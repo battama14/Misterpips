@@ -1,22 +1,10 @@
 class TradingDashboard {
     constructor() {
-        this.currentUser = sessionStorage.getItem('currentUser') || 'default';
-        this.currentAccount = localStorage.getItem(`currentAccount_${this.currentUser}`) || 'compte1';
-        
-        try {
-            this.trades = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${this.currentAccount}`)) || [];
-        } catch (error) {
-            console.error('Erreur lors du chargement des trades:', error);
-            this.trades = [];
-        }
-        
-        try {
-            this.settings = JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${this.currentAccount}`)) || { capital: 1000, riskPerTrade: 2 };
-        } catch (error) {
-            console.error('Erreur lors du chargement des paramètres:', error);
-            this.settings = { capital: 1000, riskPerTrade: 2 };
-        }
-        this.accounts = JSON.parse(localStorage.getItem(`accounts_${this.currentUser}`)) || {
+        this.currentUser = null;
+        this.currentAccount = 'compte1';
+        this.trades = [];
+        this.settings = { capital: 1000, riskPerTrade: 2 };
+        this.accounts = {
             'compte1': { name: 'Compte Principal', capital: 1000 },
             'compte2': { name: 'Compte Démo', capital: 500 },
             'compte3': { name: 'Compte Swing', capital: 2000 }
@@ -825,11 +813,16 @@ class TradingDashboard {
         const winRate = closedTrades.length > 0 ? 
             (closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length / closedTrades.length * 100).toFixed(1) : 0;
         
+        // Calculer le capital actuel (capital initial + gains/pertes)
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const currentCapital = initialCapital + totalPnL;
+        
         const statsElements = {
             totalTrades: document.getElementById('totalTrades'),
             openTrades: document.getElementById('openTrades'),
             totalPnL: document.getElementById('totalPnL'),
-            winRate: document.getElementById('winRate')
+            winRate: document.getElementById('winRate'),
+            capital: document.getElementById('capital')
         };
         
         if (statsElements.totalTrades) statsElements.totalTrades.textContent = this.trades.length;
@@ -839,6 +832,10 @@ class TradingDashboard {
             statsElements.totalPnL.className = totalPnL >= 0 ? 'positive' : 'negative';
         }
         if (statsElements.winRate) statsElements.winRate.textContent = `${winRate}%`;
+        if (statsElements.capital) {
+            statsElements.capital.textContent = `$${currentCapital.toFixed(2)}`;
+            statsElements.capital.className = totalPnL >= 0 ? 'positive' : 'negative';
+        }
     }
 
     renderTradesTable() {
@@ -912,9 +909,15 @@ class TradingDashboard {
     }
 
     saveToStorage() {
+        if (!this.currentUser) return;
+        
         localStorage.setItem(`trades_${this.currentUser}_${this.currentAccount}`, JSON.stringify(this.trades));
         localStorage.setItem(`settings_${this.currentUser}_${this.currentAccount}`, JSON.stringify(this.settings));
         localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
+        localStorage.setItem(`currentAccount_${this.currentUser}`, this.currentAccount);
+        
+        // Sauvegarder automatiquement dans Firebase
+        this.saveUserData();
     }
 
     showSettings() {
@@ -1072,27 +1075,142 @@ class TradingDashboard {
         }
     }
 
-    initFirebase() {
+    async initFirebase() {
         try {
+            // Attendre que Firebase Auth soit disponible
+            await this.waitForFirebaseAuth();
+            
+            // Importer Firebase modules
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+            const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+            const { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+            
             const firebaseConfig = {
                 apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
                 authDomain: "misterpips-b71fb.firebaseapp.com",
-                databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
                 projectId: "misterpips-b71fb",
                 storageBucket: "misterpips-b71fb.firebasestorage.app",
                 messagingSenderId: "574231126409",
                 appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
             };
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            this.database = firebase.database();
-            this.deviceId = this.getDeviceId();
-            this.syncInProgress = false;
-            this.lastSyncTime = 0;
-            this.setupRealtimeSync();
+            
+            this.app = initializeApp(firebaseConfig);
+            this.auth = getAuth(this.app);
+            this.db = getFirestore(this.app);
+            this.firebaseModules = { doc, setDoc, getDoc, onSnapshot, serverTimestamp };
+            
+            // Écouter les changements d'authentification
+            onAuthStateChanged(this.auth, (user) => {
+                if (user) {
+                    this.currentUser = user.email;
+                    this.loadUserData();
+                    this.setupRealtimeSync();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+            
         } catch (error) {
-            console.log('Firebase non disponible, mode local uniquement');
+            console.error('Erreur Firebase:', error);
+            // Fallback en mode local
+            this.currentUser = 'local_user';
+            this.loadLocalData();
+        }
+    }
+    
+    waitForFirebaseAuth() {
+        return new Promise((resolve) => {
+            const checkAuth = () => {
+                if (window.firebaseAuth || document.querySelector('script[src*="firebase-auth"]')) {
+                    resolve();
+                } else {
+                    setTimeout(checkAuth, 100);
+                }
+            };
+            checkAuth();
+        });
+    }
+    
+    async loadUserData() {
+        if (!this.db || !this.currentUser) {
+            this.loadLocalData();
+            return;
+        }
+        
+        try {
+            const userDocRef = this.firebaseModules.doc(this.db, 'users', this.currentUser);
+            const userDoc = await this.firebaseModules.getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                this.accounts = userData.accounts || this.accounts;
+                this.currentAccount = userData.currentAccount || 'compte1';
+                this.trades = userData.trades?.[this.currentAccount] || [];
+                this.settings = userData.settings?.[this.currentAccount] || { capital: 1000, riskPerTrade: 2 };
+            } else {
+                // Créer les données par défaut pour le nouvel utilisateur
+                await this.saveUserData();
+            }
+            
+            this.updateStats();
+            this.renderTradesTable();
+            this.updateCharts();
+            this.updateCalendar();
+            this.updateAccountDisplay();
+            this.updateAccountSelector();
+            
+        } catch (error) {
+            console.error('Erreur chargement données utilisateur:', error);
+            this.loadLocalData();
+        }
+    }
+    
+    loadLocalData() {
+        this.currentUser = sessionStorage.getItem('currentUser') || 'local_user';
+        this.currentAccount = localStorage.getItem(`currentAccount_${this.currentUser}`) || 'compte1';
+        
+        try {
+            this.trades = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${this.currentAccount}`)) || [];
+            this.settings = JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${this.currentAccount}`)) || { capital: 1000, riskPerTrade: 2 };
+            this.accounts = JSON.parse(localStorage.getItem(`accounts_${this.currentUser}`)) || this.accounts;
+        } catch (error) {
+            console.error('Erreur chargement local:', error);
+        }
+    }
+    
+    async saveUserData() {
+        // Sauvegarder en local d'abord
+        this.saveToStorage();
+        
+        // Puis sauvegarder dans Firebase si disponible
+        if (this.db && this.currentUser) {
+            try {
+                const userData = {
+                    accounts: this.accounts,
+                    currentAccount: this.currentAccount,
+                    trades: {},
+                    settings: {},
+                    lastModified: this.firebaseModules.serverTimestamp()
+                };
+                
+                // Sauvegarder tous les comptes
+                Object.keys(this.accounts).forEach(accountId => {
+                    userData.trades[accountId] = accountId === this.currentAccount ? this.trades : 
+                        JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${accountId}`)) || [];
+                    userData.settings[accountId] = accountId === this.currentAccount ? this.settings :
+                        JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${accountId}`)) || { capital: 1000, riskPerTrade: 2 };
+                });
+                
+                const userDocRef = this.firebaseModules.doc(this.db, 'users', this.currentUser);
+                await this.firebaseModules.setDoc(userDocRef, userData);
+                
+                this.updateSyncStatus('✅ Syncé');
+                setTimeout(() => this.updateSyncStatus('🔄 Sync Auto'), 2000);
+                
+            } catch (error) {
+                console.error('Erreur sauvegarde Firebase:', error);
+                this.updateSyncStatus('❌ Erreur sync');
+            }
         }
     }
 
