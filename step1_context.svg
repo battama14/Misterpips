@@ -1,0 +1,104 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond sombre -->
+  <rect width="800" height="500" fill="#0a0a0a"/>
+  
+  <!-- Grille TradingView -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1e222d" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="500" fill="url(#grid)"/>
+  
+  <!-- Titre -->
+  <text x="400" y="30" text-anchor="middle" fill="#00d4ff" font-size="20" font-weight="bold">CONTEXTE MULTI-TIMEFRAME - EUR/USD</text>
+  
+  <!-- Zone Premium -->
+  <rect x="80" y="60" width="640" height="80" fill="rgba(239,83,80,0.15)" stroke="#ef5350" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="90" y="85" fill="#ef5350" font-size="14" font-weight="bold">🔴 PREMIUM ZONE - Zone de Vente</text>
+  
+  <!-- Zone Equilibrium -->
+  <rect x="80" y="140" width="640" height="60" fill="rgba(255,193,7,0.15)" stroke="#ffc107" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="90" y="165" fill="#ffc107" font-size="14" font-weight="bold">🟡 EQUILIBRIUM - Zone Neutre</text>
+  
+  <!-- Zone Discount -->
+  <rect x="80" y="200" width="640" height="80" fill="rgba(76,175,80,0.15)" stroke="#4caf50" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="90" y="225" fill="#4caf50" font-size="14" font-weight="bold">🟢 DISCOUNT ZONE - Zone d'Achat</text>
+  
+  <!-- Bougies Daily -->
+  <g id="dailyCandles">
+    <!-- Semaine 1 - Baisse -->
+    <rect x="120" y="90" width="20" height="50" fill="#ef5350"/>
+    <line x1="130" y1="80" x2="130" y2="90" stroke="#ef5350" stroke-width="3"/>
+    <line x1="130" y1="140" x2="130" y2="155" stroke="#ef5350" stroke-width="3"/>
+    
+    <!-- Semaine 2 - Continuation baisse -->
+    <rect x="160" y="110" width="20" height="45" fill="#ef5350"/>
+    <line x1="170" y1="100" x2="170" y2="110" stroke="#ef5350" stroke-width="3"/>
+    <line x1="170" y1="155" x2="170" y2="170" stroke="#ef5350" stroke-width="3"/>
+    
+    <!-- Semaine 3 - Entrée en discount -->
+    <rect x="200" y="140" width="20" height="60" fill="#ef5350"/>
+    <line x1="210" y1="130" x2="210" y2="140" stroke="#ef5350" stroke-width="3"/>
+    <line x1="210" y1="200" x2="210" y2="220" stroke="#ef5350" stroke-width="3"/>
+    
+    <!-- Semaine 4 - Rejet et hausse -->
+    <rect x="240" y="180" width="20" height="70" fill="#4caf50"/>
+    <line x1="250" y1="170" x2="250" y2="180" stroke="#4caf50" stroke-width="3"/>
+    <line x1="250" y1="250" x2="250" y2="270" stroke="#4caf50" stroke-width="3"/>
+    
+    <!-- Semaine 5 - Continuation hausse -->
+    <rect x="280" y="160" width="20" height="50" fill="#4caf50"/>
+    <line x1="290" y1="150" x2="290" y2="160" stroke="#4caf50" stroke-width="3"/>
+    <line x1="290" y1="210" x2="290" y2="225" stroke="#4caf50" stroke-width="3"/>
+  </g>
+  
+  <!-- Flèche de tendance -->
+  <path d="M130,120 Q200,160 290,180" stroke="#00d4ff" stroke-width="4" fill="none" stroke-dasharray="8,4"/>
+  <text x="210" y="140" text-anchor="middle" fill="#00d4ff" font-size="12" font-weight="bold">Tendance Daily</text>
+  
+  <!-- Zone d'intérêt H4 -->
+  <ellipse cx="350" cy="230" rx="80" ry="40" fill="none" stroke="#ff9800" stroke-width="3" stroke-dasharray="10,5"/>
+  <text x="350" y="290" text-anchor="middle" fill="#ff9800" font-size="14" font-weight="bold">Zone d'entrée H4</text>
+  
+  <!-- Bougies H4 dans la zone -->
+  <g id="h4Candles">
+    <rect x="320" y="220" width="8" height="15" fill="#4caf50"/>
+    <line x1="324" y1="215" x2="324" y2="220" stroke="#4caf50" stroke-width="1"/>
+    <line x1="324" y1="235" x2="324" y2="245" stroke="#4caf50" stroke-width="1"/>
+    
+    <rect x="335" y="210" width="8" height="20" fill="#4caf50"/>
+    <line x1="339" y1="205" x2="339" y2="210" stroke="#4caf50" stroke-width="1"/>
+    <line x1="339" y1="230" x2="339" y2="240" stroke="#4caf50" stroke-width="1"/>
+    
+    <rect x="350" y="205" width="8" height="25" fill="#4caf50"/>
+    <line x1="354" y1="200" x2="354" y2="205" stroke="#4caf50" stroke-width="1"/>
+    <line x1="354" y1="230" x2="354" y2="240" stroke="#4caf50" stroke-width="1"/>
+    
+    <rect x="365" y="215" width="8" height="18" fill="#ef5350"/>
+    <line x1="369" y1="210" x2="369" y2="215" stroke="#ef5350" stroke-width="1"/>
+    <line x1="369" y1="233" x2="369" y2="243" stroke="#ef5350" stroke-width="1"/>
+    
+    <rect x="380" y="200" width="8" height="30" fill="#4caf50"/>
+    <line x1="384" y1="195" x2="384" y2="200" stroke="#4caf50" stroke-width="1"/>
+    <line x1="384" y1="230" x2="384" y2="240" stroke="#4caf50" stroke-width="1"/>
+  </g>
+  
+  <!-- Informations timeframes -->
+  <rect x="500" y="320" width="280" height="150" fill="rgba(20,20,20,0.9)" stroke="#00d4ff" stroke-width="2" rx="10"/>
+  <text x="640" y="345" text-anchor="middle" fill="#00d4ff" font-size="16" font-weight="bold">📊 ANALYSE MULTI-TIMEFRAME</text>
+  
+  <text x="520" y="370" fill="#ef5350" font-size="12">• DAILY: Identifier la tendance générale</text>
+  <text x="520" y="390" fill="#ffc107" font-size="12">• H4: Localiser les zones d'entrée</text>
+  <text x="520" y="410" fill="#4caf50" font-size="12">• H1: Confirmer la direction</text>
+  <text x="520" y="430" fill="#2196f3" font-size="12">• M15: Signal d'entrée précis</text>
+  <text x="520" y="450" fill="#ff9800" font-size="12">• Confluence = Alignement des timeframes</text>
+  
+  <!-- Prix sur l'axe Y -->
+  <text x="50" y="85" fill="#ffffff" font-size="10">1.1200</text>
+  <text x="50" y="125" fill="#ffffff" font-size="10">1.1150</text>
+  <text x="50" y="165" fill="#ffffff" font-size="10">1.1100</text>
+  <text x="50" y="205" fill="#ffffff" font-size="10">1.1050</text>
+  <text x="50" y="245" fill="#ffffff" font-size="10">1.1000</text>
+  <text x="50" y="285" fill="#ffffff" font-size="10">1.0950</text>
+</svg>
