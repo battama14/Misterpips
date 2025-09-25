@@ -12,6 +12,12 @@
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
         
+        // Rendre addDoc disponible globalement
+        window.addDoc = addDoc;
+        window.collection = collection;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+        
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
             authDomain: "misterpips-b71fb.firebaseapp.com",
@@ -352,15 +358,15 @@
         async function loadFromFirebase() {
             try {
                 // Charger les avis
-                const testimonialsSnapshot = await getDocs(collection(db, 'testimonials'));
+                const testimonialsSnapshot = await getDocs(window.collection(db, 'testimonials'));
                 testimonials = testimonialsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 
                 // Charger les news publiques
-                const newsSnapshot = await getDocs(collection(db, 'public_news'));
+                const newsSnapshot = await getDocs(window.collection(db, 'public_news'));
                 news = newsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 
                 // Charger les news VIP
-                const vipNewsSnapshot = await getDocs(collection(db, 'vip_news'));
+                const vipNewsSnapshot = await getDocs(window.collection(db, 'vip_news'));
                 vipNews = vipNewsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 
                 // Si pas de données, créer des exemples
@@ -379,7 +385,7 @@
                     ];
                     
                     for (const testimonial of defaultTestimonials) {
-                        const docRef = await addDoc(collection(db, 'testimonials'), testimonial);
+                        const docRef = await window.addDoc(window.collection(db, 'testimonials'), testimonial);
                         testimonials.push({id: docRef.id, ...testimonial});
                     }
                 }
@@ -439,7 +445,7 @@
                     };
                     
                     try {
-                        const docRef = await addDoc(collection(db, 'testimonials'), newTestimonial);
+                        const docRef = await window.addDoc(window.collection(db, 'testimonials'), newTestimonial);
                         testimonials.push({id: docRef.id, ...newTestimonial});
                         loadTestimonials();
                         document.getElementById('testimonial-form').reset();
@@ -459,7 +465,7 @@
                 };
                 
                 try {
-                    const docRef = await addDoc(collection(db, 'testimonials'), newTestimonial);
+                    const docRef = await window.addDoc(window.collection(db, 'testimonials'), newTestimonial);
                     testimonials.push({id: docRef.id, ...newTestimonial});
                     loadTestimonials();
                     document.getElementById('testimonial-form').reset();
@@ -475,7 +481,7 @@
         async function deleteTestimonial(id) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
                 try {
-                    await deleteDoc(doc(db, 'testimonials', id));
+                    await window.deleteDoc(window.doc(db, 'testimonials', id));
                     testimonials = testimonials.filter(t => t.id !== id);
                     loadTestimonials();
                     alert('Avis supprimé !');
@@ -540,7 +546,7 @@
             
             try {
                 const collectionName = type === 'vip' ? 'vip_news' : 'public_news';
-                const docRef = await addDoc(collection(db, collectionName), newNews);
+                const docRef = await window.addDoc(window.collection(db, collectionName), newNews);
                 
                 if (type === 'vip') {
                     vipNews.push({id: docRef.id, ...newNews});
@@ -562,7 +568,7 @@
             if (confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) {
                 try {
                     const collectionName = type === 'vip' ? 'vip_news' : 'public_news';
-                    await deleteDoc(doc(db, collectionName, id));
+                    await window.deleteDoc(window.doc(db, collectionName, id));
                     
                     if (type === 'vip') {
                         vipNews = vipNews.filter(n => n.id !== id);
