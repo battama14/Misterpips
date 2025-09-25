@@ -250,7 +250,8 @@ class TradingDashboard {
     }
 
     setupEventListeners() {
-        setTimeout(() => {
+        // Event listeners directs comme sur vip-space.html
+        document.addEventListener('DOMContentLoaded', () => {
             const newTradeBtn = document.getElementById('newTradeBtn');
             const settingsBtn = document.getElementById('settingsBtn');
             const closeTradeBtn = document.getElementById('closeTradeBtn');
@@ -284,7 +285,7 @@ class TradingDashboard {
                     this.closeFullscreen();
                 }
             });
-        }, 100);
+        });
     }
 
     updateStats() {
@@ -1828,7 +1829,7 @@ class TradingDashboard {
 // Initialisation
 let dashboard;
 
-window.onload = function() {
+document.addEventListener('DOMContentLoaded', function() {
     dashboard = new TradingDashboard();
     window.dashboard = dashboard;
-};
+});
