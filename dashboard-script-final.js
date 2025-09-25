@@ -529,7 +529,7 @@ class TradingDashboard {
         if (this.currentStep < this.checklistSteps.length) {
             const step = this.checklistSteps[this.currentStep];
             const optionsHtml = step.options.map((option, index) => 
-                `<button class="btn-yes btn-small" onclick="dashboard.answerStep('${option}')">${option}</button>`
+                `<button class="btn-yes btn-small" data-answer="${option}">${option}</button>`
             ).join('');
             
             const chartHtml = this.renderStepChart(this.currentStep + 1);
@@ -551,10 +551,23 @@ class TradingDashboard {
                     </div>
                     <textarea class="comment-box" placeholder="Commentaire (optionnel)..." id="stepComment"></textarea>
                     <div style="text-align: center; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
-                        <button class="btn-skip" onclick="dashboard.skipToTrade()">⏩ Passer les étapes</button>
+                        <button class="btn-skip" id="skipToTradeBtn">⏩ Passer les étapes</button>
                     </div>
                 </div>
             `;
+            
+            // Event listeners pour les boutons d'options
+            modalContent.querySelectorAll('.btn-yes').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.answerStep(e.target.dataset.answer);
+                });
+            });
+            
+            // Event listener pour le bouton skip
+            const skipBtn = document.getElementById('skipToTradeBtn');
+            if (skipBtn) {
+                skipBtn.addEventListener('click', () => this.skipToTrade());
+            }
         } else {
             this.renderTradeForm();
         }
@@ -681,19 +694,19 @@ class TradingDashboard {
                 </div>
                 <div class="form-group">
                     <label>Point d'entrée:</label>
-                    <input type="number" id="entryPoint" step="0.00001" placeholder="1.12345" oninput="dashboard.calculateLotSize()">
+                    <input type="number" id="entryPoint" step="0.00001" placeholder="1.12345">
                 </div>
                 <div class="form-group">
                     <label>Stop Loss:</label>
-                    <input type="number" id="stopLoss" step="0.00001" placeholder="1.12000" oninput="dashboard.calculateLotSize()">
+                    <input type="number" id="stopLoss" step="0.00001" placeholder="1.12000">
                 </div>
                 <div class="form-group">
                     <label>Take Profit:</label>
-                    <input type="number" id="takeProfit" step="0.00001" placeholder="1.13000" oninput="dashboard.calculateLotSize()">
+                    <input type="number" id="takeProfit" step="0.00001" placeholder="1.13000">
                 </div>
                 <div class="form-group">
                     <label>Lot:</label>
-                    <input type="number" id="lotSize" step="0.01" placeholder="0.10" oninput="dashboard.calculateFromLot()">
+                    <input type="number" id="lotSize" step="0.01" placeholder="0.10">
                 </div>
                 <div class="form-group">
                     <label>Ratio R:R:</label>
@@ -708,11 +721,29 @@ class TradingDashboard {
                     <input type="text" id="potentialGain" readonly>
                 </div>
                 <div class="form-buttons">
-                    <button class="btn-submit" onclick="dashboard.saveTrade()">Enregistrer Trade</button>
-                    <button class="btn-secondary" onclick="dashboard.closeModal()">Annuler</button>
+                    <button class="btn-submit" id="saveTradeBtn">Enregistrer Trade</button>
+                    <button class="btn-secondary" id="cancelTradeBtn">Annuler</button>
                 </div>
             </div>
         `;
+        
+        // Event listeners pour les inputs
+        const entryPoint = document.getElementById('entryPoint');
+        const stopLoss = document.getElementById('stopLoss');
+        const takeProfit = document.getElementById('takeProfit');
+        const lotSize = document.getElementById('lotSize');
+        
+        if (entryPoint) entryPoint.addEventListener('input', () => this.calculateLotSize());
+        if (stopLoss) stopLoss.addEventListener('input', () => this.calculateLotSize());
+        if (takeProfit) takeProfit.addEventListener('input', () => this.calculateLotSize());
+        if (lotSize) lotSize.addEventListener('input', () => this.calculateFromLot());
+        
+        // Event listeners pour les boutons
+        const saveBtn = document.getElementById('saveTradeBtn');
+        const cancelBtn = document.getElementById('cancelTradeBtn');
+        
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveTrade());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal());
     }
 
     calculateLotSize() {
@@ -965,11 +996,19 @@ class TradingDashboard {
                     <input type="number" id="riskInput" value="${this.settings.riskPerTrade}" step="0.1" min="0.1" max="10">
                 </div>
                 <div class="form-buttons">
-                    <button class="btn-submit" onclick="dashboard.saveSettings()">Sauvegarder</button>
-                    <button class="btn-secondary" onclick="dashboard.closeModal()">Annuler</button>
+                    <button class="btn-submit" id="saveSettingsBtn">Sauvegarder</button>
+                    <button class="btn-secondary" id="cancelSettingsBtn">Annuler</button>
                 </div>
             </div>
         `;
+        
+        // Event listeners pour les boutons
+        const saveBtn = document.getElementById('saveSettingsBtn');
+        const cancelBtn = document.getElementById('cancelSettingsBtn');
+        
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveSettings());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal());
+        
         this.showModal();
     }
 
@@ -1751,8 +1790,8 @@ class TradingDashboard {
                     <input type="number" id="manualClosePrice" step="0.00001" placeholder="Prix de sortie">
                 </div>
                 <div class="form-buttons">
-                    <button class="btn-submit" onclick="dashboard.executeManualClose()">Clôturer</button>
-                    <button class="btn-secondary" onclick="dashboard.closeModal()">Annuler</button>
+                    <button class="btn-submit" id="executeManualCloseBtn">Clôturer</button>
+                    <button class="btn-secondary" id="cancelManualBtn">Annuler</button>
                 </div>
             </div>
         `;
@@ -1794,9 +1833,10 @@ class TradingDashboard {
 
 // Initialisation
 let dashboard;
-window.dashboard = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    dashboard = new TradingDashboard();
-    window.dashboard = dashboard;
+    setTimeout(() => {
+        dashboard = new TradingDashboard();
+        window.dashboard = dashboard;
+    }, 100);
 });
