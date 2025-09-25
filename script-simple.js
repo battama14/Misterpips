@@ -1,17 +1,4 @@
-// Configuration Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
-    authDomain: "misterpips-b71fb.firebaseapp.com",
-    projectId: "misterpips-b71fb",
-    storageBucket: "misterpips-b71fb.firebasestorage.app",
-    messagingSenderId: "574231126409",
-    appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
-};
-
-// Initialiser Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Firebase est maintenant géré dans chaque page individuellement
 
 // Système VIP avec authentification
 function showVipAuthModal() {

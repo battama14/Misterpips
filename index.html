@@ -464,40 +464,84 @@
             loadCustomSections();
         });
         
-        // Charger les sections personnalisées
-        function loadCustomSections() {
-            const sections = JSON.parse(localStorage.getItem('misterpips_sections')) || {};
-            
-            Object.keys(sections).forEach(sectionKey => {
-                const sectionData = sections[sectionKey];
-                const titleElement = document.getElementById(sectionKey + '-title');
-                const contentElement = document.getElementById(sectionKey + '-content');
+        // Charger les sections personnalisées depuis Firebase
+        async function loadCustomSections() {
+            try {
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+                const { getFirestore, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
                 
-                if (titleElement && sectionData.title) {
-                    titleElement.textContent = sectionData.title;
-                }
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+                    authDomain: "misterpips-b71fb.firebaseapp.com",
+                    projectId: "misterpips-b71fb",
+                    storageBucket: "misterpips-b71fb.firebasestorage.app",
+                    messagingSenderId: "574231126409",
+                    appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+                };
                 
-                if (contentElement && sectionData.content) {
-                    let mediaHtml = '';
-                    
-                    if (sectionData.media) {
-                        if (sectionData.mediaType === 'image' || sectionData.mediaType === 'url') {
-                            mediaHtml = `<img src="${sectionData.media}" alt="${sectionData.title}" class="section-media">`;
-                        } else if (sectionData.mediaType === 'audio') {
-                            mediaHtml = `<audio controls class="section-media"><source src="${sectionData.media}" type="${sectionData.mediaType}"></audio>`;
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                const sectionsSnapshot = await getDocs(collection(db, 'page_sections'));
+                
+                if (!sectionsSnapshot.empty) {
+                    const sections = {};
+                    sectionsSnapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (!sections[data.section] || new Date(data.lastModified) > new Date(sections[data.section].lastModified)) {
+                            sections[data.section] = data;
                         }
-                    }
+                    });
                     
-                    contentElement.innerHTML = `
-                        <div class="custom-section-content">
-                            ${mediaHtml}
-                            <div class="section-text">
-                                ${sectionData.content.replace(/\n/g, '<br>')}
-                            </div>
-                        </div>
-                    `;
+                    Object.keys(sections).forEach(sectionKey => {
+                        const sectionData = sections[sectionKey];
+                        const titleElement = document.getElementById(sectionKey + '-title');
+                        const contentElement = document.getElementById(sectionKey + '-content');
+                        
+                        if (titleElement && sectionData.title) {
+                            titleElement.textContent = sectionData.title;
+                        }
+                        
+                        if (contentElement) {
+                            if (sectionData.content && sectionData.content.trim()) {
+                                // Afficher le contenu personnalisé
+                                let mediaHtml = '';
+                                
+                                if (sectionData.media) {
+                                    if (sectionData.mediaType === 'image' || sectionData.mediaType === 'url') {
+                                        mediaHtml = `<img src="${sectionData.media}" alt="${sectionData.title}" class="section-media">`;
+                                    } else if (sectionData.mediaType === 'audio') {
+                                        mediaHtml = `<audio controls class="section-media"><source src="${sectionData.media}" type="${sectionData.mediaType}"></audio>`;
+                                    }
+                                }
+                                
+                                contentElement.innerHTML = `
+                                    <div class="custom-section-content">
+                                        ${mediaHtml}
+                                        <div class="section-text">
+                                            ${sectionData.content.replace(/\n/g, '<br>')}
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (sectionData.showConstruction !== false) {
+                                // Afficher "En construction" si option activée
+                                contentElement.innerHTML = `
+                                    <div class="construction-container">
+                                        <div class="construction-icon">
+                                            <i class="fas fa-hard-hat"></i>
+                                        </div>
+                                        <h3>Section en construction</h3>
+                                        <p>Notre équipe travaille actuellement sur du contenu exceptionnel pour cette section.</p>
+                                        <p>Revenez bientôt pour découvrir nos services!</p>
+                                    </div>
+                                `;
+                            }
+                        }
+                    });
                 }
-            });
+            } catch (error) {
+                console.error('Erreur chargement sections:', error);
+            }
         }
         
         // Fonction pour tracker le téléchargement de l'ebook avec Firebase

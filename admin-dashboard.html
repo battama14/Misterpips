@@ -165,6 +165,13 @@
                                     <input type="file" id="section-image" accept="image/*,audio/*">
                                     <input type="url" id="section-image-url" placeholder="https://exemple.com/image.jpg">
                                 </div>
+                                <div class="form-group">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="show-construction" checked>
+                                        <span class="checkmark"></span>
+                                        Afficher "En construction" si contenu vide
+                                    </label>
+                                </div>
                                 <button type="submit" class="admin-button">
                                     <i class="fas fa-save"></i> Sauvegarder la Section
                                 </button>
@@ -515,16 +522,24 @@
             allNews.forEach(item => {
                 const newsItem = document.createElement('div');
                 newsItem.className = 'news-admin-item';
+                
+                // Vérifier que les propriétés existent
+                const title = item.title || 'Titre manquant';
+                const content = item.content || 'Contenu manquant';
+                const priority = item.priority || 'low';
+                const type = item.type || 'public';
+                const date = item.date || new Date().toISOString();
+                
                 newsItem.innerHTML = `
                     <div class="news-preview">
-                        <h4>${item.title}</h4>
-                        <p>${item.content.substring(0, 100)}...</p>
-                        <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
-                        <span class="news-type-badge ${item.type}">${item.type.toUpperCase()}</span>
-                        <small>${new Date(item.date).toLocaleDateString()}</small>
+                        <h4>${title}</h4>
+                        <p>${content.substring(0, 100)}...</p>
+                        <span class="news-priority priority-${priority}">${priority.toUpperCase()}</span>
+                        <span class="news-type-badge ${type}">${type.toUpperCase()}</span>
+                        <small>${new Date(date).toLocaleDateString()}</small>
                     </div>
                     <div class="news-actions">
-                        <button onclick="deleteNews(${item.id}, '${item.type}')" class="delete-btn">
+                        <button onclick="deleteNews('${item.id}', '${type}')" class="delete-btn">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -644,7 +659,7 @@
         }
 
         // Gestion du contenu
-        document.getElementById('content-form').addEventListener('submit', (e) => {
+        document.getElementById('content-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const heroTitle = document.getElementById('hero-title').value;
@@ -654,20 +669,37 @@
             const content = {
                 heroTitle,
                 heroSubtitle,
-                aboutText
+                aboutText,
+                timestamp: new Date().toISOString()
             };
             
-            localStorage.setItem('misterpips_content', JSON.stringify(content));
-            alert('Contenu sauvegardé avec succès !');
+            try {
+                const db = window.firebaseDB;
+                await window.addDoc(window.collection(db, 'site_content'), content);
+                alert('Contenu sauvegardé avec succès !');
+            } catch (error) {
+                console.error('Erreur sauvegarde contenu:', error);
+                alert('Erreur lors de la sauvegarde');
+            }
         });
 
         // Charger le contenu existant
-        function loadContent() {
-            const content = JSON.parse(localStorage.getItem('misterpips_content'));
-            if (content) {
-                document.getElementById('hero-title').value = content.heroTitle || '';
-                document.getElementById('hero-subtitle').value = content.heroSubtitle || '';
-                document.getElementById('about-text').value = content.aboutText || '';
+        async function loadContent() {
+            try {
+                const db = window.firebaseDB;
+                const contentSnapshot = await window.getDocs(window.collection(db, 'site_content'));
+                
+                if (!contentSnapshot.empty) {
+                    // Prendre le dernier contenu sauvegardé
+                    const contents = contentSnapshot.docs.map(doc => doc.data());
+                    const latestContent = contents.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+                    
+                    document.getElementById('hero-title').value = latestContent.heroTitle || '';
+                    document.getElementById('hero-subtitle').value = latestContent.heroSubtitle || '';
+                    document.getElementById('about-text').value = latestContent.aboutText || '';
+                }
+            } catch (error) {
+                console.error('Erreur chargement contenu:', error);
             }
         }
 
@@ -680,6 +712,7 @@
             const content = document.getElementById('section-content').value;
             const imageFile = document.getElementById('section-image').files[0];
             const imageUrl = document.getElementById('section-image-url').value;
+            const showConstruction = document.getElementById('show-construction').checked;
             
             let media = imageUrl;
             
@@ -692,6 +725,7 @@
                         content,
                         media: e.target.result,
                         mediaType: imageFile.type.startsWith('image/') ? 'image' : 'audio',
+                        showConstruction,
                         lastModified: new Date().toISOString()
                     };
                     
@@ -705,6 +739,7 @@
                     content,
                     media,
                     mediaType: 'url',
+                    showConstruction,
                     lastModified: new Date().toISOString()
                 };
                 
@@ -712,25 +747,49 @@
             }
         });
         
-        function saveSectionData(data) {
-            const sections = JSON.parse(localStorage.getItem('misterpips_sections')) || {};
-            sections[data.section] = data;
-            localStorage.setItem('misterpips_sections', JSON.stringify(sections));
-            
-            document.getElementById('pages-form').reset();
-            alert('Section sauvegardée avec succès !');
-            loadSectionData();
+        async function saveSectionData(data) {
+            try {
+                const db = window.firebaseDB;
+                await window.addDoc(window.collection(db, 'page_sections'), data);
+                
+                document.getElementById('pages-form').reset();
+                alert('Section sauvegardée avec succès !');
+                loadSectionData();
+            } catch (error) {
+                console.error('Erreur sauvegarde section:', error);
+                alert('Erreur lors de la sauvegarde');
+            }
         }
         
-        function loadSectionData() {
-            const sections = JSON.parse(localStorage.getItem('misterpips_sections')) || {};
-            const select = document.getElementById('section-select');
-            const currentSection = select.value;
-            
-            if (sections[currentSection]) {
-                document.getElementById('section-title').value = sections[currentSection].title || '';
-                document.getElementById('section-content').value = sections[currentSection].content || '';
-                document.getElementById('section-image-url').value = sections[currentSection].mediaType === 'url' ? sections[currentSection].media || '' : '';
+        async function loadSectionData() {
+            try {
+                const db = window.firebaseDB;
+                const sectionsSnapshot = await window.getDocs(window.collection(db, 'page_sections'));
+                const select = document.getElementById('section-select');
+                const currentSection = select.value;
+                
+                if (!sectionsSnapshot.empty) {
+                    const sections = {};
+                    sectionsSnapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (!sections[data.section] || new Date(data.lastModified) > new Date(sections[data.section].lastModified)) {
+                            sections[data.section] = data;
+                        }
+                    });
+                    
+                    if (sections[currentSection]) {
+                        document.getElementById('section-title').value = sections[currentSection].title || '';
+                        document.getElementById('section-content').value = sections[currentSection].content || '';
+                        document.getElementById('section-image-url').value = sections[currentSection].mediaType === 'url' ? sections[currentSection].media || '' : '';
+                    } else {
+                        // Vider les champs si pas de données
+                        document.getElementById('section-title').value = '';
+                        document.getElementById('section-content').value = '';
+                        document.getElementById('section-image-url').value = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur chargement sections:', error);
             }
         }
         
