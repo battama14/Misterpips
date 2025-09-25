@@ -76,6 +76,16 @@
             </div>
         </section>
 
+        <!-- Section News VIP -->
+        <section id="news-vip" class="section">
+            <div class="container">
+                <h2>Actualités VIP</h2>
+                <div id="news-vip-grid" class="news-grid">
+                    <!-- Les news VIP seront chargées dynamiquement -->
+                </div>
+            </div>
+        </section>
+
         <section id="dashboard" class="section">
             <div class="container">
                 <h2>Dashboard Trading</h2>
@@ -339,7 +349,40 @@
             }
         }
         
-        document.addEventListener('DOMContentLoaded', createTradingChart);
+        document.addEventListener('DOMContentLoaded', () => {
+            createTradingChart();
+            loadNewsVIP();
+        });
+        
+        // Charger les news VIP
+        function loadNewsVIP() {
+            const news = JSON.parse(localStorage.getItem('misterpips_news')) || [];
+            const grid = document.getElementById('news-vip-grid');
+            
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            if (news.length === 0) {
+                grid.innerHTML = '<p class="no-news">Aucune actualité VIP pour le moment</p>';
+                return;
+            }
+            
+            // Afficher toutes les news pour les VIP
+            news.slice().reverse().forEach(item => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                newsItem.innerHTML = `
+                    <div class="news-header">
+                        <h3>${item.title}</h3>
+                        <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                    </div>
+                    <p class="news-content">${item.content}</p>
+                    <div class="news-date">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                `;
+                grid.appendChild(newsItem);
+            });
+        }
     </script>
 </body>
 </html>

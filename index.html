@@ -65,16 +65,28 @@
             </div>
         </section>
 
+        <!-- Section News -->
+        <section id="news" class="section">
+            <div class="container">
+                <h2>Actualités Misterpips</h2>
+                <div id="news-grid" class="news-grid">
+                    <!-- Les news seront chargées dynamiquement -->
+                </div>
+            </div>
+        </section>
+
         <section id="presentation" class="section">
             <div class="container">
-                <h2>Présentation</h2>
-                <div class="construction-container">
-                    <div class="construction-icon">
-                        <i class="fas fa-hard-hat"></i>
+                <h2 id="presentation-title">Présentation</h2>
+                <div id="presentation-content" class="section-content">
+                    <div class="construction-container">
+                        <div class="construction-icon">
+                            <i class="fas fa-hard-hat"></i>
+                        </div>
+                        <h3>Section en construction</h3>
+                        <p>Notre équipe travaille actuellement sur du contenu exceptionnel pour cette section.</p>
+                        <p>Revenez bientôt pour découvrir nos services!</p>
                     </div>
-                    <h3>Section en construction</h3>
-                    <p>Notre équipe travaille actuellement sur du contenu exceptionnel pour cette section.</p>
-                    <p>Revenez bientôt pour découvrir nos services!</p>
                 </div>
             </div>
         </section>
@@ -445,7 +457,45 @@
         document.addEventListener('DOMContentLoaded', () => {
             createTradingChart();
             loadTestimonials();
+            loadNews();
+            loadCustomSections();
         });
+        
+        // Charger les sections personnalisées
+        function loadCustomSections() {
+            const sections = JSON.parse(localStorage.getItem('misterpips_sections')) || {};
+            
+            Object.keys(sections).forEach(sectionKey => {
+                const sectionData = sections[sectionKey];
+                const titleElement = document.getElementById(sectionKey + '-title');
+                const contentElement = document.getElementById(sectionKey + '-content');
+                
+                if (titleElement && sectionData.title) {
+                    titleElement.textContent = sectionData.title;
+                }
+                
+                if (contentElement && sectionData.content) {
+                    let mediaHtml = '';
+                    
+                    if (sectionData.media) {
+                        if (sectionData.mediaType === 'image' || sectionData.mediaType === 'url') {
+                            mediaHtml = `<img src="${sectionData.media}" alt="${sectionData.title}" class="section-media">`;
+                        } else if (sectionData.mediaType === 'audio') {
+                            mediaHtml = `<audio controls class="section-media"><source src="${sectionData.media}" type="${sectionData.mediaType}"></audio>`;
+                        }
+                    }
+                    
+                    contentElement.innerHTML = `
+                        <div class="custom-section-content">
+                            ${mediaHtml}
+                            <div class="section-text">
+                                ${sectionData.content.replace(/\n/g, '<br>')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
         
         // Charger les avis depuis le localStorage
         function loadTestimonials() {
@@ -488,6 +538,36 @@
                     </div>
                 `;
                 grid.appendChild(item);
+            });
+        }
+        
+        // Charger les news depuis le localStorage
+        function loadNews() {
+            const news = JSON.parse(localStorage.getItem('misterpips_news')) || [];
+            const grid = document.getElementById('news-grid');
+            
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            if (news.length === 0) {
+                grid.innerHTML = '<p class="no-news">Aucune actualité pour le moment</p>';
+                return;
+            }
+            
+            // Afficher les 3 dernières news
+            news.slice(-3).reverse().forEach(item => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                newsItem.innerHTML = `
+                    <div class="news-header">
+                        <h3>${item.title}</h3>
+                        <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                    </div>
+                    <p class="news-content">${item.content}</p>
+                    <div class="news-date">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                `;
+                grid.appendChild(newsItem);
             });
         }
     </script>
