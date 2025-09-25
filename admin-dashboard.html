@@ -12,12 +12,6 @@
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
         
-        // Rendre addDoc disponible globalement
-        window.addDoc = addDoc;
-        window.collection = collection;
-        window.deleteDoc = deleteDoc;
-        window.doc = doc;
-        
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
             authDomain: "misterpips-b71fb.firebaseapp.com",
@@ -30,7 +24,16 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        
+        // Rendre tout disponible globalement
         window.firebaseDB = db;
+        window.firebaseAuth = auth;
+        window.addDoc = addDoc;
+        window.collection = collection;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+        window.getDocs = getDocs;
+        window.onSnapshot = onSnapshot;
         
         onAuthStateChanged(auth, (user) => {
             console.log('Admin auth check:', user);
@@ -357,16 +360,18 @@
         // Charger depuis Firebase
         async function loadFromFirebase() {
             try {
+                const db = window.firebaseDB;
+                
                 // Charger les avis
-                const testimonialsSnapshot = await getDocs(window.collection(db, 'testimonials'));
+                const testimonialsSnapshot = await window.getDocs(window.collection(db, 'testimonials'));
                 testimonials = testimonialsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 
                 // Charger les news publiques
-                const newsSnapshot = await getDocs(window.collection(db, 'public_news'));
+                const newsSnapshot = await window.getDocs(window.collection(db, 'public_news'));
                 news = newsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 
                 // Charger les news VIP
-                const vipNewsSnapshot = await getDocs(window.collection(db, 'vip_news'));
+                const vipNewsSnapshot = await window.getDocs(window.collection(db, 'vip_news'));
                 vipNews = vipNewsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 
                 // Si pas de données, créer des exemples
@@ -445,6 +450,7 @@
                     };
                     
                     try {
+                        const db = window.firebaseDB;
                         const docRef = await window.addDoc(window.collection(db, 'testimonials'), newTestimonial);
                         testimonials.push({id: docRef.id, ...newTestimonial});
                         loadTestimonials();
@@ -465,6 +471,7 @@
                 };
                 
                 try {
+                    const db = window.firebaseDB;
                     const docRef = await window.addDoc(window.collection(db, 'testimonials'), newTestimonial);
                     testimonials.push({id: docRef.id, ...newTestimonial});
                     loadTestimonials();
@@ -481,6 +488,7 @@
         async function deleteTestimonial(id) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
                 try {
+                    const db = window.firebaseDB;
                     await window.deleteDoc(window.doc(db, 'testimonials', id));
                     testimonials = testimonials.filter(t => t.id !== id);
                     loadTestimonials();
@@ -545,6 +553,7 @@
             };
             
             try {
+                const db = window.firebaseDB;
                 const collectionName = type === 'vip' ? 'vip_news' : 'public_news';
                 const docRef = await window.addDoc(window.collection(db, collectionName), newNews);
                 
@@ -567,6 +576,7 @@
         async function deleteNews(id, type) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) {
                 try {
+                    const db = window.firebaseDB;
                     const collectionName = type === 'vip' ? 'vip_news' : 'public_news';
                     await window.deleteDoc(window.doc(db, collectionName, id));
                     
@@ -597,28 +607,30 @@
         // Statistiques en temps réel avec Firebase
         async function setupRealTimeStats() {
             try {
+                const db = window.firebaseDB;
+                
                 // Compter les utilisateurs VIP réels
-                const usersSnapshot = await getDocs(collection(db, 'users'));
+                const usersSnapshot = await window.getDocs(window.collection(db, 'users'));
                 document.getElementById('vip-users').textContent = usersSnapshot.size;
                 
                 // Compter les téléchargements ebook réels
-                const downloadsSnapshot = await getDocs(collection(db, 'ebook_downloads'));
+                const downloadsSnapshot = await window.getDocs(window.collection(db, 'ebook_downloads'));
                 document.getElementById('ebook-downloads').textContent = downloadsSnapshot.size;
                 
                 // Compter les visiteurs uniques
-                const visitorsSnapshot = await getDocs(collection(db, 'visitors'));
+                const visitorsSnapshot = await window.getDocs(window.collection(db, 'visitors'));
                 document.getElementById('total-visitors').textContent = visitorsSnapshot.size;
                 
                 // Écouter les changements en temps réel
-                onSnapshot(collection(db, 'users'), (snapshot) => {
+                window.onSnapshot(window.collection(db, 'users'), (snapshot) => {
                     document.getElementById('vip-users').textContent = snapshot.size;
                 });
                 
-                onSnapshot(collection(db, 'ebook_downloads'), (snapshot) => {
+                window.onSnapshot(window.collection(db, 'ebook_downloads'), (snapshot) => {
                     document.getElementById('ebook-downloads').textContent = snapshot.size;
                 });
                 
-                onSnapshot(collection(db, 'visitors'), (snapshot) => {
+                window.onSnapshot(window.collection(db, 'visitors'), (snapshot) => {
                     document.getElementById('total-visitors').textContent = snapshot.size;
                 });
                 
