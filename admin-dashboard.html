@@ -24,8 +24,15 @@
         const auth = getAuth(app);
         
         onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== 'admin@misterpips.com') {
+            console.log('Admin auth check:', user);
+            if (!user) {
+                console.log('No user, redirecting to VIP');
                 window.location.href = 'vip-space.html';
+            } else if (user.email !== 'admin@misterpips.com') {
+                console.log('Not admin user, redirecting to VIP');
+                window.location.href = 'vip-space.html';
+            } else {
+                console.log('Admin authenticated:', user.email);
             }
         });
         

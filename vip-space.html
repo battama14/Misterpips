@@ -272,18 +272,23 @@
             }
         });
         
-        // Gestion de la connexion admin
+        // Gestion de la connexion admin avec Firebase
         document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
             
-            // Vérification des identifiants admin
-            if (email === 'admin@misterpips.com' && password === 'AdminMisterpips2024!') {
-                window.location.href = 'admin-dashboard.html';
-            } else {
-                alert('Identifiants administrateur incorrects');
+            try {
+                await signInWithEmailAndPassword(window.firebaseAuth.auth, email, password);
+                // Vérifier si c'est un admin
+                if (email === 'admin@misterpips.com') {
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    alert('Accès administrateur refusé');
+                }
+            } catch (error) {
+                alert('Identifiants incorrects');
             }
         });
     </script>
