@@ -417,5 +417,51 @@
             document.getElementById('refreshTrends').addEventListener('click', refreshTrends);
         });
     </script>
+    <script>
+        // Création du graphique de bougies japonaises
+        function createTradingChart() {
+            const chart = document.getElementById('trading-chart');
+            if (!chart) return;
+            
+            let currentPrice = 50; // Prix de départ au milieu
+            
+            for (let i = 0; i < 40; i++) {
+                const candle = document.createElement('div');
+                candle.className = 'candle';
+                candle.style.left = (i * 2.5) + '%';
+                candle.style.animationDelay = (i * 0.1) + 's';
+                
+                // Mouvement de prix réaliste
+                const priceChange = (Math.random() - 0.5) * 10;
+                currentPrice += priceChange;
+                currentPrice = Math.max(20, Math.min(80, currentPrice)); // Limites
+                
+                candle.style.bottom = currentPrice + '%';
+                
+                // Mèche haute
+                const wickTop = document.createElement('div');
+                wickTop.className = 'candle-wick';
+                wickTop.style.height = (Math.random() * 15 + 5) + 'px';
+                
+                // Corps de la bougie
+                const body = document.createElement('div');
+                const isBullish = priceChange > 0;
+                body.className = 'candle-body ' + (isBullish ? 'bullish' : 'bearish');
+                body.style.height = (Math.random() * 25 + 10) + 'px';
+                
+                // Mèche basse
+                const wickBottom = document.createElement('div');
+                wickBottom.className = 'candle-wick-bottom';
+                wickBottom.style.height = (Math.random() * 10 + 3) + 'px';
+                
+                candle.appendChild(wickTop);
+                candle.appendChild(body);
+                candle.appendChild(wickBottom);
+                chart.appendChild(candle);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', createTradingChart);
+    </script>
 </body>
 </html>

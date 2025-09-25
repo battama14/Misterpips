@@ -79,7 +79,7 @@
             <div class="container">
                 <h2>Dashboard Trading</h2>
                 <div class="vip-features">
-                    <div class="feature-item clickable-feature" onclick="window.open('../DASHBOARDTRADING/index.html', '_blank')">
+                    <div class="feature-item clickable-feature" onclick="window.open('https://votre-dashboard.netlify.app', '_blank')">
                         <i class="fas fa-chart-line"></i>
                         <h4>Dashboard Professionnel</h4>
                         <p>Calculateur de lots, gestion des risques, analyses techniques complètes</p>
@@ -221,17 +221,40 @@
 
     <script src="script-simple.js"></script>
     <script>
-        // Animation des bougies
         function createTradingChart() {
             const chart = document.getElementById('trading-chart');
             if (!chart) return;
             
-            for (let i = 0; i < 50; i++) {
+            let currentPrice = 50;
+            
+            for (let i = 0; i < 40; i++) {
                 const candle = document.createElement('div');
                 candle.className = 'candle';
-                candle.style.left = Math.random() * 100 + '%';
-                candle.style.animationDelay = Math.random() * 10 + 's';
-                candle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                candle.style.left = (i * 2.5) + '%';
+                candle.style.animationDelay = (i * 0.1) + 's';
+                
+                const priceChange = (Math.random() - 0.5) * 10;
+                currentPrice += priceChange;
+                currentPrice = Math.max(20, Math.min(80, currentPrice));
+                
+                candle.style.bottom = currentPrice + '%';
+                
+                const wickTop = document.createElement('div');
+                wickTop.className = 'candle-wick';
+                wickTop.style.height = (Math.random() * 15 + 5) + 'px';
+                
+                const body = document.createElement('div');
+                const isBullish = priceChange > 0;
+                body.className = 'candle-body ' + (isBullish ? 'bullish' : 'bearish');
+                body.style.height = (Math.random() * 25 + 10) + 'px';
+                
+                const wickBottom = document.createElement('div');
+                wickBottom.className = 'candle-wick-bottom';
+                wickBottom.style.height = (Math.random() * 10 + 3) + 'px';
+                
+                candle.appendChild(wickTop);
+                candle.appendChild(body);
+                candle.appendChild(wickBottom);
                 chart.appendChild(candle);
             }
         }
