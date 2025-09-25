@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord VIP - Misterpips</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="vip-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</head>
+<body class="dashboard-body">
+    <div id="trading-chart"></div>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-crown"></i> Tableau de Bord VIP Misterpips</h1>
+            <a href="vip-space.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Retour à l'espace VIP
+            </a>
+        </div>
+        
+        <div class="dashboard-grid">
+            <!-- Corrélations des Devises -->
+            <div class="dashboard-card correlation-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-exchange-alt"></i> Corrélations Forex</h3>
+                    <div class="refresh-btn" id="refreshCorrelations">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                </div>
+                <div class="correlation-grid" id="correlationGrid">
+                    <!-- Le contenu sera injecté par JavaScript -->
+                </div>
+            </div>
+
+            <!-- Indicateurs de Tendance -->
+            <div class="dashboard-card trend-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-trending-up"></i> Tendances en Temps Réel</h3>
+                    <div class="refresh-btn" id="refreshTrends">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                </div>
+                <div class="trends-grid" id="trendsGrid">
+                    <!-- Le contenu sera injecté par JavaScript -->
+                </div>
+            </div>
+
+            <!-- Calendrier Économique -->
+            <div class="dashboard-card calendar-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Calendrier Économique</h3>
+                    <div class="calendar-links">
+                        <a href="https://www.investing.com/economic-calendar/" target="_blank" class="calendar-link">
+                            <i class="fas fa-external-link-alt"></i> Investing.com
+                        </a>
+                        <a href="https://www.forexfactory.com/calendar" target="_blank" class="calendar-link">
+                            <i class="fas fa-external-link-alt"></i> ForexFactory
+                        </a>
+                    </div>
+                </div>
+                <div class="calendar-widget">
+                    <div id="economicCalendarWidget">
+                        <div class="tradingview-widget-container">
+                            <div class="tradingview-widget-container__widget"></div>
+                            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                            {
+                                "colorTheme": "dark",
+                                "isTransparent": false,
+                                "width": "100%",
+                                "height": "400",
+                                "locale": "fr",
+                                "importanceFilter": "-1,0,1"
+                            }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertes et Analyses -->
+            <div class="dashboard-card alerts-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bell"></i> Alertes & Analyses</h3>
+                </div>
+                <div class="alerts-content" id="alertsContent">
+                    <!-- Le contenu sera injecté par JavaScript -->
+                </div>
+            </div>
+
+            <!-- Performance des Pairs -->
+            <div class="dashboard-card performance-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-bar"></i> Performance 24h</h3>
+                    <div class="refresh-btn" id="refreshPerformance">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                </div>
+                <div class="performance-content" id="performanceContent">
+                    <!-- Le contenu sera injecté par JavaScript -->
+                </div>
+            </div>
+
+            <!-- Actualités Forex -->
+            <div class="dashboard-card news-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-newspaper"></i> Actualités Forex</h3>
+                </div>
+                <div class="news-content" id="newsContent">
+                    <!-- Le contenu sera injecté par JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Logo" class="footer-logo-img">
+                <p>Misterpips - Tableau de Bord VIP</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="vip-space.html">Espace VIP</a></li>
+                        <li><a href="planning-forex.html">Planning Forex</a></li>
+                        <li><a href="index.html">Accueil</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Communauté</h4>
+                    <ul>
+                        <li><a href="https://www.instagram.com/EVAN4SLM/" target="_blank"><i class="fab fa-instagram"></i> Instagram @EVAN4SLM</a></li>
+                        <li><a href="https://www.tiktok.com/@MISTERPIPS3" target="_blank"><i class="fab fa-tiktok"></i> TikTok @MISTERPIPS3</a></li>
+                        <li><a href="https://t.me/misterpips" target="_blank"><i class="fab fa-telegram"></i> Canal Misterpips</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips. Tous droits réservés.</p>
+            <p class="disclaimer">Le trading comporte des risques. Les performances passées ne préjugent pas des performances futures.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Animation des bougies
+        function createTradingChart() {
+            const chart = document.getElementById('trading-chart');
+            if (!chart) return;
+            
+            for (let i = 0; i < 50; i++) {
+                const candle = document.createElement('div');
+                candle.className = 'candle';
+                candle.style.left = Math.random() * 100 + '%';
+                candle.style.animationDelay = Math.random() * 10 + 's';
+                candle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                chart.appendChild(candle);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', createTradingChart);
+    </script>
+</body>
+</html>

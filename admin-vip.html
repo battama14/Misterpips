@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin VIP - Misterpips</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <h1>Administration VIP</h1>
+    <div>
+        <h3>Ajouter un utilisateur VIP</h3>
+        <input type="email" id="userEmail" placeholder="Email utilisateur">
+        <button onclick="addVipUser()">Ajouter</button>
+    </div>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        async function addVipUser() {
+            const email = document.getElementById('userEmail').value;
+            if (!email) return alert('Email requis');
+            
+            try {
+                await db.collection('vip_users').add({
+                    email: email,
+                    vip_access: true,
+                    created_at: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Utilisateur VIP ajouté: ' + email);
+                document.getElementById('userEmail').value = '';
+            } catch (error) {
+                alert('Erreur: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

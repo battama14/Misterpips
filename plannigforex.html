@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/battama14/doncrypto/f368e068fe4e530bc7bc75441efde4f5bb53ab43/misterpips_logo.ico">
+  <title>Trading Calendar Misterpips</title>
+  <style>
+    :root{--bg:#0f1113;--card:#141516;--muted:#9aa0a6;--accent:#10b981;--danger:#ef4444;--cell:#1a1c1e}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{margin:0;background:linear-gradient(180deg,#0b0c0d 0%, #0f1113 100%);color:#e6eef6}
+    .app{max-width:1100px;margin:18px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    header h1{font-size:20px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+    button, .btn{background:#111315;border:1px solid #222;padding:8px 12px;border-radius:8px;color:#dfe7ee;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid #2a2c2f}
+    .calendarWrap{display:grid;grid-template-columns:1fr 280px;gap:16px}
+    .calendar{background:var(--card);padding:12px;border-radius:12px}
+    .monthHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px}
+    .weekdays div{font-size:12px;text-align:center;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+    .cell{min-height:100px;background:var(--cell);padding:8px;border-radius:8px;position:relative;overflow:hidden;border:1px solid #202224}
+    .cell .date{position:absolute;top:6px;right:8px;font-size:12px;color:var(--muted)}
+    .cell .sum{font-weight:700;font-size:14px;margin-top:20px}
+    .cell .count{font-size:11px;color:var(--muted);margin-top:6px}
+    .green{background:linear-gradient(180deg, rgba(16,185,129,0.08), transparent);border-color:rgba(16,185,129,0.18)}
+    .red{background:linear-gradient(180deg, rgba(239,68,68,0.06), transparent);border-color:rgba(239,68,68,0.18)}
+    .sidebar{background:var(--card);padding:12px;border-radius:12px}
+    .weekSummary{display:flex;flex-direction:column;gap:8px}
+    .weekBlock{padding:8px;border-radius:8px;background:#0f1315;border:1px solid #1e2224}
+    .weekBlock h3{margin:0;font-size:14px}
+    .weekBlock p{margin:6px 0 0;font-size:18px;font-weight:700}
+    .tradeList{margin-top:8px;max-height:200px;overflow:auto}
+    .tradeItem{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #202426;font-size:13px}
+    .footer{margin-top:12px;display:flex;gap:8px}
+    /* modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:60}
+    .dialog{background:#0b0d0e;padding:16px;border-radius:12px;width:420px;border:1px solid #212426}
+    .dialog h2{margin:0 0 8px}
+    .field{display:flex;flex-direction:column;margin-bottom:8px}
+    input,textarea,select{background:#0f1315;border:1px solid #212526;padding:8px;border-radius:8px;color:#e6eef6}
+    .small{font-size:12px;color:var(--muted)}
+    .topRow{display:flex;gap:8px;align-items:center}
+    .nav{display:flex;gap:6px;align-items:center}
+    .today{background:#121314;padding:6px 10px;border-radius:8px}
+    .exportBtn{width:100%}
+    @media(max-width:900px){.calendarWrap{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>
+  <img src="https://raw.githubusercontent.com/battama14/doncrypto/f368e068fe4e530bc7bc75441efde4f5bb53ab43/misterpips_logo.ico" 
+       alt="logo" style="width:60px; vertical-align:middle; margin-right:8px;">
+  Trading Calendar Misterpips
+</h1>
+      <div class="controls">
+        <div class="nav">
+          <button id="prev">◀</button>
+          <div class="today" id="monthLabel">Mois</div>
+          <button id="next">▶</button>
+        </div>
+        <button id="addDay" class="btn">Ajouter trade</button>
+        <button id="reset" class="btn secondary">Reset</button>
+      </div>
+    </header>
+
+    <div class="calendarWrap">
+      <div class="calendar">
+        <div class="monthHead">
+          <div class="topRow">
+            <strong id="headingMonth">Mois Année</strong>
+          </div>
+          <div class="topRow small">Sélectionne une case pour ajouter/modifier des trades</div>
+        </div>
+
+        <div class="weekdays">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+
+        <div class="grid" id="grid"></div>
+      </div>
+
+      <aside class="sidebar">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Vue</div>
+            <div style="font-weight:700">Semaine & Mois</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Total sélection</div>
+            <div id="selectedTotal" style="font-weight:800;font-size:18px">$0</div>
+          </div>
+        </div>
+
+        <div class="weekSummary" id="weeks"></div>
+
+        <div class="tradeList" id="tradeList"></div>
+
+        <div class="footer">
+          <button id="exportCsv" class="btn exportBtn">Exporter CSV</button>
+          <button id="toggleWeek" class="btn secondary">Basculer semaine</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- modal -->
+  <div id="modal" class="modal" style="display:none">
+    <div class="dialog">
+      <h2 id="modalTitle">Ajouter trade</h2>
+      <div class="field small">
+        <label>Date</label>
+        <input id="tradeDate" type="date" />
+      </div>
+      <div class="field small">
+        <label>Montant (ex: 150.50 ou -75)</label>
+        <input id="tradeAmount" type="number" step="0.01" />
+      </div>
+      <div class="field small">
+        <label>Description (optionnelle)</label>
+        <input id="tradeDesc" type="text" />
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button id="saveTrade" class="btn">Enregistrer</button>
+        <button id="closeModal" class="btn secondary">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- State & helpers ---
+    const state = { viewDate: new Date(), selectedDate: null, showWeek:false }
+    const storageKey = 'trading_calendar_trades_v1'
+
+    function loadTrades(){
+      const raw = localStorage.getItem(storageKey)
+      return raw ? JSON.parse(raw) : {}
+    }
+    function saveTrades(obj){ localStorage.setItem(storageKey, JSON.stringify(obj)) }
+
+    function startOfWeek(date){ const d=new Date(date); const day=d.getDay(); d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d }
+    function formatDateISO(d){ const dt=new Date(d); const y=dt.getFullYear(); const m=String(dt.getMonth()+1).padStart(2,'0'); const day=String(dt.getDate()).padStart(2,'0'); return `${y}-${m}-${day}` }
+
+    // --- Calendar render ---
+    const grid = document.getElementById('grid'), headingMonth=document.getElementById('headingMonth'), monthLabel=document.getElementById('monthLabel')
+    const weeksContainer = document.getElementById('weeks'), tradeList = document.getElementById('tradeList'), selectedTotal = document.getElementById('selectedTotal')
+
+    function render(){
+      grid.innerHTML=''
+      const year = state.viewDate.getFullYear(); const month = state.viewDate.getMonth()
+      headingMonth.textContent = state.viewDate.toLocaleString('fr-FR',{month:'long', year:'numeric'})
+      monthLabel.textContent = headingMonth.textContent
+
+      const firstDay = new Date(year, month,1)
+      const start = new Date(firstDay); start.setDate(1 - firstDay.getDay()) // start from sunday before
+      const trades = loadTrades()
+
+      for(let i=0;i<42;i++){
+        const day = new Date(start); day.setDate(start.getDate()+i)
+        const iso = formatDateISO(day)
+        const cell = document.createElement('div'); cell.className='cell';
+        if(day.getMonth() !== month) cell.style.opacity = 0.45
+        const dateEl = document.createElement('div'); dateEl.className='date'; dateEl.textContent = day.getDate()
+        cell.appendChild(dateEl)
+
+        // compute sum & count
+        const entries = trades[iso] || []
+        const sum = entries.reduce((s,e)=>s+Number(e.amount||0),0)
+        const count = entries.length
+        if(count>0){
+          const sumEl = document.createElement('div'); sumEl.className='sum'; sumEl.textContent = (sum>=0?'+':'') + formatMoney(sum)
+          const countEl = document.createElement('div'); countEl.className='count'; countEl.textContent = `${count} trade${count>1?'s':''}`
+          cell.appendChild(sumEl); cell.appendChild(countEl)
+          if(sum>0) cell.classList.add('green')
+          if(sum<0) cell.classList.add('red')
+        }
+
+        cell.addEventListener('click',()=>{ openModalFor(iso) })
+        grid.appendChild(cell)
+      }
+
+      renderWeeks(trades)
+      updateSelectedTotal()
+    }
+
+    function renderWeeks(trades){
+      weeksContainer.innerHTML=''
+      // iterate weeks overlapping current month (6 rows of 7 days)
+      const year = state.viewDate.getFullYear(); const month=state.viewDate.getMonth()
+      const firstDay = new Date(year, month,1)
+      const start = new Date(firstDay); start.setDate(1 - firstDay.getDay())
+      for(let r=0;r<6;r++){
+        const weekStart = new Date(start); weekStart.setDate(start.getDate()+r*7)
+        const days = []
+        let weekSum=0, dayCount=0
+        for(let d=0; d<7; d++){
+          const day = new Date(weekStart); day.setDate(weekStart.getDate()+d)
+          const iso=formatDateISO(day)
+          const entries = trades[iso]||[]
+          const s = entries.reduce((a,b)=>a+Number(b.amount||0),0)
+          weekSum += s; if(entries.length) dayCount++
+          days.push({date:day, sum:s})
+        }
+        const block = document.createElement('div'); block.className='weekBlock'
+        const title = document.createElement('h3'); title.textContent = `Semaine ${r+1} (${formatDateISO(days[0].date)} → ${formatDateISO(days[6].date)})`
+        const p = document.createElement('p'); p.textContent = (weekSum>=0?'+':'')+formatMoney(weekSum)
+        if(weekSum>0) p.style.color='var(--accent)'
+        if(weekSum<0) p.style.color='var(--danger)'
+        block.appendChild(title); block.appendChild(p)
+
+        // small days preview
+        const tiny = document.createElement('div'); tiny.style.display='flex'; tiny.style.gap='6px'; tiny.style.marginTop='8px'
+        days.forEach(d=>{
+          const t = document.createElement('div'); t.style.fontSize='11px'; t.style.padding='6px'; t.style.borderRadius='6px'; t.style.background='#070808'; t.style.minWidth='34px'; t.style.textAlign='center'; t.title = formatDateISO(d.date)
+          if(d.sum>0) t.style.border = '1px solid rgba(16,185,129,0.14)'
+          if(d.sum<0) t.style.border = '1px solid rgba(239,68,68,0.14)'
+          t.textContent = (d.sum!==0) ? (d.sum>0?'+':'') + shortMoney(d.sum) : '-'
+          tiny.appendChild(t)
+        })
+        block.appendChild(tiny)
+
+        block.addEventListener('click',()=>{ // show detailed week
+          showWeekDetails(weekStart)
+        })
+
+        weeksContainer.appendChild(block)
+      }
+    }
+
+    function showWeekDetails(weekStart){
+      const trades = loadTrades();
+      tradeList.innerHTML = ''
+      let weekSum=0
+      for(let d=0; d<7; d++){
+        const day = new Date(weekStart); day.setDate(weekStart.getDate()+d)
+        const iso = formatDateISO(day)
+        const entries = trades[iso]||[]
+        if(entries.length){
+          entries.forEach(e=>{
+            const node = document.createElement('div'); node.className='tradeItem'
+            const left = document.createElement('div'); left.innerHTML = `<strong>${iso}</strong><div class='small'>${e.desc||''}</div>`
+            const right = document.createElement('div'); right.innerHTML = `<div>${e.amount>=0?'+':''}${formatMoney(e.amount)}</div>`
+            if(e.amount>0) right.style.color='var(--accent)'
+            if(e.amount<0) right.style.color='var(--danger)'
+            node.appendChild(left); node.appendChild(right)
+            tradeList.appendChild(node)
+            weekSum += Number(e.amount||0)
+          })
+        }
+      }
+      selectedTotal.textContent = (weekSum>=0?'+':'')+formatMoney(weekSum)
+    }
+
+    function updateSelectedTotal(){ selectedTotal.textContent = '$0' }
+
+    // --- Modal actions ---
+    const modal = document.getElementById('modal'), tradeDate = document.getElementById('tradeDate'), tradeAmount=document.getElementById('tradeAmount'), tradeDesc=document.getElementById('tradeDesc')
+    document.getElementById('addDay').addEventListener('click',()=>{ openModalFor(formatDateISO(new Date())) })
+    document.getElementById('closeModal').addEventListener('click',()=>{ modal.style.display='none' })
+    document.getElementById('saveTrade').addEventListener('click',()=>{
+      const iso = tradeDate.value; if(!iso) return alert('Sélectionne une date')
+      const amt = Number(tradeAmount.value||0);
+      if(!amt && amt!==0) return alert('Montant invalide')
+      const desc = tradeDesc.value
+      const trades = loadTrades(); trades[iso] = trades[iso] || []
+      trades[iso].push({amount:amt, desc:desc, created: new Date().toISOString()})
+      saveTrades(trades); modal.style.display='none'; tradeAmount.value=''; tradeDesc.value=''; render();
+    })
+
+    function openModalFor(iso){
+      tradeDate.value = iso
+      modal.style.display='flex'
+    }
+
+    // --- navigation & util ---
+    document.getElementById('prev').addEventListener('click',()=>{ state.viewDate.setMonth(state.viewDate.getMonth()-1); render() })
+    document.getElementById('next').addEventListener('click',()=>{ state.viewDate.setMonth(state.viewDate.getMonth()+1); render() })
+    document.getElementById('reset').addEventListener('click',()=>{ if(confirm('Supprimer tous les trades ?')){ localStorage.removeItem(storageKey); render() } })
+
+    document.getElementById('exportCsv').addEventListener('click',()=>{
+      const trades = loadTrades(); const rows = [['date','amount','desc']]
+      Object.keys(trades).sort().forEach(d=>{ trades[d].forEach(e=>rows.push([d, e.amount, `"${(e.desc||'').replace(/"/g,'""')}"`])) })
+      const csv = rows.map(r=>r.join(',')).join('\n')
+      const blob = new Blob([csv], {type:'text/csv'})
+      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='trades.csv'; a.click(); URL.revokeObjectURL(url)
+    })
+
+    document.getElementById('toggleWeek').addEventListener('click',()=>{ state.showWeek = !state.showWeek; alert('Clique sur une semaine à droite pour voir les détails (liste des trades)') })
+
+    function formatMoney(n){ const sign = n<0?'-':''; n = Math.abs(Number(n)||0); return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}) }
+    function shortMoney(n){ const abs = Math.abs(n); if(abs>=1000) return (n/1000).toFixed(1)+'k'; return n.toFixed(0) }
+
+    // init
+    render()
+  </script>
+</body>
+</html>

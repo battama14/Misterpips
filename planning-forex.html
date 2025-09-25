@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Forex - Misterpips</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="vip-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            console.log('Auth state changed:', user);
+            if (!user) {
+                console.log('No user, redirecting to index.html');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                console.log('User authenticated:', user.email);
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="trading-chart"></div>
+    
+    <header>
+        <div class="logo-container">
+            <img src="Misterpips.jpg" alt="Misterpips Logo" class="logo">
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="#planning">Planning</a></li>
+                <li><a href="#calendar">Calendrier</a></li>
+                <li><a href="#correlations">Corrélations</a></li>
+                <li><a href="#trends">Tendances</a></li>
+                <li><a href="vip-space.html">Retour VIP</a></li>
+            </ul>
+            <div class="burger">
+                <div class="line1"></div>
+                <div class="line2"></div>
+                <div class="line3"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Planning Forex Professionnel</h1>
+                <p>Sessions de trading, calendrier économique et analyses en temps réel</p>
+                <div class="cta-buttons">
+                    <a href="#planning" class="cta-button">Voir les Sessions</a>
+                    <a href="#calendar" class="telegram-button">
+                        <i class="fas fa-calendar-alt"></i> Calendrier Économique
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Planning Forex -->
+        <section id="planning" class="section">
+            <div class="container">
+                <h2>Planning Forex - Sessions de Trading</h2>
+                <div class="sessions-grid">
+                    <div class="session-card" id="sydney-session">
+                        <div class="session-header">
+                            <i class="fas fa-sun"></i>
+                            <h3>Session de Sydney</h3>
+                        </div>
+                        <div class="session-time">22h00 - 07h00 (GMT+1)</div>
+                        <div class="session-pairs">Paires principales: AUD/USD, NZD/USD</div>
+                        <div class="volatility-low">Volatilité: Faible à Modérée</div>
+                    </div>
+                    
+                    <div class="session-card" id="tokyo-session">
+                        <div class="session-header">
+                            <i class="fas fa-yen-sign"></i>
+                            <h3>Session de Tokyo</h3>
+                        </div>
+                        <div class="session-time">01h00 - 10h00 (GMT+1)</div>
+                        <div class="session-pairs">Paires principales: USD/JPY, EUR/JPY, GBP/JPY</div>
+                        <div class="volatility-high">Volatilité: Modérée</div>
+                    </div>
+                    
+                    <div class="session-card" id="london-session">
+                        <div class="session-header">
+                            <i class="fas fa-pound-sign"></i>
+                            <h3>Session de Londres</h3>
+                        </div>
+                        <div class="session-time">08h00 - 17h00 (GMT+1)</div>
+                        <div class="session-pairs">Paires principales: EUR/USD, GBP/USD, USD/CHF</div>
+                        <div class="volatility-high">Volatilité: Élevée</div>
+                    </div>
+                    
+                    <div class="session-card" id="newyork-session">
+                        <div class="session-header">
+                            <i class="fas fa-dollar-sign"></i>
+                            <h3>Session de New York</h3>
+                        </div>
+                        <div class="session-time">14h00 - 23h00 (GMT+1)</div>
+                        <div class="session-pairs">Paires principales: EUR/USD, GBP/USD, USD/CAD</div>
+                        <div class="volatility-high">Volatilité: Très Élevée</div>
+                    </div>
+                </div>
+                
+                <div class="overlap-info">
+                    <h3>Chevauchements des Sessions - Meilleurs Moments pour Trader</h3>
+                    <div class="overlap-grid">
+                        <div class="overlap-item">
+                            <h4>Londres + New York</h4>
+                            <p>14h00 - 17h00 (GMT+1)</p>
+                            <div class="best-time">MEILLEUR MOMENT</div>
+                            <p>Volume maximal, spreads réduits</p>
+                        </div>
+                        <div class="overlap-item">
+                            <h4>Sydney + Tokyo</h4>
+                            <p>01h00 - 07h00 (GMT+1)</p>
+                            <div class="good-time">BON MOMENT</div>
+                            <p>Activité modérée sur les paires asiatiques</p>
+                        </div>
+                        <div class="overlap-item">
+                            <h4>Tokyo + Londres</h4>
+                            <p>08h00 - 10h00 (GMT+1)</p>
+                            <div class="good-time">BON MOMENT</div>
+                            <p>Transition entre sessions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Calendrier Économique -->
+        <section id="calendar" class="section">
+            <div class="container">
+                <h2>Calendrier Économique</h2>
+                <div class="calendar-container">
+                    <div class="calendar-widget">
+                        <!-- TradingView Economic Calendar Widget -->
+                        <div class="tradingview-widget-container">
+                            <div class="tradingview-widget-container__widget"></div>
+                            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                            {
+                                "colorTheme": "dark",
+                                "isTransparent": false,
+                                "width": "100%",
+                                "height": "600",
+                                "locale": "fr",
+                                "importanceFilter": "-1,0,1"
+                            }
+                            </script>
+                        </div>
+                    </div>
+                    
+                    <div class="calendar-links">
+                        <h3>Liens Utiles</h3>
+                        <div class="links-grid">
+                            <a href="https://fr.investing.com/economic-calendar/" target="_blank" class="calendar-link">
+                                <i class="fas fa-external-link-alt"></i> Investing.com
+                            </a>
+                            <a href="https://www.forexfactory.com/calendar" target="_blank" class="calendar-link">
+                                <i class="fas fa-external-link-alt"></i> ForexFactory
+                            </a>
+                            <a href="https://www.dailyfx.com/economic-calendar" target="_blank" class="calendar-link">
+                                <i class="fas fa-external-link-alt"></i> DailyFX
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Corrélations -->
+        <section id="correlations" class="section">
+            <div class="container">
+                <h2>Corrélations des Devises</h2>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card correlation-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-exchange-alt"></i> Corrélations Forex</h3>
+                            <div class="refresh-btn" id="refreshCorrelations">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                        </div>
+                        <div class="correlation-grid" id="correlationGrid">
+                            <div class="correlation-item">
+                                <div class="pair-name">EUR/USD vs GBP/USD</div>
+                                <div class="correlation-value positive">+0.85</div>
+                                <div class="correlation-strength">Forte corrélation positive</div>
+                            </div>
+                            <div class="correlation-item">
+                                <div class="pair-name">USD/JPY vs USD/CHF</div>
+                                <div class="correlation-value positive">+0.72</div>
+                                <div class="correlation-strength">Corrélation positive modérée</div>
+                            </div>
+                            <div class="correlation-item">
+                                <div class="pair-name">EUR/USD vs USD/CHF</div>
+                                <div class="correlation-value negative">-0.91</div>
+                                <div class="correlation-strength">Forte corrélation négative</div>
+                            </div>
+                            <div class="correlation-item">
+                                <div class="pair-name">GBP/USD vs USD/JPY</div>
+                                <div class="correlation-value negative">-0.43</div>
+                                <div class="correlation-strength">Corrélation négative faible</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tendances -->
+        <section id="trends" class="section">
+            <div class="container">
+                <h2>Tendances du Marché</h2>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card trend-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-trending-up"></i> Tendances en Temps Réel</h3>
+                            <div class="refresh-btn" id="refreshTrends">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                        </div>
+                        <div class="trends-grid" id="trendsGrid">
+                            <div class="trend-item bullish">
+                                <div class="trend-pair">EUR/USD</div>
+                                <div class="trend-direction"><i class="fas fa-arrow-up"></i> Haussier</div>
+                                <div class="trend-strength">Force: 78%</div>
+                            </div>
+                            <div class="trend-item bearish">
+                                <div class="trend-pair">GBP/USD</div>
+                                <div class="trend-direction"><i class="fas fa-arrow-down"></i> Baissier</div>
+                                <div class="trend-strength">Force: 65%</div>
+                            </div>
+                            <div class="trend-item neutral">
+                                <div class="trend-pair">USD/JPY</div>
+                                <div class="trend-direction"><i class="fas fa-arrows-alt-h"></i> Neutre</div>
+                                <div class="trend-strength">Force: 45%</div>
+                            </div>
+                            <div class="trend-item bullish">
+                                <div class="trend-pair">AUD/USD</div>
+                                <div class="trend-direction"><i class="fas fa-arrow-up"></i> Haussier</div>
+                                <div class="trend-strength">Force: 82%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Logo" class="footer-logo-img">
+                <p>Misterpips - Planning Forex Professionnel</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="#planning">Planning</a></li>
+                        <li><a href="#calendar">Calendrier</a></li>
+                        <li><a href="#correlations">Corrélations</a></li>
+                        <li><a href="#trends">Tendances</a></li>
+                        <li><a href="vip-space.html">Retour VIP</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Communauté</h4>
+                    <ul>
+                        <li><a href="https://www.instagram.com/EVAN4SLM/" target="_blank"><i class="fab fa-instagram"></i> Instagram @EVAN4SLM</a></li>
+                        <li><a href="https://www.tiktok.com/@MISTERPIPS3" target="_blank"><i class="fab fa-tiktok"></i> TikTok @MISTERPIPS3</a></li>
+                        <li><a href="https://t.me/misterpips" target="_blank"><i class="fab fa-telegram"></i> Canal Misterpips</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips. Tous droits réservés.</p>
+            <p class="disclaimer">Le trading comporte des risques. Les performances passées ne préjugent pas des performances futures.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Animation des bougies
+        function createTradingChart() {
+            const chart = document.getElementById('trading-chart');
+            if (!chart) return;
+            
+            for (let i = 0; i < 50; i++) {
+                const candle = document.createElement('div');
+                candle.className = 'candle';
+                candle.style.left = Math.random() * 100 + '%';
+                candle.style.animationDelay = Math.random() * 10 + 's';
+                candle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                chart.appendChild(candle);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', createTradingChart);
+    </script>
+    <script>
+        // Fonction pour mettre à jour les sessions actives
+        function updateActiveSessions() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            // Réinitialiser toutes les sessions
+            document.querySelectorAll('.session-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Vérifier quelle session est active
+            if (currentHour >= 22 || currentHour < 7) {
+                document.getElementById('sydney-session').classList.add('active');
+            }
+            if (currentHour >= 1 && currentHour < 10) {
+                document.getElementById('tokyo-session').classList.add('active');
+            }
+            if (currentHour >= 8 && currentHour < 17) {
+                document.getElementById('london-session').classList.add('active');
+            }
+            if (currentHour >= 14 && currentHour < 23) {
+                document.getElementById('newyork-session').classList.add('active');
+            }
+        }
+        
+        // Fonction pour actualiser les corrélations
+        function refreshCorrelations() {
+            const correlations = [
+                { pair: "EUR/USD vs GBP/USD", value: (Math.random() * 0.4 + 0.6).toFixed(2), type: "positive" },
+                { pair: "USD/JPY vs USD/CHF", value: (Math.random() * 0.4 + 0.5).toFixed(2), type: "positive" },
+                { pair: "EUR/USD vs USD/CHF", value: -(Math.random() * 0.3 + 0.7).toFixed(2), type: "negative" },
+                { pair: "GBP/USD vs USD/JPY", value: -(Math.random() * 0.5 + 0.2).toFixed(2), type: "negative" }
+            ];
+            
+            const grid = document.getElementById('correlationGrid');
+            grid.innerHTML = '';
+            
+            correlations.forEach(corr => {
+                const item = document.createElement('div');
+                item.className = 'correlation-item';
+                item.innerHTML = `
+                    <div class="pair-name">${corr.pair}</div>
+                    <div class="correlation-value ${corr.type}">${corr.value > 0 ? '+' : ''}${corr.value}</div>
+                    <div class="correlation-strength">${getCorrelationStrength(Math.abs(corr.value))}</div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+        
+        function getCorrelationStrength(value) {
+            if (value > 0.8) return "Très forte corrélation";
+            if (value > 0.6) return "Forte corrélation";
+            if (value > 0.4) return "Corrélation modérée";
+            return "Corrélation faible";
+        }
+        
+        // Fonction pour actualiser les tendances
+        function refreshTrends() {
+            const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CHF', 'NZD/USD'];
+            const trends = pairs.map(pair => ({
+                pair: pair,
+                direction: Math.random() > 0.5 ? 'bullish' : (Math.random() > 0.5 ? 'bearish' : 'neutral'),
+                strength: Math.floor(Math.random() * 40 + 40)
+            }));
+            
+            const grid = document.getElementById('trendsGrid');
+            grid.innerHTML = '';
+            
+            trends.slice(0, 4).forEach(trend => {
+                const item = document.createElement('div');
+                item.className = `trend-item ${trend.direction}`;
+                const icon = trend.direction === 'bullish' ? 'fa-arrow-up' : 
+                           trend.direction === 'bearish' ? 'fa-arrow-down' : 'fa-arrows-alt-h';
+                const dirText = trend.direction === 'bullish' ? 'Haussier' : 
+                              trend.direction === 'bearish' ? 'Baissier' : 'Neutre';
+                
+                item.innerHTML = `
+                    <div class="trend-pair">${trend.pair}</div>
+                    <div class="trend-direction"><i class="fas ${icon}"></i> ${dirText}</div>
+                    <div class="trend-strength">Force: ${trend.strength}%</div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+        
+        // Mettre à jour au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateActiveSessions();
+            refreshCorrelations();
+            refreshTrends();
+            
+            // Mettre à jour toutes les minutes
+            setInterval(updateActiveSessions, 60000);
+            
+            // Boutons de rafraîchissement
+            document.getElementById('refreshCorrelations').addEventListener('click', refreshCorrelations);
+            document.getElementById('refreshTrends').addEventListener('click', refreshTrends);
+        });
+    </script>
+</body>
+</html>
