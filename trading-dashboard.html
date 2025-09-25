@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Trading</title>
+    <link rel="stylesheet" href="dashboard-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+
+</head>
+<body>
+    <script>
+        // Initialisation directe sans authentification
+        window.addEventListener('DOMContentLoaded', function() {
+            // Définir un utilisateur par défaut
+            if (!sessionStorage.getItem('currentUser')) {
+                sessionStorage.setItem('currentUser', 'trader_vip');
+                sessionStorage.setItem('authenticated', 'true');
+            }
+            
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
+                document.querySelector('header h1').innerHTML = `Dashboard Trading <span style="font-size: 0.6em; opacity: 0.7;">- ${currentUser}</span>`;
+            }
+        });
+    </script>
+    
+    <div class="container">
+        <header>
+            <h1>Dashboard Trading</h1>
+            <div class="account-selector">
+                <label for="accountSelect">💼 Compte:</label>
+                <select id="accountSelect">
+                    <option value="compte1">Compte Principal</option>
+                    <option value="compte2">Compte Démo</option>
+                    <option value="compte3">Compte Swing</option>
+                </select>
+                <button id="addAccountBtn" onclick="dashboard.addNewAccount()" class="btn-info" style="padding: 5px 10px; margin-left: 10px;">+ Nouveau</button>
+                <button id="deleteAccountBtn" onclick="dashboard.deleteAccount()" class="btn-danger" style="padding: 5px 10px; margin-left: 5px;">🗑️</button>
+                <div id="syncStatus" style="margin-left: 10px; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; background: rgba(78,205,196,0.2); color: #4ecdc4;">🔄 Sync Auto</div>
+            </div>
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <h3>Capital</h3>
+                    <span id="capital">$1000</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Winrate</h3>
+                    <span id="winRate">0%</span>
+                </div>
+                <div class="stat-card">
+                    <h3>P&L Total</h3>
+                    <span id="totalPnL">$0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Trades Ouverts</h3>
+                    <span id="openTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Trades</h3>
+                    <span id="totalTrades">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="actions">
+                <button id="newTradeBtn" class="btn-primary">Nouveau Trade</button>
+                <button id="settingsBtn" class="btn-secondary">⚙️ Paramètres</button>
+                <button id="closeTradeBtn" class="btn-warning">Clôturer Trade</button>
+                <button id="resetBtn" class="btn-danger">Reset Données</button>
+                <button id="manualCloseBtn" class="btn-warning">🎯 Clôture Manuelle</button>
+                <button id="exportBtn" class="btn-info">📊 Export Excel</button>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <div class="gauge-container">
+                        <h3>💰 Performance Totale</h3>
+                        <div id="gainsGauge" class="gauge"></div>
+                        <div id="gainsValue" class="gauge-value">$0</div>
+                        <div id="gainsPercent" class="gauge-percent">0%</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>📊 Analyse des Confluences</h3>
+                    <canvas id="confluencesChart"></canvas>
+                    <div id="confluenceAnalysis" class="confluence-analysis"></div>
+                </div>
+            </div>
+            
+            <div class="chart-container" style="margin-top: 30px;">
+                <h3>🔗 Matrice de Corrélation ICT</h3>
+                <div id="correlationMatrix"></div>
+                <div class="correlation-legend">
+                    <div class="legend-item"><span class="legend-color excellent"></span>Excellente synergie (>80%)</div>
+                    <div class="legend-item"><span class="legend-color good"></span>Bonne synergie (60-80%)</div>
+                    <div class="legend-item"><span class="legend-color average"></span>Synergie moyenne (40-60%)</div>
+                    <div class="legend-item"><span class="legend-color poor"></span>Faible synergie (<40%)</div>
+                </div>
+            </div>
+
+            <!-- Calendrier de Trading -->
+            <div class="calendar-section">
+                <h2>📅 Calendrier de Trading</h2>
+                <div class="calendar-wrapper">
+                    <div class="calendar-controls">
+                        <button id="prevMonth" class="btn-secondary">◀</button>
+                        <div id="monthLabel" class="month-label">Mois</div>
+                        <button id="nextMonth" class="btn-secondary">▶</button>
+                    </div>
+                    <div class="calendar-grid-container">
+                        <div class="weekdays">
+                            <div>Dim</div><div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+                    <div class="calendar-summary" id="calendarSummary"></div>
+                </div>
+            </div>
+
+            <div class="trades-history">
+                <h2>Historique des Trades</h2>
+                <table id="tradesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Devise</th>
+                            <th>Entrée</th>
+                            <th>SL</th>
+                            <th>TP</th>
+                            <th>Lot</th>
+                            <th>Risque %</th>
+                            <th>Résultat</th>
+                            <th>Gain/Perte</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Nouveau Trade -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal Plein Écran pour Graphiques -->
+    <div id="fullscreenModal" class="modal fullscreen-modal">
+        <div class="fullscreen-content">
+            <span class="close-fullscreen">&times;</span>
+            <button class="fullscreen-btn" onclick="dashboard.toggleFullscreen()">📊 Plein Écran</button>
+            <div id="fullscreenContent"></div>
+        </div>
+    </div>
+
+    <script src="dashboard-script.js"></script>
+    
+    <!-- Bouton de retour VIP -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button onclick="window.close()" style="background: rgba(0, 212, 255, 0.8); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.3s ease;">🔙 Retour</button>
+    </div>
+</body>
+</html>
