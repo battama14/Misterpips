@@ -1828,9 +1828,7 @@ class TradingDashboard {
 // Initialisation
 let dashboard;
 
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        dashboard = new TradingDashboard();
-        window.dashboard = dashboard;
-    }, 100);
-});
+window.onload = function() {
+    dashboard = new TradingDashboard();
+    window.dashboard = dashboard;
+};
