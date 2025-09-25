@@ -103,10 +103,10 @@
                         <div class="ebook-highlight">
                             <p><strong>IMPORTANT:</strong> Cette ebook doit être lu et analysé en premier avant d'aller plus loin dans l'apprentissage.</p>
                             <p>Cette ebook constitue la <strong>base d'apprentissage essentielle</strong> qui regroupe les meilleurs concepts de trading utilisés par l'équipe Misterpips.</p>
-                            <a href="pips book2.pdf" class="ebook-button" download="Ebook-Misterpips-Fondamental.pdf" target="_blank" onclick="trackEbookDownload()">
+                            <a href="https://github.com/battama14/Misterpips/raw/e664f568b9b95d9853368e723f31f2cc9f9ff1c6/pips%20book2.pdf" class="ebook-button" download="Ebook-Misterpips-Fondamental.pdf" target="_blank" onclick="trackEbookDownload()">
                                 <i class="fas fa-download"></i> Télécharger l'Ebook Fondamental
                             </a>
-                            <a href="https://drive.google.com/file/d/VOTRE_ID_GOOGLE_DRIVE/view" class="ebook-button-alt" target="_blank" style="margin-top: 10px; background: #34495e;">
+                            <a href="https://github.com/battama14/Misterpips/blob/e664f568b9b95d9853368e723f31f2cc9f9ff1c6/pips%20book2.pdf" class="ebook-button-alt" target="_blank" style="margin-top: 10px; background: #34495e;">
                                 <i class="fas fa-external-link-alt"></i> Voir l'Ebook en ligne
                             </a>
                         </div>
@@ -582,16 +582,16 @@
                 console.error('Erreur tracking ebook:', error);
             }
             
-            // Vérifier si le fichier existe
-            fetch('pips book2.pdf', { method: 'HEAD' })
+            // Vérifier si le fichier GitHub existe
+            fetch('https://github.com/battama14/Misterpips/raw/e664f568b9b95d9853368e723f31f2cc9f9ff1c6/pips%20book2.pdf', { method: 'HEAD' })
                 .then(response => {
                     if (!response.ok) {
-                        console.error('Fichier PDF non trouvé');
+                        console.error('Fichier PDF GitHub non trouvé');
                         alert('Erreur: Le fichier PDF est temporairement indisponible. Veuillez réessayer plus tard.');
                     }
                 })
                 .catch(error => {
-                    console.error('Erreur de chargement PDF:', error);
+                    console.error('Erreur de chargement PDF GitHub:', error);
                 });
         }
         
