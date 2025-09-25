@@ -10,6 +10,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
@@ -22,16 +23,38 @@
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Fonction pour sauvegarder en temps réel
+        window.saveToFirebase = async (collection, data) => {
+            try {
+                await setDoc(doc(db, collection, Date.now().toString()), {
+                    ...data,
+                    timestamp: serverTimestamp(),
+                    userId: auth.currentUser?.email || 'anonymous'
+                });
+                console.log('Données sauvegardées:', data);
+            } catch (error) {
+                console.error('Erreur sauvegarde:', error);
+            }
+        };
+        
+        // Fonction pour écouter les changements en temps réel
+        window.listenToFirebase = (collection, callback) => {
+            return onSnapshot(doc(db, collection, 'latest'), callback);
+        };
         
         onAuthStateChanged(auth, (user) => {
-            console.log('Auth state changed:', user);
             if (!user) {
-                console.log('No user, redirecting to index.html');
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 1000);
             } else {
-                console.log('User authenticated:', user.email);
+                // Enregistrer la visite VIP
+                saveToFirebase('vip_visits', {
+                    page: 'planning-forex',
+                    userEmail: user.email
+                });
             }
         });
     </script>

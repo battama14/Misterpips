@@ -10,6 +10,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
@@ -22,6 +23,8 @@
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        window.firebaseDB = db;
         
         onAuthStateChanged(auth, (user) => {
             console.log('Admin auth check:', user);
@@ -223,6 +226,13 @@
                                         <option value="high">Élevée</option>
                                     </select>
                                 </div>
+                                <div class="form-group">
+                                    <label for="news-type">Type de news</label>
+                                    <select id="news-type">
+                                        <option value="public">Page Principale</option>
+                                        <option value="vip">Espace VIP</option>
+                                    </select>
+                                </div>
                                 <button type="submit" class="admin-button">
                                     <i class="fas fa-plus"></i> Publier la News
                                 </button>
@@ -251,6 +261,15 @@
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Visiteurs Uniques</h3>
+                            <div class="stat-number" id="total-visitors">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-content">
@@ -272,8 +291,17 @@
                             <i class="fas fa-newspaper"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>News Publiées</h3>
-                            <div class="stat-number" id="total-news">0</div>
+                            <h3>News Publiques</h3>
+                            <div class="stat-number" id="public-news">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>News VIP</h3>
+                            <div class="stat-number" id="vip-news">0</div>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -315,29 +343,51 @@
 
     <script src="script-simple.js"></script>
     <script>
-        // Gestion des avis
-        let testimonials = JSON.parse(localStorage.getItem('misterpips_testimonials')) || [
-            {
-                id: 1,
-                text: "Excellent service ! Les analyses sont précises et m'ont aidé à améliorer mes performances de trading.",
-                author: "Client VIP",
-                image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+1"
-            },
-            {
-                id: 2,
-                text: "Le dashboard est incroyable ! Tous les outils dont j'ai besoin en un seul endroit.",
-                author: "Trader Professionnel",
-                image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+2"
-            },
-            {
-                id: 3,
-                text: "Support réactif et conseils de qualité. Je recommande vivement Misterpips !",
-                author: "Membre VIP",
-                image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+3"
+        // Variables globales Firebase
+        let testimonials = [];
+        let news = [];
+        let vipNews = [];
+        
+        // Charger depuis Firebase
+        async function loadFromFirebase() {
+            try {
+                // Charger les avis
+                const testimonialsSnapshot = await getDocs(collection(db, 'testimonials'));
+                testimonials = testimonialsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                
+                // Charger les news publiques
+                const newsSnapshot = await getDocs(collection(db, 'public_news'));
+                news = newsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                
+                // Charger les news VIP
+                const vipNewsSnapshot = await getDocs(collection(db, 'vip_news'));
+                vipNews = vipNewsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                
+                // Si pas de données, créer des exemples
+                if (testimonials.length === 0) {
+                    const defaultTestimonials = [
+                        {
+                            text: "Excellent service ! Les analyses sont précises et m'ont aidé à améliorer mes performances de trading.",
+                            author: "Client VIP",
+                            image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+1"
+                        },
+                        {
+                            text: "Le dashboard est incroyable ! Tous les outils dont j'ai besoin en un seul endroit.",
+                            author: "Trader Professionnel",
+                            image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+2"
+                        }
+                    ];
+                    
+                    for (const testimonial of defaultTestimonials) {
+                        const docRef = await addDoc(collection(db, 'testimonials'), testimonial);
+                        testimonials.push({id: docRef.id, ...testimonial});
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Erreur chargement Firebase:', error);
             }
-        ];
-
-        let news = JSON.parse(localStorage.getItem('misterpips_news')) || [];
+        }
 
         // Charger les avis
         function loadTestimonials() {
@@ -356,10 +406,7 @@
                         </div>
                     </div>
                     <div class="testimonial-actions">
-                        <button onclick="editTestimonial(${testimonial.id})" class="edit-btn">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteTestimonial(${testimonial.id})" class="delete-btn">
+                        <button onclick="deleteTestimonial('${testimonial.id}')" class="delete-btn">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -371,7 +418,7 @@
         }
 
         // Ajouter un avis
-        document.getElementById('testimonial-form').addEventListener('submit', (e) => {
+        document.getElementById('testimonial-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const text = document.getElementById('testimonial-text').value;
@@ -383,52 +430,75 @@
             
             if (imageFile) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     const newTestimonial = {
-                        id: Date.now(),
                         text,
                         author,
-                        image: e.target.result
+                        image: e.target.result,
+                        timestamp: new Date().toISOString()
                     };
                     
-                    testimonials.push(newTestimonial);
-                    localStorage.setItem('misterpips_testimonials', JSON.stringify(testimonials));
-                    loadTestimonials();
-                    document.getElementById('testimonial-form').reset();
-                    alert('Avis ajouté avec succès !');
+                    try {
+                        const docRef = await addDoc(collection(db, 'testimonials'), newTestimonial);
+                        testimonials.push({id: docRef.id, ...newTestimonial});
+                        loadTestimonials();
+                        document.getElementById('testimonial-form').reset();
+                        alert('Avis ajouté avec succès !');
+                    } catch (error) {
+                        console.error('Erreur ajout avis:', error);
+                        alert('Erreur lors de l\'ajout');
+                    }
                 };
                 reader.readAsDataURL(imageFile);
             } else {
                 const newTestimonial = {
-                    id: Date.now(),
                     text,
                     author,
-                    image
+                    image,
+                    timestamp: new Date().toISOString()
                 };
                 
-                testimonials.push(newTestimonial);
-                localStorage.setItem('misterpips_testimonials', JSON.stringify(testimonials));
-                loadTestimonials();
-                document.getElementById('testimonial-form').reset();
-                alert('Avis ajouté avec succès !');
+                try {
+                    const docRef = await addDoc(collection(db, 'testimonials'), newTestimonial);
+                    testimonials.push({id: docRef.id, ...newTestimonial});
+                    loadTestimonials();
+                    document.getElementById('testimonial-form').reset();
+                    alert('Avis ajouté avec succès !');
+                } catch (error) {
+                    console.error('Erreur ajout avis:', error);
+                    alert('Erreur lors de l\'ajout');
+                }
             }
         });
 
         // Supprimer un avis
-        function deleteTestimonial(id) {
+        async function deleteTestimonial(id) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
-                testimonials = testimonials.filter(t => t.id !== id);
-                localStorage.setItem('misterpips_testimonials', JSON.stringify(testimonials));
-                loadTestimonials();
+                try {
+                    await deleteDoc(doc(db, 'testimonials', id));
+                    testimonials = testimonials.filter(t => t.id !== id);
+                    loadTestimonials();
+                    alert('Avis supprimé !');
+                } catch (error) {
+                    console.error('Erreur suppression:', error);
+                    alert('Erreur lors de la suppression');
+                }
             }
         }
+        window.deleteTestimonial = deleteTestimonial;
 
-        // Gestion des news
+        // Charger les news
         function loadNews() {
             const list = document.getElementById('news-list');
             list.innerHTML = '';
             
-            news.forEach(item => {
+            // Combiner les news publiques et VIP
+            const allNews = [
+                ...news.map(n => ({...n, type: 'public'})),
+                ...vipNews.map(n => ({...n, type: 'vip'}))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            allNews.forEach(item => {
                 const newsItem = document.createElement('div');
                 newsItem.className = 'news-admin-item';
                 newsItem.innerHTML = `
@@ -436,10 +506,11 @@
                         <h4>${item.title}</h4>
                         <p>${item.content.substring(0, 100)}...</p>
                         <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                        <span class="news-type-badge ${item.type}">${item.type.toUpperCase()}</span>
                         <small>${new Date(item.date).toLocaleDateString()}</small>
                     </div>
                     <div class="news-actions">
-                        <button onclick="deleteNews(${item.id})" class="delete-btn">
+                        <button onclick="deleteNews(${item.id}, '${item.type}')" class="delete-btn">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -451,43 +522,107 @@
         }
 
         // Ajouter une news
-        document.getElementById('news-form').addEventListener('submit', (e) => {
+        document.getElementById('news-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const title = document.getElementById('news-title').value;
             const content = document.getElementById('news-content').value;
             const priority = document.getElementById('news-priority').value;
+            const type = document.getElementById('news-type').value;
             
             const newNews = {
-                id: Date.now(),
                 title,
                 content,
                 priority,
-                date: new Date().toISOString()
+                date: new Date().toISOString(),
+                timestamp: new Date().toISOString()
             };
             
-            news.push(newNews);
-            localStorage.setItem('misterpips_news', JSON.stringify(news));
-            loadNews();
-            document.getElementById('news-form').reset();
-            alert('News publiée avec succès !');
+            try {
+                const collectionName = type === 'vip' ? 'vip_news' : 'public_news';
+                const docRef = await addDoc(collection(db, collectionName), newNews);
+                
+                if (type === 'vip') {
+                    vipNews.push({id: docRef.id, ...newNews});
+                } else {
+                    news.push({id: docRef.id, ...newNews});
+                }
+                
+                document.getElementById('news-form').reset();
+                alert('News publiée avec succès !');
+                loadNews();
+            } catch (error) {
+                console.error('Erreur publication news:', error);
+                alert('Erreur lors de la publication');
+            }
         });
 
         // Supprimer une news
-        function deleteNews(id) {
+        async function deleteNews(id, type) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) {
-                news = news.filter(n => n.id !== id);
-                localStorage.setItem('misterpips_news', JSON.stringify(news));
-                loadNews();
+                try {
+                    const collectionName = type === 'vip' ? 'vip_news' : 'public_news';
+                    await deleteDoc(doc(db, collectionName, id));
+                    
+                    if (type === 'vip') {
+                        vipNews = vipNews.filter(n => n.id !== id);
+                    } else {
+                        news = news.filter(n => n.id !== id);
+                    }
+                    
+                    loadNews();
+                    alert('News supprimée !');
+                } catch (error) {
+                    console.error('Erreur suppression news:', error);
+                    alert('Erreur lors de la suppression');
+                }
             }
         }
+        
+        window.deleteNews = deleteNews;
 
         // Mettre à jour les statistiques
         function updateStats() {
             document.getElementById('total-testimonials').textContent = testimonials.length;
-            document.getElementById('total-news').textContent = news.length;
-            document.getElementById('vip-users').textContent = Math.floor(Math.random() * 50) + 10;
-            document.getElementById('ebook-downloads').textContent = Math.floor(Math.random() * 500) + 100;
+            document.getElementById('public-news').textContent = news.length;
+            document.getElementById('vip-news').textContent = vipNews.length;
+        }
+        
+        // Statistiques en temps réel avec Firebase
+        async function setupRealTimeStats() {
+            try {
+                // Compter les utilisateurs VIP réels
+                const usersSnapshot = await getDocs(collection(db, 'users'));
+                document.getElementById('vip-users').textContent = usersSnapshot.size;
+                
+                // Compter les téléchargements ebook réels
+                const downloadsSnapshot = await getDocs(collection(db, 'ebook_downloads'));
+                document.getElementById('ebook-downloads').textContent = downloadsSnapshot.size;
+                
+                // Compter les visiteurs uniques
+                const visitorsSnapshot = await getDocs(collection(db, 'visitors'));
+                document.getElementById('total-visitors').textContent = visitorsSnapshot.size;
+                
+                // Écouter les changements en temps réel
+                onSnapshot(collection(db, 'users'), (snapshot) => {
+                    document.getElementById('vip-users').textContent = snapshot.size;
+                });
+                
+                onSnapshot(collection(db, 'ebook_downloads'), (snapshot) => {
+                    document.getElementById('ebook-downloads').textContent = snapshot.size;
+                });
+                
+                onSnapshot(collection(db, 'visitors'), (snapshot) => {
+                    document.getElementById('total-visitors').textContent = snapshot.size;
+                });
+                
+            } catch (error) {
+                console.error('Erreur stats Firebase:', error);
+                // Fallback sur des valeurs par défaut
+                document.getElementById('vip-users').textContent = '0';
+                document.getElementById('ebook-downloads').textContent = '0';
+                document.getElementById('total-visitors').textContent = '0';
+            }
         }
 
         // Gestion du contenu
@@ -584,11 +719,13 @@
         document.getElementById('section-select').addEventListener('change', loadSectionData);
 
         // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFromFirebase();
             loadTestimonials();
             loadNews();
             loadContent();
             loadSectionData();
+            setupRealTimeStats();
             updateStats();
         });
 
