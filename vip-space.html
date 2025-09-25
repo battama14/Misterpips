@@ -279,16 +279,23 @@
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
             
+            console.log('Tentative connexion admin:', email);
+            
             try {
-                await signInWithEmailAndPassword(window.firebaseAuth.auth, email, password);
+                const userCredential = await signInWithEmailAndPassword(window.firebaseAuth.auth, email, password);
+                console.log('Connexion réussie:', userCredential.user.email);
+                
                 // Vérifier si c'est un admin
                 if (email === 'admin@misterpips.com') {
+                    console.log('Admin vérifié, redirection...');
                     window.location.href = 'admin-dashboard.html';
                 } else {
+                    console.log('Pas un admin:', email);
                     alert('Accès administrateur refusé');
                 }
             } catch (error) {
-                alert('Identifiants incorrects');
+                console.error('Erreur connexion admin:', error);
+                alert('Identifiants incorrects: ' + error.message);
             }
         });
     </script>
