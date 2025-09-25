@@ -41,6 +41,7 @@
                 <li><a href="#avis">Vos avis</a></li>
                 <li><a href="#contact">Nous contacter</a></li>
                 <li><a href="#vip" class="vip-link">VIP</a></li>
+                <li><a href="#apprentissage" class="ebook-link-nav">📚 PRENDS TON<br>EBOOK GRATUIT</a></li>
             </ul>
             <div class="burger">
                 <div class="line1"></div>
@@ -141,40 +142,8 @@
         <section id="avis" class="section">
             <div class="container">
                 <h2>Vos avis</h2>
-                <div class="testimonials-grid">
-                    <div class="testimonial-item">
-                        <div class="testimonial-content">
-                            <div class="testimonial-image">
-                                <img src="https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+1" alt="Avis client 1">
-                            </div>
-                            <div class="testimonial-text">
-                                <p>"Excellent service ! Les analyses sont précises et m'ont aidé à améliorer mes performances de trading."</p>
-                                <div class="testimonial-author">- Client VIP</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="testimonial-item">
-                        <div class="testimonial-content">
-                            <div class="testimonial-image">
-                                <img src="https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+2" alt="Avis client 2">
-                            </div>
-                            <div class="testimonial-text">
-                                <p>"Le dashboard est incroyable ! Tous les outils dont j'ai besoin en un seul endroit."</p>
-                                <div class="testimonial-author">- Trader Professionnel</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="testimonial-item">
-                        <div class="testimonial-content">
-                            <div class="testimonial-image">
-                                <img src="https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+3" alt="Avis client 3">
-                            </div>
-                            <div class="testimonial-text">
-                                <p>"Support réactif et conseils de qualité. Je recommande vivement Misterpips !"</p>
-                                <div class="testimonial-author">- Membre VIP</div>
-                            </div>
-                        </div>
-                    </div>
+                <div id="testimonials-grid" class="testimonials-grid">
+                    <!-- Les avis seront chargés dynamiquement -->
                 </div>
             </div>
         </section>
@@ -473,7 +442,54 @@
             }
         }
         
-        document.addEventListener('DOMContentLoaded', createTradingChart);
+        document.addEventListener('DOMContentLoaded', () => {
+            createTradingChart();
+            loadTestimonials();
+        });
+        
+        // Charger les avis depuis le localStorage
+        function loadTestimonials() {
+            const testimonials = JSON.parse(localStorage.getItem('misterpips_testimonials')) || [
+                {
+                    id: 1,
+                    text: "Excellent service ! Les analyses sont précises et m'ont aidé à améliorer mes performances de trading.",
+                    author: "Client VIP",
+                    image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+1"
+                },
+                {
+                    id: 2,
+                    text: "Le dashboard est incroyable ! Tous les outils dont j'ai besoin en un seul endroit.",
+                    author: "Trader Professionnel",
+                    image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+2"
+                },
+                {
+                    id: 3,
+                    text: "Support réactif et conseils de qualité. Je recommande vivement Misterpips !",
+                    author: "Membre VIP",
+                    image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+3"
+                }
+            ];
+            
+            const grid = document.getElementById('testimonials-grid');
+            grid.innerHTML = '';
+            
+            testimonials.forEach(testimonial => {
+                const item = document.createElement('div');
+                item.className = 'testimonial-item';
+                item.innerHTML = `
+                    <div class="testimonial-content">
+                        <div class="testimonial-image">
+                            <img src="${testimonial.image}" alt="Avis client">
+                        </div>
+                        <div class="testimonial-text">
+                            <p>"${testimonial.text}"</p>
+                            <div class="testimonial-author">- ${testimonial.author}</div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(item);
+            });
+        }
     </script>
 </body>
 </html>

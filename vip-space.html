@@ -184,7 +184,38 @@
                 </div>
             </div>
         </section>
+        <!-- Bouton Accès Admin -->
+        <div class="admin-access-container">
+            <button id="admin-access-btn" class="admin-access-button">
+                <i class="fas fa-cog"></i> Accès Admin
+            </button>
+        </div>
     </main>
+
+    <!-- Modal Admin Login -->
+    <div id="adminLoginModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h2><i class="fas fa-shield-alt"></i> Accès Administrateur</h2>
+                <span class="admin-modal-close">&times;</span>
+            </div>
+            <div class="admin-modal-body">
+                <form id="admin-login-form" class="admin-form">
+                    <div class="form-group">
+                        <label for="admin-email">Email Administrateur</label>
+                        <input type="email" id="admin-email" placeholder="admin@misterpips.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-password">Mot de passe</label>
+                        <input type="password" id="admin-password" placeholder="Mot de passe admin" required>
+                    </div>
+                    <button type="submit" class="admin-login-button">
+                        <i class="fas fa-sign-in-alt"></i> Se connecter
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <div class="footer-content">
@@ -220,6 +251,42 @@
     </footer>
 
     <script src="script-simple.js"></script>
+    <script type="module">
+        import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        // Gestion du bouton d'accès admin
+        document.getElementById('admin-access-btn').addEventListener('click', () => {
+            document.getElementById('adminLoginModal').style.display = 'block';
+        });
+        
+        // Fermer la modal admin
+        document.querySelector('.admin-modal-close').addEventListener('click', () => {
+            document.getElementById('adminLoginModal').style.display = 'none';
+        });
+        
+        // Fermer la modal en cliquant à l'extérieur
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('adminLoginModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Gestion de la connexion admin
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            // Vérification des identifiants admin
+            if (email === 'admin@misterpips.com' && password === 'AdminMisterpips2024!') {
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                alert('Identifiants administrateur incorrects');
+            }
+        });
+    </script>
     <script>
         function createTradingChart() {
             const chart = document.getElementById('trading-chart');

@@ -122,7 +122,7 @@ nav {
 }
 
 .nav-links li {
-    padding: 0 15px;
+    padding: 0 8px;
 }
 
 .nav-links a {
@@ -162,6 +162,35 @@ nav {
     transition: all 0.3s ease;
     text-shadow: none !important;
     border: 1px solid transparent;
+}
+
+.ebook-link-nav {
+    color: #3498db !important;
+    font-weight: bold;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: textBlink 2s ease-in-out infinite;
+    text-decoration: none;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    padding: 5px;
+}
+
+.ebook-link-nav:hover {
+    color: #2980b9 !important;
+}
+
+@keyframes textBlink {
+    0%, 100% {
+        opacity: 1;
+        text-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+    }
+    50% {
+        opacity: 0.6;
+        text-shadow: 0 0 15px rgba(52, 152, 219, 0.8);
+    }
 }
 
 .vip-link:hover {

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Admin - Misterpips</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="vip-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== 'admin@misterpips.com') {
+                window.location.href = 'vip-space.html';
+            }
+        });
+        
+        window.adminLogout = () => {
+            signOut(auth).then(() => {
+                window.location.href = 'index.html';
+            });
+        };
+    </script>
+</head>
+<body>
+    <div id="trading-chart"></div>
+    
+    <header>
+        <div class="logo-container">
+            <img src="Misterpips.jpg" alt="Misterpips Logo" class="logo">
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#testimonials">Avis</a></li>
+                <li><a href="#content">Contenu</a></li>
+                <li><a href="#news">News</a></li>
+                <li><a href="vip-space.html">Retour VIP</a></li>
+                <li><a href="#" onclick="adminLogout()" class="logout-link">Déconnexion</a></li>
+            </ul>
+            <div class="burger">
+                <div class="line1"></div>
+                <div class="line2"></div>
+                <div class="line3"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Tableau de Bord Administrateur</h1>
+                <p>Gestion complète du site Misterpips</p>
+            </div>
+        </section>
+
+        <!-- Section Gestion des Avis -->
+        <section id="testimonials" class="section">
+            <div class="container">
+                <h2>Gestion des Avis Clients</h2>
+                <div class="admin-panel">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fas fa-comments"></i> Ajouter un Nouvel Avis</h3>
+                        </div>
+                        <div class="admin-card-body">
+                            <form id="testimonial-form" class="admin-form">
+                                <div class="form-group">
+                                    <label for="testimonial-text">Texte de l'avis</label>
+                                    <textarea id="testimonial-text" placeholder="Excellent service ! Les analyses sont précises..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="testimonial-author">Nom du client</label>
+                                    <input type="text" id="testimonial-author" placeholder="Client VIP" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="testimonial-image">Image (URL ou upload)</label>
+                                    <input type="file" id="testimonial-image" accept="image/*">
+                                    <input type="url" id="testimonial-image-url" placeholder="https://exemple.com/image.jpg">
+                                </div>
+                                <button type="submit" class="admin-button">
+                                    <i class="fas fa-plus"></i> Ajouter l'Avis
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fas fa-list"></i> Avis Existants</h3>
+                        </div>
+                        <div class="admin-card-body">
+                            <div id="testimonials-list" class="testimonials-admin-list">
+                                <!-- Les avis seront chargés ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Gestion du Contenu -->
+        <section id="content" class="section">
+            <div class="container">
+                <h2>Gestion du Contenu</h2>
+                <div class="admin-panel">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fas fa-edit"></i> Modifier les Textes</h3>
+                        </div>
+                        <div class="admin-card-body">
+                            <form id="content-form" class="admin-form">
+                                <div class="form-group">
+                                    <label for="hero-title">Titre Principal</label>
+                                    <input type="text" id="hero-title" value="Bienvenue chez Misterpips">
+                                </div>
+                                <div class="form-group">
+                                    <label for="hero-subtitle">Sous-titre</label>
+                                    <input type="text" id="hero-subtitle" value="Votre partenaire pour maîtriser l'art du trading">
+                                </div>
+                                <div class="form-group">
+                                    <label for="about-text">Texte À Propos</label>
+                                    <textarea id="about-text" placeholder="Description de l'équipe Misterpips..."></textarea>
+                                </div>
+                                <button type="submit" class="admin-button">
+                                    <i class="fas fa-save"></i> Sauvegarder les Modifications
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Gestion des News -->
+        <section id="news" class="section">
+            <div class="container">
+                <h2>Gestion des Actualités</h2>
+                <div class="admin-panel">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fas fa-newspaper"></i> Ajouter une News</h3>
+                        </div>
+                        <div class="admin-card-body">
+                            <form id="news-form" class="admin-form">
+                                <div class="form-group">
+                                    <label for="news-title">Titre de la News</label>
+                                    <input type="text" id="news-title" placeholder="Nouvelle analyse EUR/USD disponible" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="news-content">Contenu</label>
+                                    <textarea id="news-content" placeholder="Détails de l'actualité..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="news-priority">Priorité</label>
+                                    <select id="news-priority">
+                                        <option value="low">Faible</option>
+                                        <option value="medium">Moyenne</option>
+                                        <option value="high">Élevée</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="admin-button">
+                                    <i class="fas fa-plus"></i> Publier la News
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fas fa-list"></i> News Publiées</h3>
+                        </div>
+                        <div class="admin-card-body">
+                            <div id="news-list" class="news-admin-list">
+                                <!-- Les news seront chargées ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Statistiques -->
+        <section id="dashboard" class="section">
+            <div class="container">
+                <h2>Statistiques du Site</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Utilisateurs VIP</h3>
+                            <div class="stat-number" id="vip-users">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Avis Clients</h3>
+                            <div class="stat-number" id="total-testimonials">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>News Publiées</h3>
+                            <div class="stat-number" id="total-news">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Téléchargements Ebook</h3>
+                            <div class="stat-number" id="ebook-downloads">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Logo" class="footer-logo-img">
+                <p>Misterpips - Administration</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Administration</h4>
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#testimonials">Gestion Avis</a></li>
+                        <li><a href="#content">Contenu</a></li>
+                        <li><a href="#news">Actualités</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips - Tableau de Bord Administrateur</p>
+        </div>
+    </footer>
+
+    <script src="script-simple.js"></script>
+    <script>
+        // Gestion des avis
+        let testimonials = JSON.parse(localStorage.getItem('misterpips_testimonials')) || [
+            {
+                id: 1,
+                text: "Excellent service ! Les analyses sont précises et m'ont aidé à améliorer mes performances de trading.",
+                author: "Client VIP",
+                image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+1"
+            },
+            {
+                id: 2,
+                text: "Le dashboard est incroyable ! Tous les outils dont j'ai besoin en un seul endroit.",
+                author: "Trader Professionnel",
+                image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+2"
+            },
+            {
+                id: 3,
+                text: "Support réactif et conseils de qualité. Je recommande vivement Misterpips !",
+                author: "Membre VIP",
+                image: "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client+3"
+            }
+        ];
+
+        let news = JSON.parse(localStorage.getItem('misterpips_news')) || [];
+
+        // Charger les avis
+        function loadTestimonials() {
+            const list = document.getElementById('testimonials-list');
+            list.innerHTML = '';
+            
+            testimonials.forEach(testimonial => {
+                const item = document.createElement('div');
+                item.className = 'testimonial-admin-item';
+                item.innerHTML = `
+                    <div class="testimonial-preview">
+                        <img src="${testimonial.image}" alt="Avis" class="testimonial-thumb">
+                        <div class="testimonial-info">
+                            <p>"${testimonial.text}"</p>
+                            <strong>- ${testimonial.author}</strong>
+                        </div>
+                    </div>
+                    <div class="testimonial-actions">
+                        <button onclick="editTestimonial(${testimonial.id})" class="edit-btn">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTestimonial(${testimonial.id})" class="delete-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            
+            updateStats();
+        }
+
+        // Ajouter un avis
+        document.getElementById('testimonial-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const text = document.getElementById('testimonial-text').value;
+            const author = document.getElementById('testimonial-author').value;
+            const imageFile = document.getElementById('testimonial-image').files[0];
+            const imageUrl = document.getElementById('testimonial-image-url').value;
+            
+            let image = imageUrl || "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client";
+            
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const newTestimonial = {
+                        id: Date.now(),
+                        text,
+                        author,
+                        image: e.target.result
+                    };
+                    
+                    testimonials.push(newTestimonial);
+                    localStorage.setItem('misterpips_testimonials', JSON.stringify(testimonials));
+                    loadTestimonials();
+                    document.getElementById('testimonial-form').reset();
+                    alert('Avis ajouté avec succès !');
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                const newTestimonial = {
+                    id: Date.now(),
+                    text,
+                    author,
+                    image
+                };
+                
+                testimonials.push(newTestimonial);
+                localStorage.setItem('misterpips_testimonials', JSON.stringify(testimonials));
+                loadTestimonials();
+                document.getElementById('testimonial-form').reset();
+                alert('Avis ajouté avec succès !');
+            }
+        });
+
+        // Supprimer un avis
+        function deleteTestimonial(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
+                testimonials = testimonials.filter(t => t.id !== id);
+                localStorage.setItem('misterpips_testimonials', JSON.stringify(testimonials));
+                loadTestimonials();
+            }
+        }
+
+        // Gestion des news
+        function loadNews() {
+            const list = document.getElementById('news-list');
+            list.innerHTML = '';
+            
+            news.forEach(item => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-admin-item';
+                newsItem.innerHTML = `
+                    <div class="news-preview">
+                        <h4>${item.title}</h4>
+                        <p>${item.content.substring(0, 100)}...</p>
+                        <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                        <small>${new Date(item.date).toLocaleDateString()}</small>
+                    </div>
+                    <div class="news-actions">
+                        <button onclick="deleteNews(${item.id})" class="delete-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(newsItem);
+            });
+            
+            updateStats();
+        }
+
+        // Ajouter une news
+        document.getElementById('news-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('news-title').value;
+            const content = document.getElementById('news-content').value;
+            const priority = document.getElementById('news-priority').value;
+            
+            const newNews = {
+                id: Date.now(),
+                title,
+                content,
+                priority,
+                date: new Date().toISOString()
+            };
+            
+            news.push(newNews);
+            localStorage.setItem('misterpips_news', JSON.stringify(news));
+            loadNews();
+            document.getElementById('news-form').reset();
+            alert('News publiée avec succès !');
+        });
+
+        // Supprimer une news
+        function deleteNews(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) {
+                news = news.filter(n => n.id !== id);
+                localStorage.setItem('misterpips_news', JSON.stringify(news));
+                loadNews();
+            }
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats() {
+            document.getElementById('total-testimonials').textContent = testimonials.length;
+            document.getElementById('total-news').textContent = news.length;
+            document.getElementById('vip-users').textContent = Math.floor(Math.random() * 50) + 10;
+            document.getElementById('ebook-downloads').textContent = Math.floor(Math.random() * 500) + 100;
+        }
+
+        // Gestion du contenu
+        document.getElementById('content-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const heroTitle = document.getElementById('hero-title').value;
+            const heroSubtitle = document.getElementById('hero-subtitle').value;
+            const aboutText = document.getElementById('about-text').value;
+            
+            const content = {
+                heroTitle,
+                heroSubtitle,
+                aboutText
+            };
+            
+            localStorage.setItem('misterpips_content', JSON.stringify(content));
+            alert('Contenu sauvegardé avec succès !');
+        });
+
+        // Charger le contenu existant
+        function loadContent() {
+            const content = JSON.parse(localStorage.getItem('misterpips_content'));
+            if (content) {
+                document.getElementById('hero-title').value = content.heroTitle || '';
+                document.getElementById('hero-subtitle').value = content.heroSubtitle || '';
+                document.getElementById('about-text').value = content.aboutText || '';
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTestimonials();
+            loadNews();
+            loadContent();
+            updateStats();
+        });
+
+        // Création du graphique de bougies japonaises
+        function createTradingChart() {
+            const chart = document.getElementById('trading-chart');
+            if (!chart) return;
+            
+            let currentPrice = 50;
+            
+            for (let i = 0; i < 40; i++) {
+                const candle = document.createElement('div');
+                candle.className = 'candle';
+                candle.style.left = (i * 2.5) + '%';
+                candle.style.animationDelay = (i * 0.1) + 's';
+                
+                const priceChange = (Math.random() - 0.5) * 10;
+                currentPrice += priceChange;
+                currentPrice = Math.max(20, Math.min(80, currentPrice));
+                
+                candle.style.bottom = currentPrice + '%';
+                
+                const wickTop = document.createElement('div');
+                wickTop.className = 'candle-wick';
+                wickTop.style.height = (Math.random() * 15 + 5) + 'px';
+                
+                const body = document.createElement('div');
+                const isBullish = priceChange > 0;
+                body.className = 'candle-body ' + (isBullish ? 'bullish' : 'bearish');
+                body.style.height = (Math.random() * 25 + 10) + 'px';
+                
+                const wickBottom = document.createElement('div');
+                wickBottom.className = 'candle-wick-bottom';
+                wickBottom.style.height = (Math.random() * 10 + 3) + 'px';
+                
+                candle.appendChild(wickTop);
+                candle.appendChild(body);
+                candle.appendChild(wickBottom);
+                chart.appendChild(candle);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', createTradingChart);
+    </script>
+</body>
+</html>
