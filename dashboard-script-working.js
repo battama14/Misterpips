@@ -7,13 +7,72 @@ class SimpleTradingDashboard {
         this.currentUser = 'trader_vip';
         this.currentAccount = 'compte1';
         this.trades = [];
-        this.settings = { capital: 1000, riskPerTrade: 2 };
+        this.settings = { 
+            capital: 1000, 
+            riskPerTrade: 2,
+            dailyTarget: 1,
+            monthlyTarget: 5,
+            yearlyTarget: 60
+        };
         this.accounts = {
             'compte1': { name: 'Compte Principal', capital: 1000 },
             'compte2': { name: 'Compte Démo', capital: 500 },
             'compte3': { name: 'Compte Swing', capital: 2000 }
         };
         this.currentCalendarDate = new Date();
+        this.currentStep = 0;
+        this.currentTrade = {};
+        this.checklistSteps = [
+            {
+                title: "✅ 1. Contexte Global",
+                question: "Quelle est la tendance Daily et la zone H4 ?",
+                key: "contextGlobal",
+                education: `<strong>🎯 Objectif :</strong> Comprendre la tendance générale<br><br><strong>📊 Daily :</strong> Haussière/Baissière/Range<br><strong>📊 H4 :</strong> Premium/Discount/Équilibre`,
+                options: ["Hausse + Discount", "Baisse + Premium", "Range", "Hausse + Premium", "Baisse + Discount"]
+            },
+            {
+                title: "✅ 2. Zone Institutionnelle",
+                question: "Zone institutionnelle identifiée ?",
+                key: "zoneInstitutionnelle",
+                education: `<strong>🎯 Objectif :</strong> Trouver les zones d'entrée<br><br><strong>🏦 Order Blocks :</strong> Dernière bougie avant impulsion<br><strong>⚡ Fair Value Gaps :</strong> Gaps à combler`,
+                options: ["Order Block Valide", "Fair Value Gap", "Liquidity Grab", "Aucune Zone"]
+            },
+            {
+                title: "✅ 3. Structure de Marché",
+                question: "Structure confirmée ?",
+                key: "structureMarche",
+                education: `<strong>🎯 Objectif :</strong> Confirmer la direction<br><br><strong>🔄 CHOCH :</strong> Changement de caractère<br><strong>📈 BOS :</strong> Cassure de structure`,
+                options: ["CHOCH Confirmé", "BOS Confirmé", "Structure Unclear", "Faux Signal"]
+            },
+            {
+                title: "✅ 4. Timing Killzones",
+                question: "Timing optimal ?",
+                key: "timingKillzones",
+                education: `<strong>🎯 Objectif :</strong> Trader aux bonnes heures<br><br><strong>⏰ Londres :</strong> 8h-11h<br><strong>⏰ New York :</strong> 14h-17h`,
+                options: ["Killzone Londres", "Killzone New York", "Overlap", "Hors Killzone"]
+            },
+            {
+                title: "✅ 5. Signal d'Entrée",
+                question: "Signal précis confirmé ?",
+                key: "signalEntree",
+                education: `<strong>🎯 Objectif :</strong> Signal d'exécution<br><br><strong>📍 Pin Bar :</strong> Rejet avec mèche<br><strong>📍 Doji :</strong> Indécision puis direction`,
+                options: ["Pin Bar", "Doji", "Engulfing", "Signal Faible"]
+            },
+            {
+                title: "✅ 6. Risk Management",
+                question: "R:R optimal ?",
+                key: "riskManagement",
+                education: `<strong>🎯 Objectif :</strong> Protéger le capital<br><br><strong>🛡️ Stop Loss :</strong> Niveau d'invalidation<br><strong>🎯 Take Profit :</strong> Zone de liquidité`,
+                options: ["R:R ≥ 1:3", "R:R = 1:2", "R:R < 1:2", "SL Trop Large"]
+            },
+            {
+                title: "✅ 7. Discipline",
+                question: "Plan respecté ?",
+                key: "discipline",
+                education: `<strong>🎯 Objectif :</strong> Cohérence<br><br><strong>🧠 Discipline :</strong> Suivre le plan<br><strong>📝 Journal :</strong> Documenter`,
+                options: ["Plan Respecté", "Discipline OK", "Émotions Contrôlées", "Amélioration Nécessaire"]
+            }
+        ];
         
         this.loadData();
         this.init();
@@ -176,8 +235,14 @@ class SimpleTradingDashboard {
 
     startNewTrade() {
         console.log('Starting new trade...');
+        this.currentStep = 0;
+        this.currentTrade = {
+            date: new Date().toISOString().split('T')[0],
+            confluences: {},
+            comments: {}
+        };
         this.showModal();
-        this.renderTradeForm();
+        this.renderChecklistStep();
     }
 
     showSettings() {
@@ -196,6 +261,19 @@ class SimpleTradingDashboard {
                     <label>Risque par trade (%):</label>
                     <input type="number" id="riskInput" value="${this.settings.riskPerTrade}" step="0.1" min="0.1" max="10">
                 </div>
+                <h3 style="color: #00d4ff; margin: 20px 0 15px 0;">🎯 Plan de Trading</h3>
+                <div class="form-group">
+                    <label>Objectif journalier (% du capital):</label>
+                    <input type="number" id="dailyTargetInput" value="${this.settings.dailyTarget}" step="0.1" min="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Objectif mensuel (% du capital):</label>
+                    <input type="number" id="monthlyTargetInput" value="${this.settings.monthlyTarget}" step="0.5" min="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Objectif annuel (% du capital):</label>
+                    <input type="number" id="yearlyTargetInput" value="${this.settings.yearlyTarget}" step="5" min="5">
+                </div>
                 <div class="form-buttons">
                     <button class="btn-submit" onclick="dashboard.saveSettings()">Sauvegarder</button>
                     <button class="btn-secondary" onclick="dashboard.closeModal()">Annuler</button>
@@ -209,12 +287,16 @@ class SimpleTradingDashboard {
     saveSettings() {
         const capital = parseFloat(document.getElementById('capitalInput')?.value) || 1000;
         const riskPerTrade = parseFloat(document.getElementById('riskInput')?.value) || 2;
+        const dailyTarget = parseFloat(document.getElementById('dailyTargetInput')?.value) || 1;
+        const monthlyTarget = parseFloat(document.getElementById('monthlyTargetInput')?.value) || 5;
+        const yearlyTarget = parseFloat(document.getElementById('yearlyTargetInput')?.value) || 60;
         
-        this.settings = { capital, riskPerTrade };
+        this.settings = { capital, riskPerTrade, dailyTarget, monthlyTarget, yearlyTarget };
         this.accounts[this.currentAccount].capital = capital;
         this.saveData();
         this.updateStats();
         this.updateAccountDisplay();
+        this.renderCalendar();
         this.closeModal();
         this.showNotification('Paramètres sauvegardés!');
     }
@@ -229,10 +311,21 @@ class SimpleTradingDashboard {
         const currentCapital = initialCapital + totalPnL;
         const riskAmount = (currentCapital * this.settings.riskPerTrade / 100).toFixed(2);
         
+        // Résumé des confluences
+        const confluencesHtml = Object.keys(this.currentTrade.confluences || {}).length > 0 ? `
+            <div class="confluences-summary">
+                <h4>🔍 Confluences Analysées:</h4>
+                ${Object.entries(this.currentTrade.confluences || {}).map(([key, value]) => 
+                    `<span class="confluence-tag">${this.getConfluenceName(key)}: ${value}</span>`
+                ).join('')}
+            </div>
+        ` : '';
+        
         modalContent.innerHTML = `
-            <h2>Nouveau Trade</h2>
+            <h2>Paramètres du Trade</h2>
             <div class="education-content">
                 <h4>💰 Capital actuel: $${currentCapital.toFixed(2)} | Risque: ${this.settings.riskPerTrade}% ($${riskAmount})</h4>
+                ${confluencesHtml}
             </div>
             <div class="trade-form">
                 <div class="form-group">
@@ -269,6 +362,19 @@ class SimpleTradingDashboard {
             </div>
         `;
     }
+    
+    getConfluenceName(key) {
+        const names = {
+            'contextGlobal': 'Contexte Global',
+            'zoneInstitutionnelle': 'Zone Institutionnelle',
+            'structureMarche': 'Structure de Marché',
+            'timingKillzones': 'Timing Killzones',
+            'signalEntree': 'Signal d\'Entrée',
+            'riskManagement': 'Risk Management',
+            'discipline': 'Discipline'
+        };
+        return names[key] || key;
+    }
 
     saveTrade() {
         const currency = document.getElementById('currency')?.value;
@@ -283,8 +389,8 @@ class SimpleTradingDashboard {
         }
 
         const trade = {
+            ...this.currentTrade,
             id: `${this.currentUser}_${Date.now()}`,
-            date: new Date().toISOString().split('T')[0],
             currency,
             entryPoint,
             stopLoss,
@@ -433,6 +539,9 @@ class SimpleTradingDashboard {
             calendarGrid.appendChild(dayHeader);
         });
         
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const dailyTargetAmount = (initialCapital * this.settings.dailyTarget / 100);
+        
         // Jours du calendrier
         for (let i = 0; i < 42; i++) {
             const currentDate = new Date(startDate);
@@ -449,12 +558,17 @@ class SimpleTradingDashboard {
             const dayTrades = this.trades.filter(t => t.date === dateStr);
             const dayPnL = dayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
             
+            // Indicateur d'objectif atteint
+            const targetReached = dayPnL >= dailyTargetAmount;
+            const targetIcon = targetReached ? '✅' : (dayPnL > 0 ? '🟡' : (dayPnL < 0 ? '🔴' : ''));
+            
             dayElement.innerHTML = `
                 <div class="calendar-date">${currentDate.getDate()}</div>
                 ${dayTrades.length > 0 ? `
                     <div class="calendar-trades">
-                        <div class="trade-count">${dayTrades.length} trade${dayTrades.length > 1 ? 's' : ''}</div>
+                        <div class="trade-count">${dayTrades.length} trade${dayTrades.length > 1 ? 's' : ''} ${targetIcon}</div>
                         <div class="trade-pnl ${dayPnL >= 0 ? 'positive' : 'negative'}">$${dayPnL.toFixed(2)}</div>
+                        ${targetReached ? '<div class="target-reached">🎯 Objectif atteint!</div>' : ''}
                     </div>
                 ` : ''}
             `;
@@ -463,9 +577,67 @@ class SimpleTradingDashboard {
                 dayElement.classList.add('has-trades');
                 if (dayPnL > 0) dayElement.classList.add('profit-day');
                 else if (dayPnL < 0) dayElement.classList.add('loss-day');
+                if (targetReached) dayElement.classList.add('target-reached-day');
             }
             
             calendarGrid.appendChild(dayElement);
+        }
+        
+        this.updateCalendarStats();
+    }
+    
+    updateCalendarStats() {
+        const year = this.currentCalendarDate.getFullYear();
+        const month = this.currentCalendarDate.getMonth();
+        const today = new Date();
+        
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const dailyTarget = (initialCapital * this.settings.dailyTarget / 100);
+        const monthlyTarget = (initialCapital * this.settings.monthlyTarget / 100);
+        const yearlyTarget = (initialCapital * this.settings.yearlyTarget / 100);
+        
+        // Stats du jour actuel
+        const todayStr = today.toISOString().split('T')[0];
+        const todayTrades = this.trades.filter(t => t.date === todayStr);
+        const todayPnL = todayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        
+        // Stats du mois
+        const monthTrades = this.trades.filter(t => {
+            const tradeDate = new Date(t.date);
+            return tradeDate.getFullYear() === year && tradeDate.getMonth() === month;
+        });
+        const monthPnL = monthTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        
+        // Stats de l'année
+        const yearTrades = this.trades.filter(t => {
+            const tradeDate = new Date(t.date);
+            return tradeDate.getFullYear() === year;
+        });
+        const yearPnL = yearTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        
+        // Mise à jour des éléments de stats s'ils existent
+        this.updateElement('todayPnL', `$${todayPnL.toFixed(2)}`, todayPnL >= 0 ? 'positive' : 'negative');
+        this.updateElement('monthPnL', `$${monthPnL.toFixed(2)}`, monthPnL >= 0 ? 'positive' : 'negative');
+        this.updateElement('yearPnL', `$${yearPnL.toFixed(2)}`, yearPnL >= 0 ? 'positive' : 'negative');
+        
+        // Progrès des objectifs
+        const monthProgress = monthlyTarget > 0 ? Math.min((monthPnL / monthlyTarget) * 100, 100).toFixed(1) : 0;
+        const yearProgress = yearlyTarget > 0 ? Math.min((yearPnL / yearlyTarget) * 100, 100).toFixed(1) : 0;
+        
+        this.updateElement('monthProgress', `${monthProgress}%`);
+        this.updateElement('yearProgress', `${yearProgress}%`);
+        
+        const monthProgressBar = document.getElementById('monthlyProgressBar');
+        const yearProgressBar = document.getElementById('yearlyProgressBar');
+        
+        if (monthProgressBar) {
+            monthProgressBar.style.width = `${Math.min(monthProgress, 100)}%`;
+            if (monthProgress >= 100) monthProgressBar.classList.add('completed');
+        }
+        
+        if (yearProgressBar) {
+            yearProgressBar.style.width = `${Math.min(yearProgress, 100)}%`;
+            if (yearProgress >= 100) yearProgressBar.classList.add('completed');
         }
     }
 
@@ -632,6 +804,94 @@ class SimpleTradingDashboard {
     closeFullscreen() {
         const modal = document.getElementById('fullscreenModal');
         if (modal) modal.style.display = 'none';
+    }
+
+    renderChecklistStep() {
+        const modalContent = document.getElementById('modalContent');
+        if (!modalContent) return;
+        
+        if (this.currentStep < this.checklistSteps.length) {
+            const step = this.checklistSteps[this.currentStep];
+            const optionsHtml = step.options.map((option, index) => 
+                `<button class="btn-yes btn-small" onclick="dashboard.answerStep('${option}')">${option}</button>`
+            ).join('');
+            
+            const chartHtml = this.renderStepChart(this.currentStep + 1);
+            
+            modalContent.innerHTML = `
+                <h2>Étape ${this.currentStep + 1}/${this.checklistSteps.length}</h2>
+                <div class="step">
+                    <h3>${step.title}</h3>
+                    <div class="education-content">
+                        <h4>💡 Explication :</h4>
+                        <p>${step.education}</p>
+                    </div>
+                    ${chartHtml}
+                    <p><strong>${step.question}</strong></p>
+                    <div class="step-buttons">
+                        ${optionsHtml}
+                    </div>
+                    <textarea class="comment-box" placeholder="Commentaire (optionnel)..." id="stepComment"></textarea>
+                    <div style="text-align: center; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <button class="btn-skip" onclick="dashboard.skipToTrade()">⏩ Passer les étapes</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            this.renderTradeForm();
+        }
+    }
+
+    renderStepChart(stepNumber) {
+        const charts = {
+            1: `<div class="strategy-chart"><img src="step1_context.svg" alt="Contexte Multi-timeframe" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step1_context.svg', 'Contexte Multi-timeframe')">🔍 Plein écran</button></div>`,
+            2: `<div class="strategy-chart"><img src="step2_orderblock.svg" alt="Order Block Strategy" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step2_orderblock.svg', 'Order Block Strategy')">🔍 Plein écran</button></div>`,
+            3: `<div class="strategy-chart"><img src="step3_bos.svg" alt="Break of Structure" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step3_bos.svg', 'Break of Structure')">🔍 Plein écran</button></div>`,
+            4: `<div class="strategy-chart"><img src="step4_killzones.svg" alt="Killzones Trading" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step4_killzones.svg', 'Killzones Trading')">🔍 Plein écran</button></div>`,
+            5: `<div class="strategy-chart"><img src="step5_entry.svg" alt="Signal d'Entrée" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step5_entry.svg', 'Signal d\\'Entrée')">🔍 Plein écran</button></div>`,
+            6: `<div class="strategy-chart"><img src="step6_risk.svg" alt="Risk Management" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step6_risk.svg', 'Risk Management')">🔍 Plein écran</button></div>`,
+            7: `<div class="strategy-chart"><img src="step7_discipline.svg" alt="Discipline Trading" style="width: 100%; max-width: 800px; height: auto; border-radius: 8px;"><button class="btn-fullscreen" onclick="dashboard.showFullscreenImage('step7_discipline.svg', 'Discipline Trading')">🔍 Plein écran</button></div>`
+        };
+        return charts[stepNumber] || '';
+    }
+
+    answerStep(answer) {
+        const step = this.checklistSteps[this.currentStep];
+        const commentElement = document.getElementById('stepComment');
+        const comment = commentElement ? commentElement.value : '';
+        
+        this.currentTrade.confluences[step.key] = answer;
+        if (comment) {
+            this.currentTrade.comments[step.key] = comment;
+        }
+        
+        this.currentStep++;
+        this.renderChecklistStep();
+    }
+
+    skipToTrade() {
+        for (let i = this.currentStep; i < this.checklistSteps.length; i++) {
+            const step = this.checklistSteps[i];
+            this.currentTrade.confluences[step.key] = step.options[0];
+        }
+        this.renderTradeForm();
+    }
+
+    showFullscreenImage(imageSrc, title) {
+        const modal = document.getElementById('fullscreenModal');
+        const content = document.getElementById('fullscreenContent');
+        if (modal && content) {
+            content.innerHTML = `
+                <div class="fullscreen-header">
+                    <h2>${title}</h2>
+                    <button class="close-fullscreen" onclick="dashboard.closeFullscreen()">✕</button>
+                </div>
+                <div class="fullscreen-image-container">
+                    <img src="${imageSrc}" alt="${title}" style="width: 100%; height: auto; max-height: 90vh; object-fit: contain;">
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
     }
 }
 
