@@ -247,50 +247,44 @@ class TradingDashboard {
         this.initCalendar();
         this.updateAccountDisplay();
         this.updateAccountSelector();
-        
-        setTimeout(() => {
-            if (this.currentUser) {
-                this.loadUserData();
-            }
-        }, 1000);
-        
-
     }
 
     setupEventListeners() {
-        const newTradeBtn = document.getElementById('newTradeBtn');
-        const settingsBtn = document.getElementById('settingsBtn');
-        const closeTradeBtn = document.getElementById('closeTradeBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const manualCloseBtn = document.getElementById('manualCloseBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const closeModal = document.querySelector('.close');
-        const addAccountBtn = document.getElementById('addAccountBtn');
-        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-        const accountSelect = document.getElementById('accountSelect');
+        setTimeout(() => {
+            const newTradeBtn = document.getElementById('newTradeBtn');
+            const settingsBtn = document.getElementById('settingsBtn');
+            const closeTradeBtn = document.getElementById('closeTradeBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const manualCloseBtn = document.getElementById('manualCloseBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const closeModal = document.querySelector('.close');
+            const addAccountBtn = document.getElementById('addAccountBtn');
+            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+            const accountSelect = document.getElementById('accountSelect');
 
-        if (newTradeBtn) newTradeBtn.addEventListener('click', () => this.startNewTrade());
-        if (settingsBtn) settingsBtn.addEventListener('click', () => this.showSettings());
-        if (closeTradeBtn) closeTradeBtn.addEventListener('click', () => this.showCloseTradeModal());
-        if (resetBtn) resetBtn.addEventListener('click', () => this.resetAllData());
-        if (manualCloseBtn) manualCloseBtn.addEventListener('click', () => this.showManualCloseModal());
-        if (exportBtn) exportBtn.addEventListener('click', () => this.exportToExcel());
-        if (closeModal) closeModal.addEventListener('click', () => this.closeModal());
-        if (addAccountBtn) addAccountBtn.addEventListener('click', () => this.addNewAccount());
-        if (deleteAccountBtn) deleteAccountBtn.addEventListener('click', () => this.deleteAccount());
-        if (accountSelect) accountSelect.addEventListener('change', (e) => this.switchAccount(e.target.value));
-        
-        const closeFullscreen = document.querySelector('.close-fullscreen');
-        if (closeFullscreen) closeFullscreen.addEventListener('click', () => this.closeFullscreen());
-        
-        window.addEventListener('click', (e) => {
-            if (e.target === document.getElementById('tradeModal')) {
-                this.closeModal();
-            }
-            if (e.target === document.getElementById('fullscreenModal')) {
-                this.closeFullscreen();
-            }
-        });
+            if (newTradeBtn) newTradeBtn.addEventListener('click', () => this.startNewTrade());
+            if (settingsBtn) settingsBtn.addEventListener('click', () => this.showSettings());
+            if (closeTradeBtn) closeTradeBtn.addEventListener('click', () => this.showCloseTradeModal());
+            if (resetBtn) resetBtn.addEventListener('click', () => this.resetAllData());
+            if (manualCloseBtn) manualCloseBtn.addEventListener('click', () => this.showManualCloseModal());
+            if (exportBtn) exportBtn.addEventListener('click', () => this.exportToExcel());
+            if (closeModal) closeModal.addEventListener('click', () => this.closeModal());
+            if (addAccountBtn) addAccountBtn.addEventListener('click', () => this.addNewAccount());
+            if (deleteAccountBtn) deleteAccountBtn.addEventListener('click', () => this.deleteAccount());
+            if (accountSelect) accountSelect.addEventListener('change', (e) => this.switchAccount(e.target.value));
+            
+            const closeFullscreen = document.querySelector('.close-fullscreen');
+            if (closeFullscreen) closeFullscreen.addEventListener('click', () => this.closeFullscreen());
+            
+            window.addEventListener('click', (e) => {
+                if (e.target === document.getElementById('tradeModal')) {
+                    this.closeModal();
+                }
+                if (e.target === document.getElementById('fullscreenModal')) {
+                    this.closeFullscreen();
+                }
+            });
+        }, 100);
     }
 
     updateStats() {
