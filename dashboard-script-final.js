@@ -238,6 +238,7 @@ class TradingDashboard {
     }
 
     init() {
+        console.log('Initializing dashboard...');
         this.setupEventListeners();
         this.initAccountSelector();
         this.updateStats();
@@ -247,11 +248,12 @@ class TradingDashboard {
         this.initCalendar();
         this.updateAccountDisplay();
         this.updateAccountSelector();
+        console.log('Dashboard initialized successfully');
     }
 
     setupEventListeners() {
-        // Event listeners directs comme sur vip-space.html
-        document.addEventListener('DOMContentLoaded', () => {
+        // Attendre que le DOM soit complètement chargé
+        const setupButtons = () => {
             const newTradeBtn = document.getElementById('newTradeBtn');
             const settingsBtn = document.getElementById('settingsBtn');
             const closeTradeBtn = document.getElementById('closeTradeBtn');
@@ -262,30 +264,73 @@ class TradingDashboard {
             const addAccountBtn = document.getElementById('addAccountBtn');
             const deleteAccountBtn = document.getElementById('deleteAccountBtn');
             const accountSelect = document.getElementById('accountSelect');
+            const prevMonth = document.getElementById('prevMonth');
+            const nextMonth = document.getElementById('nextMonth');
 
-            if (newTradeBtn) newTradeBtn.addEventListener('click', () => this.startNewTrade());
-            if (settingsBtn) settingsBtn.addEventListener('click', () => this.showSettings());
-            if (closeTradeBtn) closeTradeBtn.addEventListener('click', () => this.showCloseTradeModal());
-            if (resetBtn) resetBtn.addEventListener('click', () => this.resetAllData());
-            if (manualCloseBtn) manualCloseBtn.addEventListener('click', () => this.showManualCloseModal());
-            if (exportBtn) exportBtn.addEventListener('click', () => this.exportToExcel());
-            if (closeModal) closeModal.addEventListener('click', () => this.closeModal());
-            if (addAccountBtn) addAccountBtn.addEventListener('click', () => this.addNewAccount());
-            if (deleteAccountBtn) deleteAccountBtn.addEventListener('click', () => this.deleteAccount());
-            if (accountSelect) accountSelect.addEventListener('change', (e) => this.switchAccount(e.target.value));
+            if (newTradeBtn) {
+                newTradeBtn.onclick = () => this.startNewTrade();
+                console.log('New Trade button configured');
+            }
+            if (settingsBtn) {
+                settingsBtn.onclick = () => this.showSettings();
+                console.log('Settings button configured');
+            }
+            if (closeTradeBtn) {
+                closeTradeBtn.onclick = () => this.showCloseTradeModal();
+                console.log('Close Trade button configured');
+            }
+            if (resetBtn) {
+                resetBtn.onclick = () => this.resetAllData();
+                console.log('Reset button configured');
+            }
+            if (manualCloseBtn) {
+                manualCloseBtn.onclick = () => this.showManualCloseModal();
+                console.log('Manual Close button configured');
+            }
+            if (exportBtn) {
+                exportBtn.onclick = () => this.exportToExcel();
+                console.log('Export button configured');
+            }
+            if (closeModal) {
+                closeModal.onclick = () => this.closeModal();
+            }
+            if (addAccountBtn) {
+                addAccountBtn.onclick = () => this.addNewAccount();
+            }
+            if (deleteAccountBtn) {
+                deleteAccountBtn.onclick = () => this.deleteAccount();
+            }
+            if (accountSelect) {
+                accountSelect.onchange = (e) => this.switchAccount(e.target.value);
+            }
+            if (prevMonth) {
+                prevMonth.onclick = () => {
+                    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
+                    this.renderCalendar();
+                };
+            }
+            if (nextMonth) {
+                nextMonth.onclick = () => {
+                    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
+                    this.renderCalendar();
+                };
+            }
             
-            const closeFullscreen = document.querySelector('.close-fullscreen');
-            if (closeFullscreen) closeFullscreen.addEventListener('click', () => this.closeFullscreen());
-            
-            window.addEventListener('click', (e) => {
+            window.onclick = (e) => {
                 if (e.target === document.getElementById('tradeModal')) {
                     this.closeModal();
                 }
                 if (e.target === document.getElementById('fullscreenModal')) {
                     this.closeFullscreen();
                 }
-            });
-        });
+            };
+        };
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupButtons);
+        } else {
+            setupButtons();
+        }
     }
 
     updateStats() {
@@ -1535,26 +1580,6 @@ class TradingDashboard {
     initCalendar() {
         this.currentCalendarDate = new Date();
         this.renderCalendar();
-        this.setupCalendarControls();
-    }
-
-    setupCalendarControls() {
-        const prevBtn = document.getElementById('prevMonth');
-        const nextBtn = document.getElementById('nextMonth');
-        
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
-                this.renderCalendar();
-            });
-        }
-        
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
-                this.renderCalendar();
-            });
-        }
     }
 
     renderCalendar() {
@@ -1826,10 +1851,33 @@ class TradingDashboard {
     }
 }
 
-// Initialisation
+// Initialisation globale
 let dashboard;
 
-document.addEventListener('DOMContentLoaded', function() {
-    dashboard = new TradingDashboard();
-    window.dashboard = dashboard;
+// Fonction d'initialisation
+function initializeDashboard() {
+    console.log('Starting dashboard initialization...');
+    try {
+        dashboard = new TradingDashboard();
+        window.dashboard = dashboard;
+        console.log('Dashboard created successfully');
+    } catch (error) {
+        console.error('Error creating dashboard:', error);
+    }
+}
+
+// Initialiser dès que possible
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDashboard);
+} else {
+    // DOM déjà chargé
+    setTimeout(initializeDashboard, 100);
+}
+
+// Backup au cas où
+window.addEventListener('load', function() {
+    if (!window.dashboard) {
+        console.log('Backup initialization...');
+        initializeDashboard();
+    }
 });
