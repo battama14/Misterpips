@@ -98,6 +98,21 @@
 
             <div class="charts-section">
                 <div class="chart-container">
+                    <h3>📈 Performance Cumulative</h3>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>🎯 Taux de Réussite</h3>
+                    <canvas id="winRateChart" width="300" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>📊 Performance Mensuelle</h3>
+                    <canvas id="monthlyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            
+            <div class="charts-section">
+                <div class="chart-container">
                     <div class="gauge-container">
                         <h3>💰 Performance Totale</h3>
                         <div id="gainsGauge" class="gauge"></div>
@@ -123,22 +138,68 @@
                 </div>
             </div>
 
+            <!-- Plan de Trading avec Objectifs -->
+            <div class="trading-plan-section">
+                <h2>🎯 Plan de Trading & Objectifs</h2>
+                <div class="plan-stats">
+                    <div class="plan-card">
+                        <h4>📊 Objectif Mensuel</h4>
+                        <div class="target-info">
+                            <div class="target-amount">Cible: $<span id="monthlyTarget">50</span></div>
+                            <div class="target-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="monthlyProgressBar" style="width: 0%"></div>
+                                </div>
+                                <span id="monthProgress">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="plan-card">
+                        <h4>🎯 Objectif Annuel</h4>
+                        <div class="target-info">
+                            <div class="target-amount">Cible: $<span id="yearlyTarget">600</span></div>
+                            <div class="target-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="yearlyProgressBar" style="width: 0%"></div>
+                                </div>
+                                <span id="yearProgress">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="plan-card">
+                        <h4>📈 Rendement Annuel</h4>
+                        <div class="return-info">
+                            <div class="return-value" id="yearReturn">0%</div>
+                            <div class="return-label">du capital initial</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Calendrier de Trading -->
             <div class="calendar-section">
                 <h2>📅 Calendrier de Trading</h2>
                 <div class="calendar-wrapper">
                     <div class="calendar-controls">
                         <button id="prevMonth" class="btn-secondary">◀</button>
-                        <div id="monthLabel" class="month-label">Mois</div>
+                        <div id="monthYear" class="month-label">Mois</div>
                         <button id="nextMonth" class="btn-secondary">▶</button>
                     </div>
                     <div class="calendar-grid-container">
-                        <div class="weekdays">
-                            <div>Dim</div><div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div>
-                        </div>
-                        <div class="calendar-grid" id="calendarGrid"></div>
+                        <div id="calendarGrid" class="calendar-grid"></div>
                     </div>
-                    <div class="calendar-summary" id="calendarSummary"></div>
+                    <div class="calendar-stats">
+                        <div class="calendar-stat">
+                            <h4>📊 Ce Mois</h4>
+                            <div class="stat-value" id="monthPnL">$0</div>
+                            <div class="stat-label">WinRate: <span id="monthWinRate">0%</span></div>
+                        </div>
+                        <div class="calendar-stat">
+                            <h4>📈 Cette Année</h4>
+                            <div class="stat-value" id="yearPnL">$0</div>
+                            <div class="stat-label">WinRate: <span id="yearWinRate">0%</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -175,10 +236,8 @@
 
     <!-- Modal Plein Écran pour Graphiques -->
     <div id="fullscreenModal" class="modal fullscreen-modal">
-        <div class="fullscreen-content">
+        <div class="fullscreen-content" id="fullscreenContent">
             <span class="close-fullscreen">&times;</span>
-            <button class="fullscreen-btn" onclick="dashboard.toggleFullscreen()">📊 Plein Écran</button>
-            <div id="fullscreenContent"></div>
         </div>
     </div>
 

@@ -1012,19 +1012,783 @@ class TradingDashboard {
         if (modal) modal.style.display = 'none';
     }
 
-    // Méthodes vides pour éviter les erreurs
-    initAccountSelector() {}
-    updateAccountSelector() {}
-    addNewAccount() {}
-    deleteAccount() {}
-    resetAllData() {}
-    exportToExcel() {}
-    initCharts() {}
-    updateCharts() {}
-    initCalendar() {}
-    updateCalendar() {}
-    showCloseTradeModal() {}
-    showManualCloseModal() {}
+    initAccountSelector() {
+        const accountSelect = document.getElementById('accountSelect');
+        if (accountSelect) {
+            accountSelect.innerHTML = '';
+            Object.keys(this.accounts).forEach(accountId => {
+                const option = document.createElement('option');
+                option.value = accountId;
+                option.textContent = this.accounts[accountId].name;
+                if (accountId === this.currentAccount) {
+                    option.selected = true;
+                }
+                accountSelect.appendChild(option);
+            });
+        }
+    }
+
+    updateAccountSelector() {
+        this.initAccountSelector();
+    }
+
+    addNewAccount() {
+        const name = prompt('Nom du nouveau compte:');
+        const capital = parseFloat(prompt('Capital initial ($):')) || 1000;
+        
+        if (name) {
+            const accountId = 'compte' + (Object.keys(this.accounts).length + 1);
+            this.accounts[accountId] = { name, capital };
+            this.saveToStorage();
+            this.updateAccountSelector();
+            this.showNotification(`Compte "${name}" créé avec succès!`);
+        }
+    }
+
+    deleteAccount() {
+        if (Object.keys(this.accounts).length <= 1) {
+            alert('Impossible de supprimer le dernier compte');
+            return;
+        }
+        
+        if (confirm(`Supprimer le compte "${this.accounts[this.currentAccount].name}" ?")) {
+            delete this.accounts[this.currentAccount];
+            this.currentAccount = Object.keys(this.accounts)[0];
+            this.loadUserData();
+            this.updateAccountSelector();
+            this.showNotification('Compte supprimé');
+        }
+    }
+
+    resetAllData() {
+        if (confirm('⚠️ ATTENTION: Cette action supprimera TOUS vos trades et données. Êtes-vous sûr ?')) {
+            this.trades = [];
+            this.settings = { capital: 1000, riskPerTrade: 2 };
+            this.accounts[this.currentAccount].capital = 1000;
+            this.saveToStorage();
+            this.updateStats();
+            this.renderTradesTable();
+            this.updateCharts();
+            this.updateCalendar();
+            this.showNotification('Toutes les données ont été supprimées');
+        }
+    }
+
+    exportToExcel() {
+        if (this.trades.length === 0) {
+            alert('Aucun trade à exporter');
+            return;
+        }
+        
+        let csvContent = "Date,Instrument,Entrée,Stop Loss,Take Profit,Lot,Risque %,Résultat,P&L\n";
+        
+        this.trades.forEach(trade => {
+            const pnl = parseFloat(trade.pnl || 0);
+            csvContent += `${trade.date},${trade.currency},${trade.entryPoint},${trade.stopLoss},${trade.takeProfit},${trade.lotSize},${trade.riskPercent || 2}%,${trade.result || 'OPEN'},${pnl.toFixed(2)}\n`;
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `trades_${this.currentUser}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showNotification('Export CSV téléchargé!');
+    }
+
+    initCharts() {
+        this.createPerformanceChart();
+        this.createWinRateChart();
+        this.createMonthlyChart();
+    }
+
+    createPerformanceChart() {
+        const canvas = document.getElementById('performanceChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const closedTrades = this.trades.filter(t => t.status === 'closed').sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        let cumulativePnL = 0;
+        const data = [0];
+        const labels = ['Début'];
+        
+        closedTrades.forEach((trade, index) => {
+            cumulativePnL += parseFloat(trade.pnl || 0);
+            data.push(cumulativePnL);
+            labels.push(`T${index + 1}`);
+        });
+        
+        this.drawLineChart(ctx, labels, data, 'Performance Cumulative', '#00d4ff');
+    }
+
+    createWinRateChart() {
+        const canvas = document.getElementById('winRateChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const closedTrades = this.trades.filter(t => t.status === 'closed');
+        const wins = closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length;
+        const losses = closedTrades.length - wins;
+        
+        this.drawPieChart(ctx, ['Gains', 'Pertes'], [wins, losses], ['#00ff88', '#ff4444']);
+    }
+
+    createMonthlyChart() {
+        const canvas = document.getElementById('monthlyChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const closedTrades = this.trades.filter(t => t.status === 'closed');
+        const monthlyData = {};
+        
+        closedTrades.forEach(trade => {
+            const month = trade.date.substring(0, 7);
+            if (!monthlyData[month]) monthlyData[month] = 0;
+            monthlyData[month] += parseFloat(trade.pnl || 0);
+        });
+        
+        const labels = Object.keys(monthlyData).sort();
+        const data = labels.map(month => monthlyData[month]);
+        
+        this.drawBarChart(ctx, labels, data, 'Performance Mensuelle', '#5b86e5');
+    }
+
+    drawLineChart(ctx, labels, data, title, color) {
+        const canvas = ctx.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 40;
+        
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, width / 2, 20);
+        
+        if (data.length < 2) return;
+        
+        const maxValue = Math.max(...data);
+        const minValue = Math.min(...data);
+        const range = maxValue - minValue || 1;
+        
+        const stepX = (width - 2 * padding) / (data.length - 1);
+        const stepY = (height - 2 * padding - 40) / range;
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        data.forEach((value, index) => {
+            const x = padding + index * stepX;
+            const y = height - padding - ((value - minValue) * stepY);
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        
+        ctx.fillStyle = color;
+        data.forEach((value, index) => {
+            const x = padding + index * stepX;
+            const y = height - padding - ((value - minValue) * stepY);
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    }
+
+    drawPieChart(ctx, labels, data, colors) {
+        const canvas = ctx.canvas;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.min(centerX, centerY) - 20;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const total = data.reduce((sum, value) => sum + value, 0);
+        if (total === 0) return;
+        
+        let currentAngle = -Math.PI / 2;
+        
+        data.forEach((value, index) => {
+            const sliceAngle = (value / total) * 2 * Math.PI;
+            
+            ctx.fillStyle = colors[index];
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fill();
+            
+            const labelAngle = currentAngle + sliceAngle / 2;
+            const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+            const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${labels[index]}: ${value}`, labelX, labelY);
+            
+            currentAngle += sliceAngle;
+        });
+    }
+
+    drawBarChart(ctx, labels, data, title, color) {
+        const canvas = ctx.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 40;
+        
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, width / 2, 20);
+        
+        if (data.length === 0) return;
+        
+        const maxValue = Math.max(...data, 0);
+        const minValue = Math.min(...data, 0);
+        const range = maxValue - minValue || 1;
+        
+        const barWidth = (width - 2 * padding) / data.length * 0.8;
+        const stepX = (width - 2 * padding) / data.length;
+        
+        data.forEach((value, index) => {
+            const x = padding + index * stepX + stepX * 0.1;
+            const barHeight = Math.abs(value) / range * (height - 2 * padding - 40);
+            const y = value >= 0 ? 
+                height - padding - (maxValue / range * (height - 2 * padding - 40)) - barHeight :
+                height - padding - (maxValue / range * (height - 2 * padding - 40));
+            
+            ctx.fillStyle = value >= 0 ? color : '#ff4444';
+            ctx.fillRect(x, y, barWidth, barHeight);
+        });
+    }
+
+    updateCharts() {
+        this.createPerformanceChart();
+        this.createWinRateChart();
+        this.createMonthlyChart();
+        this.updateGauge();
+        this.updateConfluenceAnalysis();
+        this.updateCorrelationMatrix();
+    }
+
+    updateGauge() {
+        const closedTrades = this.trades.filter(t => t.status === 'closed');
+        const totalPnL = closedTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const currentCapital = initialCapital + totalPnL;
+        const returnPercent = initialCapital > 0 ? ((totalPnL / initialCapital) * 100) : 0;
+        
+        const gainsValue = document.getElementById('gainsValue');
+        const gainsPercent = document.getElementById('gainsPercent');
+        const gainsGauge = document.getElementById('gainsGauge');
+        
+        if (gainsValue) {
+            gainsValue.textContent = `$${totalPnL.toFixed(2)}`;
+            gainsValue.className = totalPnL >= 0 ? 'gauge-value positive' : 'gauge-value negative';
+        }
+        
+        if (gainsPercent) {
+            gainsPercent.textContent = `${returnPercent.toFixed(1)}%`;
+            gainsPercent.className = returnPercent >= 0 ? 'gauge-percent positive' : 'gauge-percent negative';
+        }
+        
+        if (gainsGauge) {
+            const angle = Math.min(Math.max((returnPercent + 50) * 3.6, 0), 360);
+            gainsGauge.style.background = `conic-gradient(from 0deg, 
+                ${returnPercent < -20 ? '#ff6b6b' : returnPercent < 0 ? '#ffc107' : returnPercent < 20 ? '#4ecdc4' : '#00ff88'} 0deg ${angle}deg, 
+                #333 ${angle}deg 360deg)`;
+        }
+    }
+
+    updateConfluenceAnalysis() {
+        const confluenceAnalysis = document.getElementById('confluenceAnalysis');
+        const confluencesChart = document.getElementById('confluencesChart');
+        
+        if (!confluenceAnalysis || !confluencesChart) return;
+        
+        const closedTrades = this.trades.filter(t => t.status === 'closed' && t.confluences);
+        
+        if (closedTrades.length === 0) {
+            confluenceAnalysis.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.6);">Aucune donnée de confluence disponible</p>';
+            return;
+        }
+        
+        const confluenceStats = {};
+        const confluenceWins = {};
+        
+        closedTrades.forEach(trade => {
+            Object.entries(trade.confluences || {}).forEach(([key, value]) => {
+                if (!confluenceStats[key]) {
+                    confluenceStats[key] = { total: 0, wins: 0 };
+                }
+                confluenceStats[key].total++;
+                if (parseFloat(trade.pnl || 0) > 0) {
+                    confluenceStats[key].wins++;
+                }
+            });
+        });
+        
+        let analysisHtml = '<h4>📊 Analyse des Confluences</h4>';
+        
+        Object.entries(confluenceStats).forEach(([confluence, stats]) => {
+            const winRate = stats.total > 0 ? (stats.wins / stats.total * 100) : 0;
+            const scoreClass = winRate >= 80 ? 'score-excellent' : 
+                              winRate >= 60 ? 'score-good' : 
+                              winRate >= 40 ? 'score-average' : 'score-poor';
+            
+            analysisHtml += `
+                <div class="analysis-item">
+                    <span class="confluence-name">${this.getConfluenceName(confluence)}</span>
+                    <span class="confluence-score ${scoreClass}">${winRate.toFixed(1)}%</span>
+                </div>
+            `;
+        });
+        
+        const bestConfluence = Object.entries(confluenceStats)
+            .sort(([,a], [,b]) => (b.wins/b.total) - (a.wins/a.total))[0];
+        
+        if (bestConfluence) {
+            const [name, stats] = bestConfluence;
+            const winRate = (stats.wins / stats.total * 100).toFixed(1);
+            analysisHtml += `
+                <div class="recommendation">
+                    <strong>💡 Recommandation:</strong> Votre meilleure confluence est "${this.getConfluenceName(name)}" avec ${winRate}% de réussite sur ${stats.total} trades.
+                </div>
+            `;
+        }
+        
+        confluenceAnalysis.innerHTML = analysisHtml;
+        
+        this.drawConfluenceChart(confluencesChart, confluenceStats);
+    }
+
+    getConfluenceName(key) {
+        const names = {
+            'contextGlobal': 'Contexte Global',
+            'zoneInstitutionnelle': 'Zone Institutionnelle',
+            'structureMarche': 'Structure de Marché',
+            'timingKillzones': 'Timing Killzones',
+            'signalEntree': 'Signal d\'Entrée',
+            'riskManagement': 'Risk Management',
+            'discipline': 'Discipline'
+        };
+        return names[key] || key;
+    }
+
+    drawConfluenceChart(canvas, confluenceStats) {
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        const entries = Object.entries(confluenceStats);
+        if (entries.length === 0) return;
+        
+        const barWidth = (width - 40) / entries.length;
+        const maxWinRate = Math.max(...entries.map(([,stats]) => stats.wins / stats.total * 100));
+        
+        entries.forEach(([confluence, stats], index) => {
+            const winRate = stats.total > 0 ? (stats.wins / stats.total * 100) : 0;
+            const barHeight = (winRate / 100) * (height - 60);
+            const x = 20 + index * barWidth;
+            const y = height - 30 - barHeight;
+            
+            const color = winRate >= 80 ? '#4ecdc4' : 
+                         winRate >= 60 ? '#00d4ff' : 
+                         winRate >= 40 ? '#ffc107' : '#ff6b6b';
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, barWidth - 10, barHeight);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${winRate.toFixed(0)}%`, x + (barWidth - 10) / 2, y - 5);
+            
+            ctx.save();
+            ctx.translate(x + (barWidth - 10) / 2, height - 10);
+            ctx.rotate(-Math.PI / 4);
+            ctx.textAlign = 'right';
+            ctx.fillText(this.getConfluenceName(confluence), 0, 0);
+            ctx.restore();
+        });
+    }
+
+    updateCorrelationMatrix() {
+        const correlationMatrix = document.getElementById('correlationMatrix');
+        if (!correlationMatrix) return;
+        
+        const confluences = [
+            'contextGlobal',
+            'zoneInstitutionnelle', 
+            'structureMarche',
+            'timingKillzones',
+            'signalEntree',
+            'riskManagement',
+            'discipline'
+        ];
+        
+        const closedTrades = this.trades.filter(t => t.status === 'closed' && t.confluences);
+        
+        if (closedTrades.length < 5) {
+            correlationMatrix.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">Minimum 5 trades fermés requis pour l\'analyse de corrélation</p>';
+            return;
+        }
+        
+        let matrixHtml = '<div class="correlation-grid">';
+        
+        matrixHtml += '<div class="correlation-cell header"></div>';
+        confluences.forEach(conf => {
+            matrixHtml += `<div class="correlation-cell header">${this.getConfluenceName(conf).substring(0, 8)}</div>`;
+        });
+        
+        confluences.forEach(conf1 => {
+            matrixHtml += `<div class="correlation-cell row-header">${this.getConfluenceName(conf1)}</div>`;
+            
+            confluences.forEach(conf2 => {
+                const correlation = this.calculateCorrelation(conf1, conf2, closedTrades);
+                const correlationClass = correlation >= 0.8 ? 'excellent' :
+                                       correlation >= 0.6 ? 'good' :
+                                       correlation >= 0.4 ? 'average' : 'poor';
+                
+                matrixHtml += `<div class="correlation-cell data ${correlationClass}" title="Corrélation ${this.getConfluenceName(conf1)} - ${this.getConfluenceName(conf2)}: ${(correlation * 100).toFixed(0)}%">${(correlation * 100).toFixed(0)}%</div>`;
+            });
+        });
+        
+        matrixHtml += '</div>';
+        correlationMatrix.innerHTML = matrixHtml;
+    }
+
+    calculateCorrelation(conf1, conf2, trades) {
+        if (conf1 === conf2) return 1.0;
+        
+        const pairs = trades.map(trade => {
+            const val1 = trade.confluences[conf1] || '';
+            const val2 = trade.confluences[conf2] || '';
+            const pnl = parseFloat(trade.pnl || 0);
+            return {
+                conf1Success: pnl > 0 && val1.includes('Confirmé') || val1.includes('Respecté') || val1.includes('Valide'),
+                conf2Success: pnl > 0 && val2.includes('Confirmé') || val2.includes('Respecté') || val2.includes('Valide')
+            };
+        });
+        
+        const bothSuccess = pairs.filter(p => p.conf1Success && p.conf2Success).length;
+        const conf1Success = pairs.filter(p => p.conf1Success).length;
+        const conf2Success = pairs.filter(p => p.conf2Success).length;
+        
+        if (conf1Success === 0 || conf2Success === 0) return 0;
+        
+        return Math.min(bothSuccess / Math.max(conf1Success, conf2Success), 1.0);
+    }
+
+    initCalendar() {
+        this.currentCalendarDate = new Date();
+        this.renderCalendar();
+        this.setupCalendarControls();
+    }
+
+    setupCalendarControls() {
+        const prevBtn = document.getElementById('prevMonth');
+        const nextBtn = document.getElementById('nextMonth');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
+                this.renderCalendar();
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
+                this.renderCalendar();
+            });
+        }
+    }
+
+    renderCalendar() {
+        const calendarGrid = document.getElementById('calendarGrid');
+        const monthYear = document.getElementById('monthYear');
+        
+        if (!calendarGrid || !monthYear) return;
+        
+        const year = this.currentCalendarDate.getFullYear();
+        const month = this.currentCalendarDate.getMonth();
+        
+        monthYear.textContent = new Intl.DateTimeFormat('fr-FR', { 
+            month: 'long', 
+            year: 'numeric' 
+        }).format(this.currentCalendarDate);
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        calendarGrid.innerHTML = '';
+        
+        const dayHeaders = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        dayHeaders.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day-header';
+            dayHeader.textContent = day;
+            calendarGrid.appendChild(dayHeader);
+        });
+        
+        for (let i = 0; i < 42; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (currentDate.getMonth() !== month) {
+                dayElement.classList.add('other-month');
+            }
+            
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const dayTrades = this.trades.filter(t => t.date === dateStr);
+            const dayPnL = dayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+            
+            dayElement.innerHTML = `
+                <div class="calendar-date">${currentDate.getDate()}</div>
+                ${dayTrades.length > 0 ? `
+                    <div class="calendar-trades">
+                        <div class="trade-count">${dayTrades.length} trade${dayTrades.length > 1 ? 's' : ''}</div>
+                        <div class="trade-pnl ${dayPnL >= 0 ? 'positive' : 'negative'}">$${dayPnL.toFixed(2)}</div>
+                    </div>
+                ` : ''}
+            `;
+            
+            if (dayTrades.length > 0) {
+                dayElement.classList.add('has-trades');
+                if (dayPnL > 0) dayElement.classList.add('profit-day');
+                else if (dayPnL < 0) dayElement.classList.add('loss-day');
+            }
+            
+            calendarGrid.appendChild(dayElement);
+        }
+        
+        this.updateCalendarStats();
+    }
+
+    updateCalendarStats() {
+        const year = this.currentCalendarDate.getFullYear();
+        const month = this.currentCalendarDate.getMonth();
+        
+        const monthTrades = this.trades.filter(t => {
+            const tradeDate = new Date(t.date);
+            return tradeDate.getFullYear() === year && tradeDate.getMonth() === month;
+        });
+        
+        const monthPnL = monthTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        const monthWins = monthTrades.filter(t => parseFloat(t.pnl || 0) > 0).length;
+        const monthWinRate = monthTrades.length > 0 ? (monthWins / monthTrades.length * 100).toFixed(1) : 0;
+        
+        const yearTrades = this.trades.filter(t => {
+            const tradeDate = new Date(t.date);
+            return tradeDate.getFullYear() === year;
+        });
+        
+        const yearPnL = yearTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        const yearWins = yearTrades.filter(t => parseFloat(t.pnl || 0) > 0).length;
+        const yearWinRate = yearTrades.length > 0 ? (yearWins / yearTrades.length * 100).toFixed(1) : 0;
+        
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const currentCapital = initialCapital + yearPnL;
+        const yearReturn = initialCapital > 0 ? ((yearPnL / initialCapital) * 100).toFixed(1) : 0;
+        
+        const monthlyTarget = (initialCapital * 0.05);
+        const yearlyTarget = (initialCapital * 0.6);
+        
+        const monthProgress = monthlyTarget > 0 ? Math.min((monthPnL / monthlyTarget) * 100, 100).toFixed(1) : 0;
+        const yearProgress = yearlyTarget > 0 ? Math.min((yearPnL / yearlyTarget) * 100, 100).toFixed(1) : 0;
+        
+        const statsElements = {
+            monthPnL: document.getElementById('monthPnL'),
+            monthWinRate: document.getElementById('monthWinRate'),
+            monthProgress: document.getElementById('monthProgress'),
+            monthlyTarget: document.getElementById('monthlyTarget'),
+            monthlyProgressBar: document.getElementById('monthlyProgressBar'),
+            yearPnL: document.getElementById('yearPnL'),
+            yearWinRate: document.getElementById('yearWinRate'),
+            yearProgress: document.getElementById('yearProgress'),
+            yearlyTarget: document.getElementById('yearlyTarget'),
+            yearlyProgressBar: document.getElementById('yearlyProgressBar'),
+            yearReturn: document.getElementById('yearReturn')
+        };
+        
+        if (statsElements.monthPnL) {
+            statsElements.monthPnL.textContent = `$${monthPnL.toFixed(2)}`;
+            statsElements.monthPnL.className = 'stat-value ' + (monthPnL >= 0 ? 'positive' : 'negative');
+        }
+        if (statsElements.monthWinRate) statsElements.monthWinRate.textContent = `${monthWinRate}%`;
+        if (statsElements.monthProgress) {
+            statsElements.monthProgress.textContent = `${monthProgress}%`;
+            statsElements.monthProgress.style.color = monthProgress >= 100 ? '#00ff88' : '#00d4ff';
+        }
+        if (statsElements.monthlyTarget) {
+            statsElements.monthlyTarget.textContent = monthlyTarget.toFixed(0);
+        }
+        if (statsElements.monthlyProgressBar) {
+            statsElements.monthlyProgressBar.style.width = `${Math.min(monthProgress, 100)}%`;
+            if (monthProgress >= 100) {
+                statsElements.monthlyProgressBar.classList.add('completed');
+            }
+        }
+        
+        if (statsElements.yearPnL) {
+            statsElements.yearPnL.textContent = `$${yearPnL.toFixed(2)}`;
+            statsElements.yearPnL.className = 'stat-value ' + (yearPnL >= 0 ? 'positive' : 'negative');
+        }
+        if (statsElements.yearWinRate) statsElements.yearWinRate.textContent = `${yearWinRate}%`;
+        if (statsElements.yearProgress) {
+            statsElements.yearProgress.textContent = `${yearProgress}%`;
+            statsElements.yearProgress.style.color = yearProgress >= 100 ? '#00ff88' : '#00d4ff';
+        }
+        if (statsElements.yearlyTarget) {
+            statsElements.yearlyTarget.textContent = yearlyTarget.toFixed(0);
+        }
+        if (statsElements.yearlyProgressBar) {
+            statsElements.yearlyProgressBar.style.width = `${Math.min(yearProgress, 100)}%`;
+            if (yearProgress >= 100) {
+                statsElements.yearlyProgressBar.classList.add('completed');
+            }
+        }
+        if (statsElements.yearReturn) {
+            statsElements.yearReturn.textContent = `${yearReturn}%`;
+            statsElements.yearReturn.className = yearReturn >= 0 ? 'positive' : 'negative';
+        }
+    }
+
+    updateCalendar() {
+        this.renderCalendar();
+    }
+
+    showCloseTradeModal() {
+        const openTrades = this.trades.filter(t => t.status === 'open');
+        if (openTrades.length === 0) {
+            alert('Aucun trade ouvert à clôturer');
+            return;
+        }
+        
+        const modalContent = document.getElementById('modalContent');
+        if (!modalContent) return;
+        
+        const tradesHtml = openTrades.map((trade, index) => {
+            const tradeIndex = this.trades.indexOf(trade);
+            return `
+                <div class="trade-item">
+                    <div class="trade-info">
+                        <strong>${trade.currency}</strong> - ${trade.date}<br>
+                        Entrée: ${trade.entryPoint} | SL: ${trade.stopLoss} | TP: ${trade.takeProfit}
+                    </div>
+                    <div class="trade-actions">
+                        <button class="btn-small btn-success" onclick="dashboard.closeTrade(${tradeIndex}, 'TP')">TP</button>
+                        <button class="btn-small btn-danger" onclick="dashboard.closeTrade(${tradeIndex}, 'SL')">SL</button>
+                        <button class="btn-small btn-warning" onclick="dashboard.closeTrade(${tradeIndex}, 'BE')">BE</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        modalContent.innerHTML = `
+            <h2>Clôturer un Trade</h2>
+            <div class="trades-list">
+                ${tradesHtml}
+            </div>
+            <div class="form-buttons">
+                <button class="btn-secondary" onclick="dashboard.closeModal()">Annuler</button>
+            </div>
+        `;
+        
+        this.showModal();
+    }
+
+    showManualCloseModal() {
+        const openTrades = this.trades.filter(t => t.status === 'open');
+        if (openTrades.length === 0) {
+            alert('Aucun trade ouvert');
+            return;
+        }
+        
+        const modalContent = document.getElementById('modalContent');
+        if (!modalContent) return;
+        
+        const tradesOptions = openTrades.map((trade, index) => {
+            const tradeIndex = this.trades.indexOf(trade);
+            return `<option value="${tradeIndex}">${trade.currency} - ${trade.date}</option>`;
+        }).join('');
+        
+        modalContent.innerHTML = `
+            <h2>Clôture Manuelle</h2>
+            <div class="trade-form">
+                <div class="form-group">
+                    <label>Trade à clôturer:</label>
+                    <select id="tradeToClose">
+                        ${tradesOptions}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prix de clôture:</label>
+                    <input type="number" id="manualClosePrice" step="0.00001" placeholder="Prix de sortie">
+                </div>
+                <div class="form-buttons">
+                    <button class="btn-submit" onclick="dashboard.executeManualClose()">Clôturer</button>
+                    <button class="btn-secondary" onclick="dashboard.closeModal()">Annuler</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal();
+    }
+
+    executeManualClose() {
+        const tradeIndex = parseInt(document.getElementById('tradeToClose')?.value);
+        const closePrice = parseFloat(document.getElementById('manualClosePrice')?.value);
+        
+        if (isNaN(tradeIndex) || isNaN(closePrice)) {
+            alert('Veuillez remplir tous les champs');
+            return;
+        }
+        
+        const trade = this.trades[tradeIndex];
+        if (!trade || trade.status === 'closed') {
+            alert('Trade invalide');
+            return;
+        }
+        
+        trade.closePrice = closePrice;
+        trade.status = 'closed';
+        trade.result = 'MANUAL';
+        trade.pnl = this.calculatePnL(trade);
+        trade.lastModified = Date.now();
+        
+        this.saveToStorage();
+        this.updateStats();
+        this.renderTradesTable();
+        this.updateCharts();
+        this.updateCalendar();
+        this.closeModal();
+        
+        this.showNotification(`Trade ${trade.currency} clôturé manuellement`);
+    }
 }
 
 // Initialisation
