@@ -260,6 +260,12 @@
                                 <i class="fas fa-sync-alt"></i>
                             </div>
                         </div>
+                        <div class="live-prices-section">
+                            <h4>Prix en Temps Réel</h4>
+                            <div class="prices-grid" id="pricesGrid">
+                                <!-- Prix réels affichés ici -->
+                            </div>
+                        </div>
                         <div class="trends-grid" id="trendsGrid">
                             <div class="trend-item bullish">
                                 <div class="trend-pair">EUR/USD</div>
@@ -366,78 +372,23 @@
             }
         }
         
-        // Fonction pour actualiser les corrélations
-        function refreshCorrelations() {
-            const correlations = [
-                { pair: "EUR/USD vs GBP/USD", value: (Math.random() * 0.4 + 0.6).toFixed(2), type: "positive" },
-                { pair: "USD/JPY vs USD/CHF", value: (Math.random() * 0.4 + 0.5).toFixed(2), type: "positive" },
-                { pair: "EUR/USD vs USD/CHF", value: -(Math.random() * 0.3 + 0.7).toFixed(2), type: "negative" },
-                { pair: "GBP/USD vs USD/JPY", value: -(Math.random() * 0.5 + 0.2).toFixed(2), type: "negative" }
-            ];
-            
-            const grid = document.getElementById('correlationGrid');
-            grid.innerHTML = '';
-            
-            correlations.forEach(corr => {
-                const item = document.createElement('div');
-                item.className = 'correlation-item';
-                item.innerHTML = `
-                    <div class="pair-name">${corr.pair}</div>
-                    <div class="correlation-value ${corr.type}">${corr.value > 0 ? '+' : ''}${corr.value}</div>
-                    <div class="correlation-strength">${getCorrelationStrength(Math.abs(corr.value))}</div>
-                `;
-                grid.appendChild(item);
-            });
-        }
+        // Système Multi-API intégré
+        let multiApiForex = null;
         
-        function getCorrelationStrength(value) {
-            if (value > 0.8) return "Très forte corrélation";
-            if (value > 0.6) return "Forte corrélation";
-            if (value > 0.4) return "Corrélation modérée";
-            return "Corrélation faible";
-        }
-        
-        // Fonction pour actualiser les tendances
-        function refreshTrends() {
-            const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CHF', 'NZD/USD'];
-            const trends = pairs.map(pair => ({
-                pair: pair,
-                direction: Math.random() > 0.5 ? 'bullish' : (Math.random() > 0.5 ? 'bearish' : 'neutral'),
-                strength: Math.floor(Math.random() * 40 + 40)
-            }));
-            
-            const grid = document.getElementById('trendsGrid');
-            grid.innerHTML = '';
-            
-            trends.slice(0, 4).forEach(trend => {
-                const item = document.createElement('div');
-                item.className = `trend-item ${trend.direction}`;
-                const icon = trend.direction === 'bullish' ? 'fa-arrow-up' : 
-                           trend.direction === 'bearish' ? 'fa-arrow-down' : 'fa-arrows-alt-h';
-                const dirText = trend.direction === 'bullish' ? 'Haussier' : 
-                              trend.direction === 'bearish' ? 'Baissier' : 'Neutre';
-                
-                item.innerHTML = `
-                    <div class="trend-pair">${trend.pair}</div>
-                    <div class="trend-direction"><i class="fas ${icon}"></i> ${dirText}</div>
-                    <div class="trend-strength">Force: ${trend.strength}%</div>
-                `;
-                grid.appendChild(item);
-            });
-        }
-        
-        // Mettre à jour au chargement de la page
+        // Initialisation avec système Multi-API
         document.addEventListener('DOMContentLoaded', function() {
             updateActiveSessions();
-            refreshCorrelations();
-            refreshTrends();
             
-            // Mettre à jour toutes les minutes
+            // Charger le système Multi-API
+            const script = document.createElement('script');
+            script.src = 'multi-api-forex.js';
+            script.onload = function() {
+                console.log('✅ Système Multi-API chargé');
+            };
+            document.head.appendChild(script);
+            
+            // Mettre à jour les sessions toutes les minutes
             setInterval(updateActiveSessions, 60000);
-            
-            // Boutons de rafraîchissement
-            document.getElementById('refreshCorrelations').addEventListener('click', refreshCorrelations);
-            document.getElementById('refreshTrends').addEventListener('click', refreshTrends);
         });
     </script>
     <script>
