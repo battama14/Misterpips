@@ -1,10 +1,22 @@
-class TradingDashboard {
+window.TradingDashboard = window.TradingDashboard || class TradingDashboard {
     constructor() {
-        this.currentUser = null;
-        this.currentAccount = 'compte1';
-        this.trades = [];
-        this.settings = { capital: 1000, riskPerTrade: 2 };
-        this.accounts = {
+        this.currentUser = sessionStorage.getItem('currentUser') || 'default';
+        this.currentAccount = localStorage.getItem(`currentAccount_${this.currentUser}`) || 'compte1';
+        
+        try {
+            this.trades = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${this.currentAccount}`)) || [];
+        } catch (error) {
+            console.error('Erreur lors du chargement des trades:', error);
+            this.trades = [];
+        }
+        
+        try {
+            this.settings = JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${this.currentAccount}`)) || { capital: 1000, riskPerTrade: 2 };
+        } catch (error) {
+            console.error('Erreur lors du chargement des paramètres:', error);
+            this.settings = { capital: 1000, riskPerTrade: 2 };
+        }
+        this.accounts = JSON.parse(localStorage.getItem(`accounts_${this.currentUser}`)) || {
             'compte1': { name: 'Compte Principal', capital: 1000 },
             'compte2': { name: 'Compte Démo', capital: 500 },
             'compte3': { name: 'Compte Swing', capital: 2000 }
@@ -14,6 +26,9 @@ class TradingDashboard {
         this.currentTrade = {};
         this.livePrices = {};
         this.previousModalContent = null;
+        this.lastLocalChange = 0;
+        this.autoSyncCode = localStorage.getItem('autoSyncCode') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        localStorage.setItem('autoSyncCode', this.autoSyncCode);
         this.checklistSteps = [
             {
                 title: "✅ 1. Contexte Global",
@@ -72,23 +87,35 @@ class TradingDashboard {
     init() {
         this.setupEventListeners();
         this.initAccountSelector();
-        this.updateStats();
-        this.renderTradesTable();
-        this.initCharts();
-        this.updateCharts();
-        this.initCalendar();
-        this.updateAccountDisplay();
-        this.updateAccountSelector();
-        // Sync automatique à l'ouverture
-        setTimeout(() => this.autoSyncToCloud(), 2000);
         
-        // Setup account selector listener
+        // Chargement automatique Firebase au démarrage
+        this.autoLoadFromFirebase().then(() => {
+            this.updateStats();
+            this.renderTradesTable();
+            this.initCharts();
+            this.updateCharts();
+            this.initCalendar();
+            this.updateAccountDisplay();
+            this.updateAccountSelector();
+            this.renderCorrelationMatrix();
+            this.updatePerformanceMetrics();
+            this.updateCumulativePerformance();
+            this.updateMonthlyPerformance();
+            console.log('Dashboard initialisé avec', this.trades.length, 'trades');
+        });
+        
         const accountSelect = document.getElementById('accountSelect');
         if (accountSelect) {
             accountSelect.addEventListener('change', (e) => {
                 this.switchAccount(e.target.value);
             });
         }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     setupEventListeners() {
@@ -124,7 +151,7 @@ class TradingDashboard {
     showCloseTradeModal() {
         const openTrades = this.trades.filter(t => t.status === 'open');
         if (openTrades.length === 0) {
-            alert('Aucun trade ouvert à clôturer');
+            this.showNotification('Aucun trade ouvert à clôturer');
             return;
         }
         
@@ -232,6 +259,7 @@ class TradingDashboard {
             return;
         }
         
+        this.lastLocalChange = Date.now(); // Marquer modification locale
         trade.closeType = closeType;
         trade.closePrice = closePrice;
         trade.status = 'closed';
@@ -260,14 +288,21 @@ class TradingDashboard {
         
         this.showNotification(`Trade ${trade.currency} clôturé en ${trade.result}`);
         
+        // Mise à jour immédiate
+        this.renderCorrelationMatrix();
+        this.updatePerformanceMetrics();
+        this.updateCumulativePerformance();
+        this.updateMonthlyPerformance();
+        
         // Sync automatique
-        this.autoSyncToCloud();
+        this.autoSyncToFirebase();
     }
     
     closeTrade(index, result) {
         const trade = this.trades[index];
         if (!trade || trade.status === 'closed') return;
         
+        this.lastLocalChange = Date.now(); // Marquer modification locale
         trade.result = result;
         trade.status = 'closed';
         trade.lastModified = Date.now();
@@ -291,8 +326,14 @@ class TradingDashboard {
         
         this.showNotification(`Trade ${trade.currency} clôturé en ${result}`);
         
+        // Mise à jour immédiate
+        this.renderCorrelationMatrix();
+        this.updatePerformanceMetrics();
+        this.updateCumulativePerformance();
+        this.updateMonthlyPerformance();
+        
         // Sync automatique
-        this.autoSyncToCloud();
+        this.autoSyncToFirebase();
     }
 
     getCurrentDate() {
@@ -680,6 +721,7 @@ class TradingDashboard {
         const riskPercent = this.settings.riskPerTrade;
         const multipleTP = document.getElementById('multipleTP')?.checked;
         const timestamp = Date.now();
+        this.lastLocalChange = timestamp; // Marquer modification locale
 
         if (!currency || !entryPoint || !stopLoss) {
             alert('Veuillez remplir tous les champs obligatoires');
@@ -780,8 +822,14 @@ class TradingDashboard {
         this.updateCalendar();
         this.showNotification('Trade(s) enregistré(s) avec succès!');
         
+        // Mise à jour immédiate
+        this.renderCorrelationMatrix();
+        this.updatePerformanceMetrics();
+        this.updateCumulativePerformance();
+        this.updateMonthlyPerformance();
+        
         // Sync automatique
-        this.autoSyncToCloud();
+        this.autoSyncToFirebase();
     }
 
     showNotification(message) {
@@ -810,12 +858,8 @@ class TradingDashboard {
         const closedTrades = this.trades.filter(t => t.status === 'closed');
         const openTrades = this.trades.filter(t => t.status === 'open');
         const totalPnL = closedTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
-        const winRate = closedTrades.length > 0 ? 
-            (closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length / closedTrades.length * 100).toFixed(1) : 0;
-        
-        // Calculer le capital actuel (capital initial + gains/pertes)
-        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
-        const currentCapital = initialCapital + totalPnL;
+        const winningTrades = closedTrades.filter(t => parseFloat(t.pnl || 0) > 0);
+        const winRate = closedTrades.length > 0 ? (winningTrades.length / closedTrades.length * 100).toFixed(1) : '0.0';
         
         const statsElements = {
             totalTrades: document.getElementById('totalTrades'),
@@ -826,16 +870,26 @@ class TradingDashboard {
         };
         
         if (statsElements.totalTrades) statsElements.totalTrades.textContent = this.trades.length;
-        if (statsElements.openTrades) statsElements.openTrades.textContent = openTrades.length;
+        if (statsElements.openTrades) {
+            statsElements.openTrades.textContent = openTrades.length;
+            statsElements.openTrades.className = openTrades.length > 0 ? 'warning' : '';
+        }
         if (statsElements.totalPnL) {
             statsElements.totalPnL.textContent = `$${totalPnL.toFixed(2)}`;
             statsElements.totalPnL.className = totalPnL >= 0 ? 'positive' : 'negative';
         }
-        if (statsElements.winRate) statsElements.winRate.textContent = `${winRate}%`;
+        if (statsElements.winRate) {
+            statsElements.winRate.textContent = `${winRate}%`;
+            const rate = parseFloat(winRate);
+            statsElements.winRate.className = rate >= 60 ? 'positive' : rate >= 40 ? 'warning' : 'negative';
+        }
         if (statsElements.capital) {
+            const currentCapital = this.settings.capital + totalPnL;
             statsElements.capital.textContent = `$${currentCapital.toFixed(2)}`;
             statsElements.capital.className = totalPnL >= 0 ? 'positive' : 'negative';
         }
+        
+        // Les métriques avancées sont mises à jour via setTimeout dans les fonctions appelantes
     }
 
     renderTradesTable() {
@@ -849,6 +903,11 @@ class TradingDashboard {
             const pnl = parseFloat(trade.pnl || 0);
             const pnlClass = pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : '';
             
+            // Calculer le risque et gain potentiel
+            const riskAmount = this.calculateRiskAmount(trade);
+            const potentialGain = this.calculatePotentialGain(trade);
+            const riskReward = riskAmount > 0 ? (potentialGain / riskAmount).toFixed(2) : '0.00';
+            
             row.innerHTML = `
                 <td>${trade.date}</td>
                 <td>${trade.currency}</td>
@@ -857,6 +916,9 @@ class TradingDashboard {
                 <td>${trade.takeProfit}</td>
                 <td>${trade.lotSize}</td>
                 <td>${trade.riskPercent || 2}%</td>
+                <td class="negative">$${riskAmount.toFixed(2)}</td>
+                <td class="positive">$${potentialGain.toFixed(2)}</td>
+                <td class="${parseFloat(riskReward) >= 2 ? 'positive' : parseFloat(riskReward) >= 1.5 ? 'warning' : 'negative'}">1:${riskReward}</td>
                 <td>${trade.result || (trade.status === 'open' ? 'OPEN' : '-')}</td>
                 <td class="${pnlClass}">$${pnl.toFixed(2)}</td>
                 <td>
@@ -877,7 +939,13 @@ class TradingDashboard {
         const result = prompt('Résultat du trade (TP/SL/BE):', 'TP');
         if (!result) return;
         
-        this.closeTrade(index, result.toUpperCase());
+        const validResults = ['TP', 'SL', 'BE'];
+        const cleanResult = result.toUpperCase().trim();
+        if (validResults.includes(cleanResult)) {
+            this.closeTrade(index, cleanResult);
+        } else {
+            this.showNotification('Résultat invalide. Utilisez TP, SL ou BE');
+        }
     }
 
     calculatePnL(trade) {
@@ -908,16 +976,64 @@ class TradingDashboard {
         return parseFloat(pnl.toFixed(2));
     }
 
+    calculateRiskAmount(trade) {
+        const entryPoint = parseFloat(trade.entryPoint);
+        const stopLoss = parseFloat(trade.stopLoss);
+        const lotSize = parseFloat(trade.lotSize);
+        const currency = trade.currency;
+        
+        if (!entryPoint || !stopLoss || !lotSize) return 0;
+        
+        const slDistance = Math.abs(entryPoint - stopLoss);
+        let riskAmount = 0;
+        
+        if (currency === 'XAU/USD') {
+            riskAmount = slDistance * lotSize * 100;
+        } else if (currency === 'NAS100' || currency === 'GER40') {
+            riskAmount = slDistance * lotSize;
+        } else {
+            const pipDistance = slDistance * Math.pow(10, this.getDecimalPlaces(currency));
+            riskAmount = pipDistance * lotSize * 10;
+        }
+        
+        return riskAmount;
+    }
+
+    calculatePotentialGain(trade) {
+        const entryPoint = parseFloat(trade.entryPoint);
+        const takeProfit = parseFloat(trade.takeProfit);
+        const lotSize = parseFloat(trade.lotSize);
+        const currency = trade.currency;
+        
+        if (!entryPoint || !takeProfit || !lotSize) return 0;
+        
+        const tpDistance = Math.abs(takeProfit - entryPoint);
+        let potentialGain = 0;
+        
+        if (currency === 'XAU/USD') {
+            potentialGain = tpDistance * lotSize * 100;
+        } else if (currency === 'NAS100' || currency === 'GER40') {
+            potentialGain = tpDistance * lotSize;
+        } else {
+            const pipDistance = tpDistance * Math.pow(10, this.getDecimalPlaces(currency));
+            potentialGain = pipDistance * lotSize * 10;
+        }
+        
+        return potentialGain;
+    }
+
     saveToStorage() {
-        if (!this.currentUser) return;
-        
-        localStorage.setItem(`trades_${this.currentUser}_${this.currentAccount}`, JSON.stringify(this.trades));
-        localStorage.setItem(`settings_${this.currentUser}_${this.currentAccount}`, JSON.stringify(this.settings));
-        localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
-        localStorage.setItem(`currentAccount_${this.currentUser}`, this.currentAccount);
-        
-        // Sauvegarder automatiquement dans Firebase
-        this.saveUserData();
+        try {
+            localStorage.setItem(`trades_${this.currentUser}_${this.currentAccount}`, JSON.stringify(this.trades));
+            localStorage.setItem(`settings_${this.currentUser}_${this.currentAccount}`, JSON.stringify(this.settings));
+            localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
+            this.lastLocalChange = Date.now();
+            // Auto-sync immédiat après sauvegarde
+            setTimeout(() => this.autoSyncToFirebase(), 100);
+        } catch (error) {
+            console.error('Erreur sauvegarde localStorage:', error);
+            this.showNotification('⚠️ Erreur de sauvegarde locale');
+        }
     }
 
     showSettings() {
@@ -966,6 +1082,7 @@ class TradingDashboard {
         const monthlyTarget = parseFloat(document.getElementById('monthlyTargetInput')?.value) || 20;
         const yearlyTarget = parseFloat(document.getElementById('yearlyTargetInput')?.value) || 100;
         
+        this.lastLocalChange = Date.now(); // Marquer modification locale
         this.settings = { 
             capital, 
             riskPerTrade, 
@@ -982,17 +1099,26 @@ class TradingDashboard {
         this.showNotification('Paramètres sauvegardés!');
         
         // Sync automatique
-        this.autoSyncToCloud();
+        this.autoSyncToFirebase();
     }
 
     resetAllData() {
         if (confirm('Êtes-vous sûr de vouloir supprimer toutes les données ?')) {
-            this.trades = [];
-            this.settings = { capital: 1000, riskPerTrade: 2 };
-            this.saveToStorage();
-            this.updateStats();
-            this.renderTradesTable();
-            this.showNotification('Données réinitialisées!');
+            try {
+                this.lastLocalChange = Date.now(); // Marquer modification locale
+                this.trades = [];
+                this.settings = { capital: 1000, riskPerTrade: 2 };
+                this.saveToStorage();
+                this.updateStats();
+                this.renderTradesTable();
+                this.updateCharts();
+                this.updateCalendar();
+                this.showNotification('Données réinitialisées!');
+                this.autoSyncToFirebase(); // Sync immédiat
+            } catch (error) {
+                console.error('Erreur reset:', error);
+                this.showNotification('⚠️ Erreur lors de la réinitialisation');
+            }
         }
     }
 
@@ -1029,26 +1155,37 @@ class TradingDashboard {
         if (!name) return;
         const capital = parseFloat(prompt('Capital initial:', '1000')) || 1000;
         const accountId = 'compte' + (Object.keys(this.accounts).length + 1);
+        this.lastLocalChange = Date.now(); // Marquer modification locale
         this.accounts[accountId] = { name, capital };
         localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
         this.updateAccountSelector();
         this.showNotification('Nouveau compte créé!');
+        this.autoSyncToFirebase(); // Sync immédiat
     }
 
     deleteAccount() {
         if (Object.keys(this.accounts).length <= 1) {
-            alert('Impossible de supprimer le dernier compte');
+            this.showNotification('Impossible de supprimer le dernier compte');
             return;
         }
         if (confirm(`Supprimer le compte ${this.accounts[this.currentAccount]?.name}?`)) {
-            delete this.accounts[this.currentAccount];
-            localStorage.removeItem(`trades_${this.currentUser}_${this.currentAccount}`);
-            localStorage.removeItem(`settings_${this.currentUser}_${this.currentAccount}`);
-            this.currentAccount = Object.keys(this.accounts)[0];
-            localStorage.setItem(`currentAccount_${this.currentUser}`, this.currentAccount);
-            localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
-            this.updateAccountSelector();
-            this.switchAccount(this.currentAccount);
+            try {
+                this.lastLocalChange = Date.now(); // Marquer la modification locale
+                delete this.accounts[this.currentAccount];
+                localStorage.removeItem(`trades_${this.currentUser}_${this.currentAccount}`);
+                localStorage.removeItem(`settings_${this.currentUser}_${this.currentAccount}`);
+                this.currentAccount = Object.keys(this.accounts)[0];
+                localStorage.setItem(`currentAccount_${this.currentUser}`, this.currentAccount);
+                localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
+                this.updateAccountSelector();
+                this.switchAccount(this.currentAccount);
+                this.showNotification('Compte supprimé avec succès');
+                // Sync immédiat pour écraser Firebase
+                this.autoSyncToFirebase();
+            } catch (error) {
+                console.error('Erreur suppression compte:', error);
+                this.showNotification('⚠️ Erreur lors de la suppression');
+            }
         }
     }
 
@@ -1075,142 +1212,30 @@ class TradingDashboard {
         }
     }
 
-    async initFirebase() {
+    initFirebase() {
         try {
-            // Attendre que Firebase Auth soit disponible
-            await this.waitForFirebaseAuth();
-            
-            // Importer Firebase modules
-            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
-            const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
-            const { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-            
-            const firebaseConfig = {
-                apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
-                authDomain: "misterpips-b71fb.firebaseapp.com",
-                projectId: "misterpips-b71fb",
-                storageBucket: "misterpips-b71fb.firebasestorage.app",
-                messagingSenderId: "574231126409",
-                appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
-            };
-            
-            this.app = initializeApp(firebaseConfig);
-            this.auth = getAuth(this.app);
-            this.db = getFirestore(this.app);
-            this.firebaseModules = { doc, setDoc, getDoc, onSnapshot, serverTimestamp };
-            
-            // Écouter les changements d'authentification
-            onAuthStateChanged(this.auth, (user) => {
-                if (user) {
-                    this.currentUser = user.email;
-                    this.loadUserData();
-                    this.setupRealtimeSync();
-                } else {
-                    window.location.href = 'index.html';
-                }
-            });
-            
-        } catch (error) {
-            console.error('Erreur Firebase:', error);
-            // Fallback en mode local
-            this.currentUser = 'local_user';
-            this.loadLocalData();
-        }
-    }
-    
-    waitForFirebaseAuth() {
-        return new Promise((resolve) => {
-            const checkAuth = () => {
-                if (window.firebaseAuth || document.querySelector('script[src*="firebase-auth"]')) {
-                    resolve();
-                } else {
-                    setTimeout(checkAuth, 100);
-                }
-            };
-            checkAuth();
-        });
-    }
-    
-    async loadUserData() {
-        if (!this.db || !this.currentUser) {
-            this.loadLocalData();
-            return;
-        }
-        
-        try {
-            const userDocRef = this.firebaseModules.doc(this.db, 'users', this.currentUser);
-            const userDoc = await this.firebaseModules.getDoc(userDocRef);
-            
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                this.accounts = userData.accounts || this.accounts;
-                this.currentAccount = userData.currentAccount || 'compte1';
-                this.trades = userData.trades?.[this.currentAccount] || [];
-                this.settings = userData.settings?.[this.currentAccount] || { capital: 1000, riskPerTrade: 2 };
-            } else {
-                // Créer les données par défaut pour le nouvel utilisateur
-                await this.saveUserData();
-            }
-            
-            this.updateStats();
-            this.renderTradesTable();
-            this.updateCharts();
-            this.updateCalendar();
-            this.updateAccountDisplay();
-            this.updateAccountSelector();
-            
-        } catch (error) {
-            console.error('Erreur chargement données utilisateur:', error);
-            this.loadLocalData();
-        }
-    }
-    
-    loadLocalData() {
-        this.currentUser = sessionStorage.getItem('currentUser') || 'local_user';
-        this.currentAccount = localStorage.getItem(`currentAccount_${this.currentUser}`) || 'compte1';
-        
-        try {
-            this.trades = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${this.currentAccount}`)) || [];
-            this.settings = JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${this.currentAccount}`)) || { capital: 1000, riskPerTrade: 2 };
-            this.accounts = JSON.parse(localStorage.getItem(`accounts_${this.currentUser}`)) || this.accounts;
-        } catch (error) {
-            console.error('Erreur chargement local:', error);
-        }
-    }
-    
-    async saveUserData() {
-        // Sauvegarder en local d'abord
-        this.saveToStorage();
-        
-        // Puis sauvegarder dans Firebase si disponible
-        if (this.db && this.currentUser) {
-            try {
-                const userData = {
-                    accounts: this.accounts,
-                    currentAccount: this.currentAccount,
-                    trades: {},
-                    settings: {},
-                    lastModified: this.firebaseModules.serverTimestamp()
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+                    authDomain: "misterpips-b71fb.firebaseapp.com",
+                    databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+                    projectId: "misterpips-b71fb",
+                    storageBucket: "misterpips-b71fb.firebasestorage.app",
+                    messagingSenderId: "574231126409",
+                    appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
                 };
-                
-                // Sauvegarder tous les comptes
-                Object.keys(this.accounts).forEach(accountId => {
-                    userData.trades[accountId] = accountId === this.currentAccount ? this.trades : 
-                        JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${accountId}`)) || [];
-                    userData.settings[accountId] = accountId === this.currentAccount ? this.settings :
-                        JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${accountId}`)) || { capital: 1000, riskPerTrade: 2 };
-                });
-                
-                const userDocRef = this.firebaseModules.doc(this.db, 'users', this.currentUser);
-                await this.firebaseModules.setDoc(userDocRef, userData);
-                
-                this.updateSyncStatus('✅ Syncé');
-                setTimeout(() => this.updateSyncStatus('🔄 Sync Auto'), 2000);
-                
-            } catch (error) {
-                console.error('Erreur sauvegarde Firebase:', error);
-                this.updateSyncStatus('❌ Erreur sync');
+                firebase.initializeApp(firebaseConfig);
             }
+            this.database = firebase?.database?.() || null;
+            this.deviceId = this.getDeviceId();
+            this.syncInProgress = false;
+            this.lastSyncTime = 0;
+            if (this.database) {
+                this.setupRealtimeSync();
+            }
+        } catch (error) {
+            console.log('Firebase non disponible, mode local uniquement');
+            this.database = null;
         }
     }
 
@@ -1218,18 +1243,41 @@ class TradingDashboard {
         const modalContent = document.getElementById('modalContent');
         if (!modalContent) return;
         
+        const lastSync = localStorage.getItem('lastSyncTime');
+        const syncStatus = this.database ? '🟢 Connecté' : '🔴 Hors ligne';
+        
         modalContent.innerHTML = `
             <h2>☁️ Synchronisation Cloud</h2>
             <div class="trade-form">
-                <div class="form-group">
-                    <label>Code de synchronisation:</label>
-                    <input type="text" id="syncCode" placeholder="Entrez votre code" value="${this.getSyncCode()}">
+                <div style="background: rgba(0,212,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4>📊 État de la synchronisation</h4>
+                    <p><strong>Statut:</strong> ${syncStatus}</p>
+                    <p><strong>Dernière sync:</strong> ${lastSync ? new Date(parseInt(lastSync)).toLocaleString() : 'Jamais'}</p>
+                    <p><strong>Référence:</strong> ${localStorage.getItem('syncCode') || 'Non définie'}</p>
                 </div>
+                
+                <div class="form-group">
+                    <label>Code de synchronisation (référence unique):</label>
+                    <input type="text" id="syncCode" placeholder="Entrez votre code" value="${this.getSyncCode()}">
+                    <small style="opacity: 0.8; font-size: 0.9em;">Ce code permet de synchroniser vos données entre appareils</small>
+                </div>
+                
                 <div class="form-buttons">
-                    <button class="btn-primary" onclick="dashboard.uploadToFirebase()">📤 Sauvegarder</button>
-                    <button class="btn-secondary" onclick="dashboard.downloadFromFirebase()">📥 Télécharger</button>
-                    <button class="btn-info" onclick="dashboard.exportAllData()">💾 Export Local</button>
-                    <button class="btn-warning" onclick="dashboard.importAllData()">📁 Import Local</button>
+                    <button class="btn-primary" onclick="dashboard.uploadToFirebase()">📤 Sauvegarder vers Cloud</button>
+                    <button class="btn-secondary" onclick="dashboard.downloadFromFirebase()">📥 Charger depuis Cloud</button>
+                    <button class="btn-info" onclick="dashboard.exportAllData()">💾 Export Local (.json)</button>
+                    <button class="btn-warning" onclick="dashboard.importAllData()">📁 Import Local (.json)</button>
+                    <button class="btn-danger" onclick="dashboard.closeModal()">Fermer</button>
+                </div>
+                
+                <div style="background: rgba(255,193,7,0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <h4>ℹ️ Comment ça marche</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 0.9em;">
+                        <li><strong>Sauvegarder:</strong> Envoie vos données vers le cloud avec votre code</li>
+                        <li><strong>Charger:</strong> Récupère les données du cloud avec un code</li>
+                        <li><strong>Auto-sync:</strong> Synchronisation automatique toutes les 2 minutes</li>
+                        <li><strong>Référence:</strong> La dernière modification est utilisée comme référence</li>
+                    </ul>
                 </div>
             </div>
         `;
@@ -1242,15 +1290,25 @@ class TradingDashboard {
 
     uploadToFirebase() {
         if (!this.database) {
-            alert('Firebase non disponible');
+            this.showNotification('❌ Firebase non disponible - mode local uniquement');
             return;
         }
-        const syncCode = document.getElementById('syncCode')?.value || this.getSyncCode();
+        
+        const syncCode = document.getElementById('syncCode')?.value?.trim();
+        if (!syncCode) {
+            this.showNotification('❌ Veuillez entrer un code de synchronisation');
+            return;
+        }
+        
+        this.updateSyncStatus('🔄 Sauvegarde...');
+        
         const data = {
             accounts: this.accounts,
             trades: {},
             settings: {},
-            lastSync: Date.now()
+            lastSync: Date.now(),
+            deviceId: this.deviceId,
+            version: '2.0'
         };
         
         Object.keys(this.accounts).forEach(accountId => {
@@ -1261,51 +1319,82 @@ class TradingDashboard {
         this.database.ref(`users/${syncCode}`).set(data)
             .then(() => {
                 localStorage.setItem('syncCode', syncCode);
-                this.showNotification('Données sauvegardées dans le cloud!');
+                localStorage.setItem('lastSyncTime', data.lastSync.toString());
+                this.lastSyncTime = data.lastSync;
+                this.showNotification('✅ Données sauvegardées dans le cloud!');
+                this.updateSyncStatus('✅ Sauvegardé');
                 this.closeModal();
             })
             .catch(error => {
-                alert('Erreur de sauvegarde: ' + error.message);
+                console.error('Erreur Firebase:', error);
+                this.showNotification('❌ Erreur de sauvegarde: ' + error.message);
+                this.updateSyncStatus('❌ Erreur');
             });
     }
 
     downloadFromFirebase() {
         if (!this.database) {
-            alert('Firebase non disponible');
+            this.showNotification('❌ Firebase non disponible - mode local uniquement');
             return;
         }
-        const syncCode = document.getElementById('syncCode')?.value;
+        
+        const syncCode = document.getElementById('syncCode')?.value?.trim();
         if (!syncCode) {
-            alert('Veuillez entrer un code de synchronisation');
+            this.showNotification('❌ Veuillez entrer un code de synchronisation');
             return;
         }
+        
+        this.updateSyncStatus('🔄 Chargement...');
         
         this.database.ref(`users/${syncCode}`).once('value')
             .then(snapshot => {
                 const data = snapshot.val();
                 if (!data) {
-                    alert('Aucune donnée trouvée pour ce code');
+                    this.showNotification('❌ Aucune donnée trouvée pour ce code');
+                    this.updateSyncStatus('❌ Code invalide');
                     return;
                 }
                 
+                // Confirmation avant écrasement
+                if (!confirm('⚠️ Cela va remplacer vos données locales. Continuer?')) {
+                    this.updateSyncStatus('🔄 Annulé');
+                    return;
+                }
+                
+                // Fusionner les données
                 this.accounts = data.accounts || this.accounts;
                 Object.keys(data.trades || {}).forEach(accountId => {
-                    localStorage.setItem(`trades_${this.currentUser}_${accountId}`, JSON.stringify(data.trades[accountId]));
+                    const remoteTrades = data.trades[accountId] || [];
+                    const localTrades = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${accountId}`)) || [];
+                    const mergedTrades = this.mergeTrades(localTrades, remoteTrades);
+                    localStorage.setItem(`trades_${this.currentUser}_${accountId}`, JSON.stringify(mergedTrades));
                 });
+                
                 Object.keys(data.settings || {}).forEach(accountId => {
                     localStorage.setItem(`settings_${this.currentUser}_${accountId}`, JSON.stringify(data.settings[accountId]));
                 });
                 
                 localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
                 localStorage.setItem('syncCode', syncCode);
+                localStorage.setItem('lastSyncTime', (data.lastSync || Date.now()).toString());
+                this.lastSyncTime = data.lastSync || Date.now();
                 
+                // Recharger l'interface
                 this.switchAccount(this.currentAccount);
                 this.updateAccountSelector();
-                this.showNotification('Données téléchargées du cloud!');
+                this.updateStats();
+                this.renderTradesTable();
+                this.updateCharts();
+                this.updateCalendar();
+                
+                this.showNotification('✅ Données chargées depuis le cloud!');
+                this.updateSyncStatus('✅ Chargé');
                 this.closeModal();
             })
             .catch(error => {
-                alert('Erreur de téléchargement: ' + error.message);
+                console.error('Erreur Firebase:', error);
+                this.showNotification('❌ Erreur de chargement: ' + error.message);
+                this.updateSyncStatus('❌ Erreur');
             });
     }
 
@@ -1444,37 +1533,57 @@ class TradingDashboard {
     }
 
     initGainsGauge() {
-        // Gauge simple avec CSS
+        // Initialisation de la gauge avec valeurs par défaut
+        this.updateGainsGauge();
     }
 
     initConfluencesChart() {
         const ctx = document.getElementById('confluencesChart');
         if (!ctx) return;
         
-        this.confluencesChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Excellentes', 'Bonnes', 'Moyennes', 'Faibles'],
-                datasets: [{
-                    data: [0, 0, 0, 0],
-                    backgroundColor: ['#4ecdc4', '#00d4ff', '#ffc107', '#ff6b6b']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        labels: { color: '#ffffff' }
+        try {
+            this.confluencesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Excellentes (6-7)', 'Bonnes (4-5)', 'Moyennes (2-3)', 'Faibles (0-1)'],
+                    datasets: [{
+                        data: [0, 0, 0, 1],
+                        backgroundColor: ['#4ecdc4', '#00d4ff', '#ffc107', '#ff6b6b'],
+                        borderWidth: 2,
+                        borderColor: '#1a1a2e'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { 
+                                color: '#ffffff',
+                                padding: 6,
+                                font: { size: 10 }
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.error('Erreur graphique confluences:', error);
+        }
     }
 
     updateCharts() {
-        this.updateGainsGauge();
-        this.updateConfluencesChart();
-        this.renderCorrelationMatrix();
+        try {
+            this.updateGainsGauge();
+            this.updateConfluencesChart();
+            this.renderCorrelationMatrix();
+            this.updatePerformanceMetrics();
+            this.updateCumulativePerformance();
+            this.updateMonthlyPerformance();
+        } catch (error) {
+            console.log('Erreur updateCharts:', error);
+        }
     }
 
     generateCorrelationMatrix() {
@@ -1489,48 +1598,34 @@ class TradingDashboard {
         ];
 
         const matrix = {};
-        const allTrades = this.trades.filter(t => t.confluences && Object.keys(t.confluences).length > 0);
-        
-        if (allTrades.length === 0) {
-            // Matrice par défaut si pas de trades
-            confluenceKeys.forEach(conf1 => {
-                matrix[conf1.key] = {};
-                confluenceKeys.forEach(conf2 => {
-                    matrix[conf1.key][conf2.key] = conf1.key === conf2.key ? 100 : 0;
-                });
-            });
-            return { matrix, confluenceKeys };
-        }
+        const closedTrades = this.trades.filter(t => t.status === 'closed' && t.confluences);
         
         confluenceKeys.forEach(conf1 => {
             matrix[conf1.key] = {};
             confluenceKeys.forEach(conf2 => {
                 if (conf1.key === conf2.key) {
-                    matrix[conf1.key][conf2.key] = 100;
+                    // Diagonal: taux de réussite de cette confluence seule
+                    const tradesWithConf = closedTrades.filter(t => 
+                        t.confluences[conf1.key] && this.isValidConfluence(t.confluences[conf1.key])
+                    );
+                    const winningTrades = tradesWithConf.filter(t => parseFloat(t.pnl || 0) > 0);
+                    matrix[conf1.key][conf2.key] = tradesWithConf.length > 0 ? 
+                        Math.round((winningTrades.length / tradesWithConf.length) * 100) : 0;
                 } else {
-                    // Trades avec les deux confluences valides
-                    const bothValid = allTrades.filter(trade => {
-                        const conf = trade.confluences || {};
-                        return this.isValidConfluence(conf[conf1.key]) && this.isValidConfluence(conf[conf2.key]);
-                    });
+                    // Corrélation entre deux confluences différentes
+                    const tradesWithBoth = closedTrades.filter(t => 
+                        t.confluences[conf1.key] && this.isValidConfluence(t.confluences[conf1.key]) &&
+                        t.confluences[conf2.key] && this.isValidConfluence(t.confluences[conf2.key])
+                    );
+                    const winningTradesBoth = tradesWithBoth.filter(t => parseFloat(t.pnl || 0) > 0);
                     
-                    // Trades gagnants avec les deux confluences
-                    const bothValidWinning = bothValid.filter(trade => {
-                        return trade.status === 'closed' && parseFloat(trade.pnl || 0) > 0;
-                    });
-                    
-                    // Trades avec seulement la première confluence
-                    const firstValid = allTrades.filter(trade => {
-                        const conf = trade.confluences || {};
-                        return this.isValidConfluence(conf[conf1.key]);
-                    });
-                    
-                    // Calcul du pourcentage de réussite
-                    if (bothValid.length > 0) {
-                        const successRate = (bothValidWinning.length / bothValid.length) * 100;
-                        matrix[conf1.key][conf2.key] = Math.round(successRate);
+                    if (tradesWithBoth.length > 0) {
+                        matrix[conf1.key][conf2.key] = Math.round((winningTradesBoth.length / tradesWithBoth.length) * 100);
                     } else {
-                        matrix[conf1.key][conf2.key] = 0;
+                        // Estimation basée sur les données existantes
+                        const baseRate = closedTrades.length > 0 ? 
+                            (closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length / closedTrades.length) * 100 : 50;
+                        matrix[conf1.key][conf2.key] = Math.round(baseRate);
                     }
                 }
             });
@@ -1545,17 +1640,28 @@ class TradingDashboard {
         return !invalid.some(term => confluenceValue.includes(term));
     }
 
+
+
     renderCorrelationMatrix() {
         const container = document.getElementById('correlationMatrix');
-        if (!container) return;
+        if (!container) {
+            console.log('Container correlationMatrix non trouvé');
+            return;
+        }
         
         const { matrix, confluenceKeys } = this.generateCorrelationMatrix();
-        const totalTrades = this.trades.filter(t => t.confluences && Object.keys(t.confluences).length > 0).length;
+        const closedTrades = this.trades.filter(t => t.status === 'closed' && t.confluences);
+        const totalTrades = closedTrades.length;
         
         let html = `<div class="correlation-info">
-            <p>📊 Analyse basée sur ${totalTrades} trades avec confluences validées</p>
-            <p>🎯 Pourcentage = (Trades gagnants avec les 2 confluences) / (Total trades avec les 2 confluences)</p>
+            <h3>🔗 Matrice de Corrélation ICT</h3>
+            <p>📊 Analyse basée sur ${totalTrades} trades fermés avec confluences</p>
+            <p>🎯 Pourcentage = Taux de réussite avec ces confluences combinées</p>
         </div>`;
+        
+        if (totalTrades === 0) {
+            html += '<div class="no-data">📈 Créez des trades avec confluences pour voir la matrice de corrélation</div>';
+        }
         
         html += '<div class="correlation-grid">';
         
@@ -1569,10 +1675,10 @@ class TradingDashboard {
         confluenceKeys.forEach(conf1 => {
             html += `<div class="correlation-cell row-header">${conf1.name}</div>`;
             confluenceKeys.forEach(conf2 => {
-                const value = matrix[conf1.key][conf2.key];
+                const value = totalTrades > 0 ? matrix[conf1.key][conf2.key] : 50;
                 const cellClass = this.getCorrelationClass(value);
                 const tooltip = conf1.key === conf2.key ? 
-                    `${conf1.name} (même confluence)` : 
+                    `${conf1.name}: ${value}% de réussite` : 
                     `${conf1.name} + ${conf2.name}: ${value}% de réussite`;
                 html += `<div class="correlation-cell data ${cellClass}" title="${tooltip}">${value}%</div>`;
             });
@@ -1580,6 +1686,7 @@ class TradingDashboard {
         
         html += '</div>';
         container.innerHTML = html;
+        console.log('Matrice de corrélation mise à jour avec', totalTrades, 'trades');
     }
 
     getCorrelationClass(value) {
@@ -1595,56 +1702,86 @@ class TradingDashboard {
         const gainsValue = document.getElementById('gainsValue');
         const gainsPercent = document.getElementById('gainsPercent');
         
-        if (gainsValue) gainsValue.textContent = `$${totalPnL.toFixed(2)}`;
+        if (gainsValue) {
+            gainsValue.textContent = `$${totalPnL.toFixed(2)}`;
+            gainsValue.className = totalPnL >= 0 ? 'positive' : 'negative';
+        }
         if (gainsPercent) {
-            const percent = ((totalPnL / this.settings.capital) * 100).toFixed(1);
+            const percent = this.settings.capital > 0 ? ((totalPnL / this.settings.capital) * 100).toFixed(1) : '0.0';
             gainsPercent.textContent = `${percent}%`;
+            gainsPercent.className = totalPnL >= 0 ? 'positive' : 'negative';
+        }
+        
+        // Mise à jour de la gauge visuelle
+        const gauge = document.getElementById('gainsGauge');
+        if (gauge) {
+            const percentValue = Math.abs(parseFloat(gainsPercent?.textContent || '0'));
+            const rotation = Math.min(percentValue * 1.8, 180); // Max 180 degrés
+            gauge.style.background = totalPnL >= 0 ? 
+                `conic-gradient(from 0deg, #4ecdc4 0deg ${rotation}deg, #2a2f3a ${rotation}deg 360deg)` :
+                `conic-gradient(from 0deg, #ff6b6b 0deg ${rotation}deg, #2a2f3a ${rotation}deg 360deg)`;
         }
     }
 
     updateConfluencesChart() {
-        if (!this.confluencesChart) return;
-        
         const analysis = this.generateConfluenceAnalysis();
-        this.confluencesChart.data.datasets[0].data = [
-            analysis.excellent, analysis.good, analysis.average, analysis.poor
-        ];
-        this.confluencesChart.update();
         
+        // Mise à jour du graphique si disponible
+        if (this.confluencesChart) {
+            this.confluencesChart.data.datasets[0].data = [
+                analysis.excellent, analysis.good, analysis.average, analysis.poor
+            ];
+            this.confluencesChart.update('none');
+        }
+        
+        // Mise à jour de l'analyse textuelle
         const analysisDiv = document.getElementById('confluenceAnalysis');
         if (analysisDiv) {
+            const total = analysis.excellent + analysis.good + analysis.average + analysis.poor;
             analysisDiv.innerHTML = `
-                <h4>📊 Analyse des Confluences</h4>
+                <h4>📊 Analyse des Confluences (${total} trades)</h4>
                 <div class="analysis-item">
-                    <span class="confluence-name">Excellentes</span>
+                    <span class="confluence-name">Excellentes (6-7 confluences)</span>
                     <span class="confluence-score score-excellent">${analysis.excellent}</span>
                 </div>
                 <div class="analysis-item">
-                    <span class="confluence-name">Bonnes</span>
+                    <span class="confluence-name">Bonnes (4-5 confluences)</span>
                     <span class="confluence-score score-good">${analysis.good}</span>
                 </div>
                 <div class="analysis-item">
-                    <span class="confluence-name">Moyennes</span>
+                    <span class="confluence-name">Moyennes (2-3 confluences)</span>
                     <span class="confluence-score score-average">${analysis.average}</span>
                 </div>
                 <div class="analysis-item">
-                    <span class="confluence-name">Faibles</span>
+                    <span class="confluence-name">Faibles (0-1 confluence)</span>
                     <span class="confluence-score score-poor">${analysis.poor}</span>
                 </div>
             `;
         }
+        
+        console.log('Analyse des confluences mise à jour:', analysis);
     }
 
     generateConfluenceAnalysis() {
         const analysis = { excellent: 0, good: 0, average: 0, poor: 0 };
+        
+        if (this.trades.length === 0) {
+            return analysis;
+        }
+        
         this.trades.forEach(trade => {
-            const confluences = Object.values(trade.confluences || {});
-            const score = confluences.length;
+            const confluences = trade.confluences || {};
+            const validConfluences = Object.values(confluences).filter(conf => 
+                this.isValidConfluence(conf)
+            );
+            
+            const score = validConfluences.length;
             if (score >= 6) analysis.excellent++;
             else if (score >= 4) analysis.good++;
             else if (score >= 2) analysis.average++;
             else analysis.poor++;
         });
+        
         return analysis;
     }
 
@@ -1781,6 +1918,7 @@ class TradingDashboard {
         if (!summaryDiv) return;
         
         const monthTrades = this.trades.filter(t => {
+            if (!t.date) return false;
             const tradeDate = new Date(t.date);
             return tradeDate.getMonth() === this.currentDate.getMonth() && 
                    tradeDate.getFullYear() === this.currentDate.getFullYear() &&
@@ -1789,30 +1927,32 @@ class TradingDashboard {
         
         const totalPnL = monthTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
         const winTrades = monthTrades.filter(t => parseFloat(t.pnl || 0) > 0).length;
-        const winRate = monthTrades.length > 0 ? (winTrades / monthTrades.length * 100).toFixed(1) : 0;
+        const winRate = monthTrades.length > 0 ? (winTrades / monthTrades.length * 100).toFixed(1) : '0.0';
         
-        // Calculs des objectifs
-        const monthlyPercentage = ((totalPnL / this.settings.capital) * 100).toFixed(2);
+        // Calculs des objectifs avec protection division par zéro
+        const capital = this.settings.capital || 1000;
+        const monthlyPercentage = ((totalPnL / capital) * 100).toFixed(2);
         const monthlyTarget = this.settings.monthlyTarget || 20;
-        const monthlyProgress = ((parseFloat(monthlyPercentage) / monthlyTarget) * 100).toFixed(1);
+        const monthlyProgress = monthlyTarget > 0 ? ((parseFloat(monthlyPercentage) / monthlyTarget) * 100).toFixed(1) : '0.0';
         
         // Calcul journalier (aujourd'hui)
         const today = this.getCurrentDate();
         const todayTrades = this.trades.filter(t => t.date === today && t.status === 'closed');
         const todayPnL = todayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
-        const dailyPercentage = ((todayPnL / this.settings.capital) * 100).toFixed(2);
+        const dailyPercentage = ((todayPnL / capital) * 100).toFixed(2);
         const dailyTarget = this.settings.dailyTarget || 2;
-        const dailyProgress = ((parseFloat(dailyPercentage) / dailyTarget) * 100).toFixed(1);
+        const dailyProgress = dailyTarget > 0 ? ((parseFloat(dailyPercentage) / dailyTarget) * 100).toFixed(1) : '0.0';
         
         // Calcul annuel
         const yearTrades = this.trades.filter(t => {
+            if (!t.date) return false;
             const tradeDate = new Date(t.date);
             return tradeDate.getFullYear() === this.currentDate.getFullYear() && t.status === 'closed';
         });
         const yearPnL = yearTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
-        const yearlyPercentage = ((yearPnL / this.settings.capital) * 100).toFixed(2);
+        const yearlyPercentage = ((yearPnL / capital) * 100).toFixed(2);
         const yearlyTarget = this.settings.yearlyTarget || 100;
-        const yearlyProgress = ((parseFloat(yearlyPercentage) / yearlyTarget) * 100).toFixed(1);
+        const yearlyProgress = yearlyTarget > 0 ? ((parseFloat(yearlyPercentage) / yearlyTarget) * 100).toFixed(1) : '0.0';
         
         summaryDiv.innerHTML = `
             <div class="summary-section">
@@ -1827,7 +1967,7 @@ class TradingDashboard {
                         <div class="value">$${totalPnL.toFixed(2)}</div>
                         <div class="sub-value">${monthlyPercentage}%</div>
                     </div>
-                    <div class="summary-card">
+                    <div class="summary-card ${parseFloat(winRate) >= 60 ? 'profit' : parseFloat(winRate) >= 40 ? '' : 'loss'}">
                         <h4>Winrate</h4>
                         <div class="value">${winRate}%</div>
                     </div>
@@ -1845,9 +1985,10 @@ class TradingDashboard {
                         <h4>📅 Aujourd'hui</h4>
                         <div class="objective-progress">
                             <div class="progress-bar">
-                                <div class="progress-fill ${parseFloat(dailyProgress) >= 100 ? 'completed' : ''}" style="width: ${Math.min(parseFloat(dailyProgress), 100)}%"></div>
+                                <div class="progress-fill ${parseFloat(dailyProgress) >= 100 ? 'completed' : ''}" style="width: ${Math.min(Math.max(parseFloat(dailyProgress), 0), 100)}%"></div>
                             </div>
                             <div class="progress-text">${dailyPercentage}% / ${dailyTarget}% (${dailyProgress}%)</div>
+                            <div class="progress-trades">${todayTrades.length} trade(s) aujourd'hui</div>
                         </div>
                     </div>
                     
@@ -1855,9 +1996,10 @@ class TradingDashboard {
                         <h4>📆 Ce Mois</h4>
                         <div class="objective-progress">
                             <div class="progress-bar">
-                                <div class="progress-fill ${parseFloat(monthlyProgress) >= 100 ? 'completed' : ''}" style="width: ${Math.min(parseFloat(monthlyProgress), 100)}%"></div>
+                                <div class="progress-fill ${parseFloat(monthlyProgress) >= 100 ? 'completed' : ''}" style="width: ${Math.min(Math.max(parseFloat(monthlyProgress), 0), 100)}%"></div>
                             </div>
                             <div class="progress-text">${monthlyPercentage}% / ${monthlyTarget}% (${monthlyProgress}%)</div>
+                            <div class="progress-trades">${monthTrades.length} trade(s) ce mois</div>
                         </div>
                     </div>
                     
@@ -1865,14 +2007,46 @@ class TradingDashboard {
                         <h4>📇 Cette Année</h4>
                         <div class="objective-progress">
                             <div class="progress-bar">
-                                <div class="progress-fill ${parseFloat(yearlyProgress) >= 100 ? 'completed' : ''}" style="width: ${Math.min(parseFloat(yearlyProgress), 100)}%"></div>
+                                <div class="progress-fill ${parseFloat(yearlyProgress) >= 100 ? 'completed' : ''}" style="width: ${Math.min(Math.max(parseFloat(yearlyProgress), 0), 100)}%"></div>
                             </div>
                             <div class="progress-text">${yearlyPercentage}% / ${yearlyTarget}% (${yearlyProgress}%)</div>
+                            <div class="progress-trades">${yearTrades.length} trade(s) cette année</div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+        
+        // Mettre à jour aussi la section du plan de trading
+        this.updateTradingPlan(dailyProgress, dailyPercentage, dailyTarget, monthlyProgress, monthlyPercentage, monthlyTarget, yearlyProgress, yearlyPercentage, yearlyTarget);
+    }
+
+    updateTradingPlan(dailyProgress, dailyPercentage, dailyTarget, monthlyProgress, monthlyPercentage, monthlyTarget, yearlyProgress, yearlyPercentage, yearlyTarget) {
+        // Mettre à jour les barres de progression dans la section plan de trading
+        const dailyBar = document.getElementById('dailyProgressBar');
+        const dailyText = document.getElementById('dailyProgressText');
+        const monthlyBar = document.getElementById('monthlyProgressBar');
+        const monthlyText = document.getElementById('monthlyProgressText');
+        const yearlyBar = document.getElementById('yearlyProgressBar');
+        const yearlyText = document.getElementById('yearlyProgressText');
+        
+        if (dailyBar && dailyText) {
+            dailyBar.style.width = `${Math.min(Math.max(parseFloat(dailyProgress), 0), 100)}%`;
+            dailyBar.className = `progress-fill ${parseFloat(dailyProgress) >= 100 ? 'completed' : ''}`;
+            dailyText.textContent = `${dailyPercentage}% / ${dailyTarget}% (${dailyProgress}%)`;
+        }
+        
+        if (monthlyBar && monthlyText) {
+            monthlyBar.style.width = `${Math.min(Math.max(parseFloat(monthlyProgress), 0), 100)}%`;
+            monthlyBar.className = `progress-fill ${parseFloat(monthlyProgress) >= 100 ? 'completed' : ''}`;
+            monthlyText.textContent = `${monthlyPercentage}% / ${monthlyTarget}% (${monthlyProgress}%)`;
+        }
+        
+        if (yearlyBar && yearlyText) {
+            yearlyBar.style.width = `${Math.min(Math.max(parseFloat(yearlyProgress), 0), 100)}%`;
+            yearlyBar.className = `progress-fill ${parseFloat(yearlyProgress) >= 100 ? 'completed' : ''}`;
+            yearlyText.textContent = `${yearlyPercentage}% / ${yearlyTarget}% (${yearlyProgress}%)`;
+        }
     }
 
     getDeviceId() {
@@ -1887,28 +2061,27 @@ class TradingDashboard {
     setupRealtimeSync() {
         if (!this.database) return;
         
-        const syncCode = localStorage.getItem('syncCode');
-        if (!syncCode) return;
-        
-        // Écouter les changements en temps réel
-        this.database.ref(`users/${syncCode}`).on('value', (snapshot) => {
-            if (this.syncInProgress) return; // Éviter les boucles
+        try {
+            this.database.ref(`users/${this.autoSyncCode}`).on('value', (snapshot) => {
+                if (this.syncInProgress) return;
+                
+                const data = snapshot.val();
+                if (!data || !data.lastSync) return;
+                
+                const timeSinceLastLocalChange = Date.now() - (this.lastLocalChange || 0);
+                if (timeSinceLastLocalChange < 5000) return;
+                
+                if (data.lastSync > this.lastSyncTime && data.deviceId !== this.deviceId) {
+                    this.handleRemoteUpdate(data);
+                }
+            });
             
-            const data = snapshot.val();
-            if (!data || !data.lastSync) return;
-            
-            // Vérifier si les données sont plus récentes
-            if (data.lastSync > this.lastSyncTime && data.deviceId !== this.deviceId) {
-                this.handleRemoteUpdate(data);
-            }
-        });
-        
-        // Sync automatique toutes les 30 secondes
-        setInterval(() => {
-            this.autoSyncToCloud();
-        }, 30000);
-        
-        this.updateSyncStatus('🔄 Sync actif');
+            setInterval(() => this.autoSyncToFirebase(), 60000);
+            this.updateSyncStatus('🔄 Auto');
+        } catch (error) {
+            console.error('Erreur sync temps réel:', error);
+            this.updateSyncStatus('❌ Erreur');
+        }
     }
 
     handleRemoteUpdate(data) {
@@ -1980,40 +2153,34 @@ class TradingDashboard {
         return merged.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
-    autoSyncToCloud() {
+    async autoSyncToFirebase() {
         if (!this.database || this.syncInProgress) return;
-        
-        const syncCode = localStorage.getItem('syncCode');
-        if (!syncCode) return;
         
         this.syncInProgress = true;
         
-        const data = {
-            accounts: this.accounts,
-            trades: {},
-            settings: {},
-            lastSync: Date.now(),
-            deviceId: this.deviceId
-        };
-        
-        Object.keys(this.accounts).forEach(accountId => {
-            data.trades[accountId] = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${accountId}`)) || [];
-            data.settings[accountId] = JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${accountId}`)) || { capital: 1000, riskPerTrade: 2 };
-        });
-        
-        this.database.ref(`users/${syncCode}`).set(data)
-            .then(() => {
-                this.lastSyncTime = data.lastSync;
-                this.updateSyncStatus('✅ Syncé');
-                setTimeout(() => this.updateSyncStatus('🔄 Sync actif'), 2000);
-            })
-            .catch(error => {
-                console.error('Erreur de synchronisation:', error);
-                this.updateSyncStatus('❌ Erreur sync');
-            })
-            .finally(() => {
-                this.syncInProgress = false;
+        try {
+            const data = {
+                accounts: this.accounts,
+                trades: {},
+                settings: {},
+                lastSync: Date.now(),
+                deviceId: this.deviceId
+            };
+            
+            Object.keys(this.accounts).forEach(accountId => {
+                data.trades[accountId] = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${accountId}`)) || [];
+                data.settings[accountId] = JSON.parse(localStorage.getItem(`settings_${this.currentUser}_${accountId}`)) || { capital: 1000, riskPerTrade: 2 };
             });
+            
+            await this.database.ref(`users/${this.autoSyncCode}`).set(data);
+            this.lastSyncTime = data.lastSync;
+            this.updateSyncStatus('✅ Sync');
+        } catch (error) {
+            console.error('Auto-sync échoué:', error);
+            this.updateSyncStatus('❌ Erreur');
+        } finally {
+            this.syncInProgress = false;
+        }
     }
 
     updateSyncStatus(status) {
@@ -2022,6 +2189,50 @@ class TradingDashboard {
             syncStatusElement.textContent = status;
             syncStatusElement.className = status.includes('✅') ? 'sync-success' : 
                                          status.includes('❌') ? 'sync-error' : 'sync-active';
+        }
+    }
+
+    async autoLoadFromFirebase() {
+        if (!this.database) {
+            console.log('Firebase non disponible, mode local');
+            return;
+        }
+        
+        try {
+            this.updateSyncStatus('🔄 Chargement...');
+            const snapshot = await this.database.ref(`users/${this.autoSyncCode}`).once('value');
+            const data = snapshot.val();
+            
+            if (data && data.lastSync) {
+                console.log('Chargement automatique Firebase');
+                this.accounts = { ...this.accounts, ...data.accounts };
+                
+                Object.keys(data.trades || {}).forEach(accountId => {
+                    const remoteTrades = data.trades[accountId] || [];
+                    const localTrades = JSON.parse(localStorage.getItem(`trades_${this.currentUser}_${accountId}`)) || [];
+                    const mergedTrades = this.mergeTrades(localTrades, remoteTrades);
+                    localStorage.setItem(`trades_${this.currentUser}_${accountId}`, JSON.stringify(mergedTrades));
+                    if (accountId === this.currentAccount) {
+                        this.trades = mergedTrades;
+                    }
+                });
+                
+                Object.keys(data.settings || {}).forEach(accountId => {
+                    localStorage.setItem(`settings_${this.currentUser}_${accountId}`, JSON.stringify(data.settings[accountId]));
+                    if (accountId === this.currentAccount) {
+                        this.settings = data.settings[accountId] || this.settings;
+                    }
+                });
+                
+                localStorage.setItem(`accounts_${this.currentUser}`, JSON.stringify(this.accounts));
+                this.lastSyncTime = data.lastSync;
+                this.updateSyncStatus('✅ Chargé');
+            } else {
+                this.updateSyncStatus('🆕 Nouveau');
+            }
+        } catch (error) {
+            console.log('Chargement Firebase échoué:', error);
+            this.updateSyncStatus('📱 Local');
         }
     }
 
@@ -2234,13 +2445,248 @@ class TradingDashboard {
         const modal = document.getElementById('fullscreenModal');
         if (modal) modal.style.display = 'none';
     }
+
+    updatePerformanceMetrics() {
+        const closedTrades = this.trades.filter(t => t.status === 'closed');
+        const totalPnL = closedTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        const winningTrades = closedTrades.filter(t => parseFloat(t.pnl || 0) > 0);
+        const losingTrades = closedTrades.filter(t => parseFloat(t.pnl || 0) < 0);
+        
+        // Calculs avancés
+        const winRate = closedTrades.length > 0 ? (winningTrades.length / closedTrades.length * 100).toFixed(1) : '0.0';
+        const avgWin = winningTrades.length > 0 ? (winningTrades.reduce((sum, t) => sum + parseFloat(t.pnl), 0) / winningTrades.length).toFixed(2) : '0.00';
+        const avgLoss = losingTrades.length > 0 ? Math.abs(losingTrades.reduce((sum, t) => sum + parseFloat(t.pnl), 0) / losingTrades.length).toFixed(2) : '0.00';
+        const profitFactor = parseFloat(avgLoss) > 0 ? (parseFloat(avgWin) / parseFloat(avgLoss)).toFixed(2) : '0.00';
+        const maxDrawdown = this.calculateMaxDrawdown();
+        const sharpeRatio = this.calculateSharpeRatio();
+        
+        // Mise à jour des éléments DOM
+        const elements = {
+            performanceTotal: document.getElementById('performanceTotal'),
+            avgWinTrade: document.getElementById('avgWinTrade'),
+            avgLossTrade: document.getElementById('avgLossTrade'),
+            profitFactor: document.getElementById('profitFactor'),
+            maxDrawdown: document.getElementById('maxDrawdown'),
+            sharpeRatio: document.getElementById('sharpeRatio')
+        };
+        
+        if (elements.performanceTotal) {
+            const performancePercent = ((totalPnL / this.settings.capital) * 100).toFixed(2);
+            elements.performanceTotal.innerHTML = `
+                <div class="performance-card ${totalPnL >= 0 ? 'positive' : 'negative'}">
+                    <h4>📊 Performance Totale</h4>
+                    <div class="performance-value">$${totalPnL.toFixed(2)}</div>
+                    <div class="performance-percent">${performancePercent}%</div>
+                    <div class="performance-details">
+                        <div>Trades: ${closedTrades.length}</div>
+                        <div>Winrate: ${winRate}%</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (elements.avgWinTrade) {
+            elements.avgWinTrade.innerHTML = `<span class="positive">$${avgWin}</span>`;
+        }
+        
+        if (elements.avgLossTrade) {
+            elements.avgLossTrade.innerHTML = `<span class="negative">$${avgLoss}</span>`;
+        }
+        
+        if (elements.profitFactor) {
+            const pfValue = parseFloat(profitFactor);
+            elements.profitFactor.innerHTML = `<span class="${pfValue >= 1.5 ? 'positive' : pfValue >= 1.0 ? 'warning' : 'negative'}">${profitFactor}</span>`;
+        }
+        
+        if (elements.maxDrawdown) {
+            elements.maxDrawdown.innerHTML = `<span class="${maxDrawdown <= 10 ? 'positive' : maxDrawdown <= 20 ? 'warning' : 'negative'}">${maxDrawdown.toFixed(2)}%</span>`;
+        }
+        
+        if (elements.sharpeRatio) {
+            elements.sharpeRatio.innerHTML = `<span class="${sharpeRatio >= 1.0 ? 'positive' : sharpeRatio >= 0.5 ? 'warning' : 'negative'}">${sharpeRatio.toFixed(2)}</span>`;
+        }
+        
+        console.log('Métriques de performance mises à jour');
+    }
+
+    updateCumulativePerformance() {
+        const container = document.getElementById('cumulativePerformance');
+        if (!container) {
+            console.log('Container cumulativePerformance non trouvé');
+            return;
+        }
+        
+        const closedTrades = this.trades.filter(t => t.status === 'closed').sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        if (closedTrades.length === 0) {
+            container.innerHTML = '<div class="no-data">❌ Aucun trade fermé pour afficher la performance cumulative</div>';
+            return;
+        }
+        
+        let cumulativePnL = 0;
+        const performanceData = [];
+        
+        closedTrades.forEach((trade, index) => {
+            cumulativePnL += parseFloat(trade.pnl || 0);
+            const cumulativePercent = ((cumulativePnL / this.settings.capital) * 100).toFixed(2);
+            performanceData.push({
+                date: trade.date,
+                pnl: cumulativePnL,
+                percent: cumulativePercent,
+                tradeNumber: index + 1
+            });
+        });
+        
+        // Générer le graphique en mode texte
+        let html = `
+            <h4>📈 Performance Cumulative</h4>
+            <div class="cumulative-summary">
+                <div class="summary-item">
+                    <span>Capital Initial:</span>
+                    <span>$${this.settings.capital.toFixed(2)}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Capital Actuel:</span>
+                    <span class="${cumulativePnL >= 0 ? 'positive' : 'negative'}">$${(this.settings.capital + cumulativePnL).toFixed(2)}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Gain/Perte Total:</span>
+                    <span class="${cumulativePnL >= 0 ? 'positive' : 'negative'}">$${cumulativePnL.toFixed(2)} (${((cumulativePnL / this.settings.capital) * 100).toFixed(2)}%)</span>
+                </div>
+            </div>
+            <div class="performance-chart">
+        `;
+        
+        // Afficher les 10 derniers points de performance
+        const recentData = performanceData.slice(-10);
+        recentData.forEach((point, index) => {
+            const isPositive = parseFloat(point.percent) >= 0;
+            html += `
+                <div class="performance-point ${isPositive ? 'positive' : 'negative'}">
+                    <div class="point-date">${point.date}</div>
+                    <div class="point-value">$${point.pnl.toFixed(2)}</div>
+                    <div class="point-percent">${point.percent}%</div>
+                    <div class="point-trade">Trade #${point.tradeNumber}</div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        console.log('Performance cumulative mise à jour avec', performanceData.length, 'points');
+    }
+
+    updateMonthlyPerformance() {
+        const container = document.getElementById('monthlyPerformance');
+        if (!container) {
+            console.log('Container monthlyPerformance non trouvé');
+            return;
+        }
+        
+        const closedTrades = this.trades.filter(t => t.status === 'closed');
+        
+        if (closedTrades.length === 0) {
+            container.innerHTML = '<div class="no-data">❌ Aucun trade fermé pour afficher la performance mensuelle</div>';
+            return;
+        }
+        
+        // Grouper les trades par mois
+        const monthlyData = {};
+        closedTrades.forEach(trade => {
+            if (!trade.date) return;
+            const date = new Date(trade.date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = {
+                    trades: [],
+                    pnl: 0,
+                    wins: 0,
+                    losses: 0
+                };
+            }
+            
+            monthlyData[monthKey].trades.push(trade);
+            monthlyData[monthKey].pnl += parseFloat(trade.pnl || 0);
+            if (parseFloat(trade.pnl || 0) > 0) {
+                monthlyData[monthKey].wins++;
+            } else if (parseFloat(trade.pnl || 0) < 0) {
+                monthlyData[monthKey].losses++;
+            }
+        });
+        
+        // Trier par mois (plus récent en premier)
+        const sortedMonths = Object.keys(monthlyData).sort().reverse();
+        
+        let html = '<h4>📅 Performance Mensuelle</h4><div class="monthly-grid">';
+        
+        sortedMonths.slice(0, 6).forEach(monthKey => { // Afficher les 6 derniers mois
+            const data = monthlyData[monthKey];
+            const winRate = data.trades.length > 0 ? ((data.wins / data.trades.length) * 100).toFixed(1) : '0.0';
+            const monthPercent = ((data.pnl / this.settings.capital) * 100).toFixed(2);
+            const [year, month] = monthKey.split('-');
+            const monthName = new Date(year, month - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            
+            html += `
+                <div class="monthly-card ${data.pnl >= 0 ? 'positive' : 'negative'}">
+                    <h5>${monthName}</h5>
+                    <div class="monthly-pnl">$${data.pnl.toFixed(2)}</div>
+                    <div class="monthly-percent">${monthPercent}%</div>
+                    <div class="monthly-details">
+                        <div>Trades: ${data.trades.length}</div>
+                        <div>Winrate: ${winRate}%</div>
+                        <div>Wins: ${data.wins} | Losses: ${data.losses}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        console.log('Performance mensuelle mise à jour pour', sortedMonths.length, 'mois');
+    }
+
+    calculateMaxDrawdown() {
+        const closedTrades = this.trades.filter(t => t.status === 'closed').sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        if (closedTrades.length === 0) return 0;
+        
+        let peak = this.settings.capital;
+        let maxDrawdown = 0;
+        let currentCapital = this.settings.capital;
+        
+        closedTrades.forEach(trade => {
+            currentCapital += parseFloat(trade.pnl || 0);
+            
+            if (currentCapital > peak) {
+                peak = currentCapital;
+            }
+            
+            const drawdown = ((peak - currentCapital) / peak) * 100;
+            if (drawdown > maxDrawdown) {
+                maxDrawdown = drawdown;
+            }
+        });
+        
+        return maxDrawdown;
+    }
+
+    calculateSharpeRatio() {
+        const closedTrades = this.trades.filter(t => t.status === 'closed');
+        
+        if (closedTrades.length < 2) return 0;
+        
+        const returns = closedTrades.map(t => (parseFloat(t.pnl || 0) / this.settings.capital) * 100);
+        const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (returns.length - 1);
+        const stdDev = Math.sqrt(variance);
+        
+        return stdDev > 0 ? avgReturn / stdDev : 0;
+    }
 }
 
-// Initialisation
-let dashboard;
-window.dashboard = null;
-
-document.addEventListener('DOMContentLoaded', function() {
-    dashboard = new TradingDashboard();
-    window.dashboard = dashboard;
+// Initialisation automatique
+document.addEventListener('DOMContentLoaded', () => {
+    window.dashboard = new TradingDashboard();
 });
