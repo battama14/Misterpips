@@ -12,7 +12,6 @@ body {
     color: #ffffff;
     min-height: 100vh;
     overflow-x: hidden;
-    position: relative;
 }
 
 body::before {
@@ -37,44 +36,38 @@ body::before {
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 5px;
-    position: absolute;
+    padding: 20px;
+    position: relative;
     z-index: 1;
-    height: 100vh;
-    width: 100%;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    box-sizing: border-box;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 header {
     background: rgba(15, 15, 15, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 10px;
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 30px;
     backdrop-filter: blur(20px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.8s ease-out;
 }
 
 @keyframes slideDown {
-    from { transform: translateY(-30px); opacity: 0; }
+    from { transform: translateY(-50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
 header h1 {
     text-align: center;
     color: #ffffff;
-    margin-bottom: 15px;
-    font-size: 1.8em;
+    margin-bottom: 30px;
+    font-size: 3em;
     font-weight: 700;
     background: linear-gradient(135deg, #00d4ff, #5b86e5, #36d1dc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: glow 2s ease-in-out infinite alternate;
 }
 
 /* Account Selector */
@@ -278,36 +271,20 @@ main {
 .charts-section {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-#confluencesChart {
-    width: 180px !important;
-    height: 180px !important;
-    margin: 10px auto;
-    display: block;
-    max-width: 180px;
-    max-height: 180px;
-}
-
-.confluence-analysis {
-    margin-top: 20px;
-    font-size: 0.9em;
-    padding: 15px;
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
 .chart-container {
     background: linear-gradient(135deg, rgba(30, 34, 45, 0.95), rgba(20, 25, 35, 0.95));
-    border: 1px solid rgba(0, 212, 255, 0.4);
+    border: 2px solid rgba(0, 212, 255, 0.4);
     padding: 25px;
-    border-radius: 15px;
+    border-radius: 20px;
     backdrop-filter: blur(15px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    min-height: 300px;
-    text-align: center;
 }
 
 .chart-container::before {
@@ -1177,9 +1154,9 @@ tr:hover {
 }
 
 .gauge {
-    width: 180px;
-    height: 180px;
-    margin: 20px auto;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 20px;
     position: relative;
     border-radius: 50%;
     background: conic-gradient(from 0deg, #ff6b6b 0deg 120deg, #ffc107 120deg 240deg, #4ecdc4 240deg 360deg);
@@ -1191,14 +1168,14 @@ tr:hover {
 }
 
 @keyframes gaugeRotate {
-    from { transform: rotate(-90deg); }
+    from { transform: rotate(-180deg); }
     to { transform: rotate(0deg); }
 }
 
 .gauge::before {
     content: '';
-    width: 130px;
-    height: 130px;
+    width: 170px;
+    height: 170px;
     background: linear-gradient(135deg, #1e222d, #2a2f3a);
     border-radius: 50%;
     position: absolute;
@@ -1206,7 +1183,7 @@ tr:hover {
 }
 
 .gauge-value {
-    font-size: 1em;
+    font-size: 2.5em;
     font-weight: 700;
     color: #00d4ff;
     text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
@@ -1240,7 +1217,7 @@ tr:hover {
 }
 
 @keyframes countUp {
-    from { transform: scale(0.5); opacity: 0; }
+    from { transform: scale(0); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
 
@@ -2254,7 +2231,6 @@ tr:hover {
         min-width: 60px;
     }
 }
-
 /* Indicateurs de synchronisation */
 .sync-active {
     background: rgba(0, 212, 255, 0.2) !important;
