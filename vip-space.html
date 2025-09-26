@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace VIP - Misterpips</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="vip-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        window.firebaseAuth = { auth, signInWithEmailAndPassword };
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            }
+        });
+        
+        window.logout = () => {
+            signOut(auth).then(() => {
+                window.location.href = 'index.html';
+            });
+        };
+    </script>
+</head>
+<body>
+    <div id="trading-chart"></div>
+    
+    <header>
+        <div class="logo-container">
+            <img src="Misterpips.jpg" alt="Misterpips Logo" class="logo">
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#planning">Planning Forex</a></li>
+                <li><a href="#analyses">Analyses</a></li>
+                <li><a href="#outils">Outils</a></li>
+                <li><a href="#support">Support VIP</a></li>
+                <li><a href="#" onclick="logout()" class="logout-link">Déconnexion</a></li>
+            </ul>
+            <div class="burger">
+                <div class="line1"></div>
+                <div class="line2"></div>
+                <div class="line3"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Bienvenue dans votre Espace VIP</h1>
+                <p>Accès exclusif aux outils professionnels de trading</p>
+                <div class="cta-buttons">
+                    <a href="#dashboard" class="cta-button">Accéder au Dashboard</a>
+                    <a href="planning-forex.html" class="telegram-button" target="_blank">
+                        <i class="fas fa-calendar-alt"></i> Planning Forex
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section News VIP -->
+        <section id="news-vip" class="section">
+            <div class="container">
+                <h2>Actualités VIP</h2>
+                <div id="news-vip-grid" class="news-grid">
+                    <!-- Les news VIP seront chargées dynamiquement -->
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard" class="section">
+            <div class="container">
+                <h2>Dashboard Trading</h2>
+                <div class="vip-features">
+                    <div class="feature-item clickable-feature" onclick="window.open('trading-dashboard.html', '_blank')">
+                        <i class="fas fa-chart-line"></i>
+                        <h4>Dashboard Professionnel</h4>
+                        <p>Calculateur de lots, gestion des risques, analyses techniques complètes</p>
+                        <div class="feature-action">
+                            <span>Ouvrir le Dashboard</span>
+                            <i class="fas fa-external-link-alt"></i>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-exchange-alt"></i>
+                        <h4>Corrélations en Temps Réel</h4>
+                        <p>USD/JPY, GBP/USD, AUD/USD, USD/CHF avec analyses techniques</p>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <h4>Analyses Avancées</h4>
+                        <p>Indicateurs techniques, signaux de trading, alertes personnalisées</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="planning" class="section">
+            <div class="container">
+                <h2>Planning Forex</h2>
+                <div class="vip-features">
+                    <div class="feature-item clickable-feature" onclick="window.open('planning-forex.html', '_blank')">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h4>Planning Forex Complet</h4>
+                        <p>Sessions de trading, calendrier économique, horaires optimaux</p>
+                        <div class="feature-action">
+                            <span>Ouvrir le Planning</span>
+                            <i class="fas fa-external-link-alt"></i>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-clock"></i>
+                        <h4>Sessions de Trading</h4>
+                        <p>Horaires optimaux selon les sessions mondiales</p>
+                        <div class="sessions-info">
+                            <div class="session">
+                                <strong>Session Européenne:</strong> 08h00 - 17h00 (GMT+1)
+                            </div>
+                            <div class="session">
+                                <strong>Session Américaine:</strong> 14h00 - 23h00 (GMT+1)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="analyses" class="section">
+            <div class="container">
+                <h2>Analyses Exclusives</h2>
+                <div class="construction-container">
+                    <div class="construction-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Analyses VIP en préparation</h3>
+                    <p>Nos experts travaillent sur des analyses exclusives pour les membres VIP.</p>
+                    <p>Bientôt disponible : signaux de trading, analyses techniques approfondies !</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="outils" class="section">
+            <div class="container">
+                <h2>Outils VIP</h2>
+                <div class="construction-container">
+                    <div class="construction-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3>Outils exclusifs en développement</h3>
+                    <p>Calculateurs avancés, backtesting, et outils d'analyse technique.</p>
+                    <p>Restez connecté pour les prochaines mises à jour !</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="support" class="section">
+            <div class="container">
+                <h2>Support VIP</h2>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <h3>Support prioritaire pour les membres VIP</h3>
+                        <p>Contactez-nous directement pour un support personnalisé et des conseils exclusifs.</p>
+                        
+                        <div class="contact-links">
+                            <div class="social-icons-grid">
+                                <a href="https://t.me/misterpips_vip" class="social-icon-link telegram-icon" target="_blank" title="Support VIP Telegram">
+                                    <i class="fab fa-telegram-plane"></i>
+                                    <span>Support VIP</span>
+                                </a>
+                                <a href="https://www.instagram.com/EVAN4SLM/" class="social-icon-link instagram-icon" target="_blank" title="Instagram: @EVAN4SLM">
+                                    <i class="fab fa-instagram"></i>
+                                    <span>@EVAN4SLM</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Bouton Accès Admin -->
+        <div class="admin-access-container">
+            <button id="admin-access-btn" class="admin-access-button">
+                <i class="fas fa-cog"></i> Accès Admin
+            </button>
+        </div>
+    </main>
+
+    <!-- Modal Admin Login -->
+    <div id="adminLoginModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h2><i class="fas fa-shield-alt"></i> Accès Administrateur</h2>
+                <span class="admin-modal-close">&times;</span>
+            </div>
+            <div class="admin-modal-body">
+                <form id="admin-login-form" class="admin-form">
+                    <div class="form-group">
+                        <label for="admin-email">Email Administrateur</label>
+                        <input type="email" id="admin-email" placeholder="admin@misterpips.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-password">Mot de passe</label>
+                        <input type="password" id="admin-password" placeholder="Mot de passe admin" required>
+                    </div>
+                    <button type="submit" class="admin-login-button">
+                        <i class="fas fa-sign-in-alt"></i> Se connecter
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Logo" class="footer-logo-img">
+                <p>Misterpips - Espace VIP Exclusif</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Navigation VIP</h4>
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#planning">Planning Forex</a></li>
+                        <li><a href="#analyses">Analyses</a></li>
+                        <li><a href="#outils">Outils</a></li>
+                        <li><a href="#support">Support VIP</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Communauté</h4>
+                    <ul>
+                        <li><a href="https://www.instagram.com/EVAN4SLM/" target="_blank"><i class="fab fa-instagram"></i> Instagram @EVAN4SLM</a></li>
+                        <li><a href="https://www.tiktok.com/@MISTERPIPS3" target="_blank"><i class="fab fa-tiktok"></i> TikTok @MISTERPIPS3</a></li>
+                        <li><a href="https://t.me/misterpips" target="_blank"><i class="fab fa-telegram"></i> Canal Misterpips</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips. Tous droits réservés.</p>
+            <p class="disclaimer">Le trading comporte des risques. Les performances passées ne préjugent pas des performances futures.</p>
+        </div>
+    </footer>
+
+    <script src="script-simple.js"></script>
+    <script type="module">
+        import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        // Gestion du bouton d'accès admin
+        document.getElementById('admin-access-btn').addEventListener('click', () => {
+            document.getElementById('adminLoginModal').style.display = 'block';
+        });
+        
+        // Fermer la modal admin
+        document.querySelector('.admin-modal-close').addEventListener('click', () => {
+            document.getElementById('adminLoginModal').style.display = 'none';
+        });
+        
+        // Fermer la modal en cliquant à l'extérieur
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('adminLoginModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Gestion de la connexion admin avec Firebase
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            console.log('Tentative connexion admin:', email);
+            
+            try {
+                const userCredential = await signInWithEmailAndPassword(window.firebaseAuth.auth, email, password);
+                console.log('Connexion réussie:', userCredential.user.email);
+                
+                // Vérifier si c'est un admin
+                if (email === 'admin@misterpips.com') {
+                    console.log('Admin vérifié, redirection...');
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    console.log('Pas un admin:', email);
+                    alert('Accès administrateur refusé');
+                }
+            } catch (error) {
+                console.error('Erreur connexion admin:', error);
+                alert('Identifiants incorrects: ' + error.message);
+            }
+        });
+    </script>
+    <script>
+        function createTradingChart() {
+            const chart = document.getElementById('trading-chart');
+            if (!chart) return;
+            
+            let currentPrice = 50;
+            
+            for (let i = 0; i < 40; i++) {
+                const candle = document.createElement('div');
+                candle.className = 'candle';
+                candle.style.left = (i * 2.5) + '%';
+                candle.style.animationDelay = (i * 0.1) + 's';
+                
+                const priceChange = (Math.random() - 0.5) * 10;
+                currentPrice += priceChange;
+                currentPrice = Math.max(20, Math.min(80, currentPrice));
+                
+                candle.style.bottom = currentPrice + '%';
+                
+                const wickTop = document.createElement('div');
+                wickTop.className = 'candle-wick';
+                wickTop.style.height = (Math.random() * 15 + 5) + 'px';
+                
+                const body = document.createElement('div');
+                const isBullish = priceChange > 0;
+                body.className = 'candle-body ' + (isBullish ? 'bullish' : 'bearish');
+                body.style.height = (Math.random() * 25 + 10) + 'px';
+                
+                const wickBottom = document.createElement('div');
+                wickBottom.className = 'candle-wick-bottom';
+                wickBottom.style.height = (Math.random() * 10 + 3) + 'px';
+                
+                candle.appendChild(wickTop);
+                candle.appendChild(body);
+                candle.appendChild(wickBottom);
+                chart.appendChild(candle);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            createTradingChart();
+            loadNewsVIP();
+        });
+        
+        // Charger les news VIP
+        function loadNewsVIP() {
+            const news = JSON.parse(localStorage.getItem('misterpips_news')) || [];
+            const grid = document.getElementById('news-vip-grid');
+            
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            if (news.length === 0) {
+                grid.innerHTML = '<p class="no-news">Aucune actualité VIP pour le moment</p>';
+                return;
+            }
+            
+            // Afficher toutes les news pour les VIP
+            news.slice().reverse().forEach(item => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                newsItem.innerHTML = `
+                    <div class="news-header">
+                        <h3>${item.title}</h3>
+                        <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                    </div>
+                    <p class="news-content">${item.content}</p>
+                    <div class="news-date">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                `;
+                grid.appendChild(newsItem);
+            });
+        }
+    </script>
+</body>
+</html>
