@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
-    <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="mobile-animations.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Misterpips">
     <link rel="apple-touch-icon" href="Misterpips.jpg">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -34,21 +34,17 @@
         window.firebaseDB = db;
         window.firebaseAuth = auth;
         
-        // Importer les fonctions Firebase
-        import { ref, get, set, onValue, push } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
-        window.dbRef = ref;
-        window.dbGet = get;
-        window.dbSet = set;
-        window.dbOnValue = onValue;
-        window.dbPush = push;
-        
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                sessionStorage.setItem('firebaseUID', user.uid);
-                sessionStorage.setItem('userEmail', user.email);
+                // Utiliser le gestionnaire d'utilisateurs
+                await window.userManager.loginUser(user.email, user.uid);
                 console.log('✅ Utilisateur connecté:', user.email);
             } else {
-                window.location.href = 'mobile-login.html';
+                // Créer un utilisateur temporaire pour le mode démo
+                const tempUID = 'mobile_demo_' + Date.now();
+                const tempEmail = 'demo@mobile.com';
+                await window.userManager.loginUser(tempEmail, tempUID);
+                console.log('📱 Mode démo activé');
             }
         });
     </script>
@@ -89,8 +85,7 @@
             <li><a href="#objectives" onclick="showSection('objectives')">🎯 Objectifs</a></li>
             <li><a href="#ranking" onclick="showSection('ranking')">🏆 Classement</a></li>
             <li><a href="#settings" onclick="showSection('settings')">⚙️ Paramètres</a></li>
-            <li><a href="#profile" onclick="showSection('profile')">👤 Profil</a></li>
-            <li><a href="mobile-login.html">🚪 Déconnexion</a></li>
+            <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
 
@@ -105,12 +100,12 @@
             
             <div class="chart-container">
                 <h3>Performance</h3>
-                <canvas id="mobilePerformanceChart" width="300" height="150"></canvas>
+                <canvas id="mobilePerformanceChart"></canvas>
             </div>
             
             <div class="chart-container">
                 <h3>WinRate</h3>
-                <canvas id="mobileWinRateChart" width="300" height="150"></canvas>
+                <canvas id="mobileWinRateChart"></canvas>
             </div>
         </section>
 
@@ -163,6 +158,18 @@
                 
                 <div class="objective-card">
                     <div class="objective-header">
+                        <span class="objective-icon">📅</span>
+                        <span class="objective-title">Hebdomadaire</span>
+                        <span class="objective-target" id="mobileWeeklyTarget">$30</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileWeeklyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileWeeklyPercent">0%</span>
+                </div>
+                
+                <div class="objective-card">
+                    <div class="objective-header">
                         <span class="objective-icon">📊</span>
                         <span class="objective-title">Mensuel</span>
                         <span class="objective-target" id="mobileMonthlyTarget">$150</span>
@@ -194,10 +201,6 @@
             
             <div class="settings-list">
                 <div class="setting-item">
-                    <label>Pseudo</label>
-                    <input type="text" id="mobileNicknameInput" placeholder="Votre pseudo">
-                </div>
-                <div class="setting-item">
                     <label>Capital initial ($)</label>
                     <input type="number" id="mobileCapitalInput" value="1000">
                 </div>
@@ -208,14 +211,6 @@
                 <div class="setting-item">
                     <label>Objectif journalier (%)</label>
                     <input type="number" id="mobileDailyTargetInput" value="1" step="0.1">
-                </div>
-                <div class="setting-item">
-                    <label>Notifications</label>
-                    <select id="mobileNotificationsInput">
-                        <option value="all">Toutes</option>
-                        <option value="trades">Trades uniquement</option>
-                        <option value="none">Aucune</option>
-                    </select>
                 </div>
                 <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
             </div>
@@ -266,23 +261,23 @@
 
     <!-- Navigation Bottom -->
     <nav class="bottom-nav">
-        <button class="nav-btn active">
+        <button onclick="showSection('dashboard')" class="nav-btn active">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Dashboard</span>
         </button>
-        <button class="nav-btn">
+        <button onclick="showSection('trades')" class="nav-btn">
             <span class="nav-icon">📈</span>
             <span class="nav-label">Trades</span>
         </button>
-        <button class="nav-btn">
+        <button onclick="showSection('calendar')" class="nav-btn">
             <span class="nav-icon">📅</span>
             <span class="nav-label">Calendrier</span>
         </button>
-        <button class="nav-btn">
+        <button onclick="showSection('objectives')" class="nav-btn">
             <span class="nav-icon">🎯</span>
             <span class="nav-label">Objectifs</span>
         </button>
-        <button class="nav-btn">
+        <button onclick="showSection('ranking')" class="nav-btn">
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Classement</span>
         </button>
@@ -298,33 +293,55 @@
         <div class="chat-messages" id="mobileChatMessages"></div>
         <div class="chat-input-container">
             <input type="text" id="mobileChatInput" placeholder="Votre message...">
-            <button id="emojiBtn" class="emoji-btn">😀</button>
-            <button id="fileBtn" class="file-btn">📁</button>
             <button id="sendMobileMessage" class="send-btn">🚀</button>
         </div>
-        <div id="emojiPicker" class="emoji-picker">
-            <div class="emoji-grid">
-                <span class="emoji" onclick="addEmoji('😀')">😀</span>
-                <span class="emoji" onclick="addEmoji('😂')">😂</span>
-                <span class="emoji" onclick="addEmoji('😍')">😍</span>
-                <span class="emoji" onclick="addEmoji('😎')">😎</span>
-                <span class="emoji" onclick="addEmoji('😭')">😭</span>
-                <span class="emoji" onclick="addEmoji('😡')">😡</span>
-                <span class="emoji" onclick="addEmoji('👍')">👍</span>
-                <span class="emoji" onclick="addEmoji('👎')">👎</span>
-                <span class="emoji" onclick="addEmoji('❤️')">❤️</span>
-                <span class="emoji" onclick="addEmoji('🔥')">🔥</span>
-                <span class="emoji" onclick="addEmoji('💰')">💰</span>
-                <span class="emoji" onclick="addEmoji('📈')">📈</span>
-                <span class="emoji" onclick="addEmoji('📉')">📉</span>
-                <span class="emoji" onclick="addEmoji('🎆')">🎆</span>
-                <span class="emoji" onclick="addEmoji('🎉')">🎉</span>
-                <span class="emoji" onclick="addEmoji('🚀')">🚀</span>
-            </div>
-        </div>
-        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
     </div>
 
+    <script src="user-manager.js"></script>
     <script src="mobile-complete.js"></script>
+    
+    <script>
+        // Enregistrement du service worker pour notifications push
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/mobile-sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker enregistré:', registration.scope);
+                        
+                        // Demander permission pour notifications
+                        if ('Notification' in window && Notification.permission === 'default') {
+                            Notification.requestPermission().then((permission) => {
+                                console.log('🔔 Permission notifications:', permission);
+                                if (permission === 'granted') {
+                                    // Test de notification
+                                    new Notification('📱 Misterpips Mobile', {
+                                        body: 'Notifications activées avec succès !',
+                                        icon: '/Misterpips.jpg',
+                                        vibrate: [200, 100, 200]
+                                    });
+                                }
+                            });
+                        }
+                    })
+                    .catch((error) => {
+                        console.log('❌ Erreur Service Worker:', error);
+                    });
+            });
+        }
+        
+        // Vibration pour feedback tactile
+        function vibrateDevice(pattern = [200]) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+        
+        // Ajouter vibration aux boutons
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('button, .nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => vibrateDevice([50]));
+            });
+        });
+    </script>
 </body>
 </html>

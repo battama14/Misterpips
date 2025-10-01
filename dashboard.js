@@ -120,6 +120,28 @@ class SimpleTradingDashboard {
             syncStatus.style.background = 'rgba(0, 212, 255, 0.2)';
             syncStatus.style.color = '#00d4ff';
         }
+        
+        // Surveillance automatique des modifications
+        this.startAutoSaveWatcher();
+    }
+
+    startAutoSaveWatcher() {
+        // Surveiller les changements dans les formulaires
+        const forms = document.querySelectorAll('input, select, button');
+        forms.forEach(element => {
+            element.addEventListener('change', () => {
+                setTimeout(() => {
+                    console.log('Sync temps réel désactivée temporairement');
+                    this.saveData();
+                }, 1000); // Délai de 1 seconde pour éviter trop de sauvegardes
+            });
+        });
+        
+        // Sauvegarde périodique toutes les 5 minutes
+        setInterval(() => {
+            console.log('Sync temps réel désactivée temporairement');
+            this.saveData();
+        }, 300000); // 5 minutes
     }
 
     setupEventListeners() {
@@ -310,7 +332,7 @@ class SimpleTradingDashboard {
                     }, 2000);
                 }
                 
-                console.log('✅ Sauvegarde Firebase réussie + trades synchronisés');
+                console.log('Sync temps réel désactivée temporairement');
                 return;
                 
             } catch (error) {
