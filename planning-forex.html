@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Forex - Données Réelles</title>
+    <link rel="stylesheet" href="planning-forex.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="Misterpips.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        
+        window.firebaseApp = app;
+        window.firebaseDB = db;
+        window.dbRef = ref;
+        window.dbGet = get;
+        window.dbSet = set;
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                alert('🔒 Accès VIP requis - Veuillez vous connecter');
+                window.location.href = 'index.html';
+            } else {
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+                setTimeout(() => {
+                    loadHistoricalData();
+                    updateFirebaseStatus('🟢 Firebase: Connecté', true);
+                }, 1000);
+            }
+        });
+        
+        window.updateFirebaseStatus = function(status, isConnected) {
+            const statusElement = document.getElementById('firebaseStatus');
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.style.color = isConnected ? '#4ecdc4' : '#ff6b6b';
+            }
+        };
+        
+        window.triggerAutoSave = function() {
+            if (typeof updateFirebaseStatus === 'function') {
+                updateFirebaseStatus('🔄 Firebase: Sauvegarde...', false);
+            }
+            saveToFirebase();
+        };
+    </script>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="Misterpips.jpg" alt="Misterpips Logo" class="logo">
+        </div>
+        <nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" style="display: none;">☰</button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="#planning">Planning</a></li>
+                <li><a href="#calendar">Calendrier</a></li>
+                <li><a href="#impact">Impact Annonces</a></li>
+                <li><a href="#history">Historique</a></li>
+                <li><a href="dashboard.html" class="vip-link">Dashboard VIP</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Planning Forex - Données Réelles</h1>
+                <p>Sessions de trading et analyses en temps réel</p>
+                <div class="status-indicator">
+                    <span id="firebaseStatus">🔄 Firebase: Connexion...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sessions de Trading -->
+        <section id="planning" class="section">
+            <div class="container">
+                <h2>Sessions de Trading Actives</h2>
+                <div class="sessions-grid">
+                    <div class="session-card" id="sydney-session">
+                        <div class="session-header">
+                            <i class="fas fa-sun"></i>
+                            <h3>Sydney</h3>
+                            <span class="session-status" id="sydney-status">Fermée</span>
+                        </div>
+                        <div class="session-time">22h00 - 07h00 (GMT+1)</div>
+                    </div>
+                    
+                    <div class="session-card" id="tokyo-session">
+                        <div class="session-header">
+                            <i class="fas fa-yen-sign"></i>
+                            <h3>Tokyo</h3>
+                            <span class="session-status" id="tokyo-status">Fermée</span>
+                        </div>
+                        <div class="session-time">01h00 - 10h00 (GMT+1)</div>
+                    </div>
+                    
+                    <div class="session-card" id="london-session">
+                        <div class="session-header">
+                            <i class="fas fa-pound-sign"></i>
+                            <h3>Londres</h3>
+                            <span class="session-status" id="london-status">Fermée</span>
+                        </div>
+                        <div class="session-time">08h00 - 17h00 (GMT+1)</div>
+                    </div>
+                    
+                    <div class="session-card" id="newyork-session">
+                        <div class="session-header">
+                            <i class="fas fa-dollar-sign"></i>
+                            <h3>New York</h3>
+                            <span class="session-status" id="newyork-status">Fermée</span>
+                        </div>
+                        <div class="session-time">14h00 - 23h00 (GMT+1)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Calendrier Économique -->
+        <section id="calendar" class="section">
+            <div class="container">
+                <h2>Calendrier Économique Forex</h2>
+                <div class="dashboard-card economic-calendar-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Actualités & Annonces Économiques</h3>
+                        <div class="refresh-btn" id="refreshCalendar">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                    </div>
+                    <div class="calendar-filters" id="calendarFilters">
+                        <div class="filter-group">
+                            <label>Impact:</label>
+                            <select id="impactFilter" onchange="updateCalendarLinks()">
+                                <option value="all">Tous</option>
+                                <option value="high">🔴 High</option>
+                                <option value="medium">🟡 Medium</option>
+                                <option value="low">🟢 Low</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Devise:</label>
+                            <select id="currencyFilter" onchange="updateCalendarLinks()">
+                                <option value="all">Toutes</option>
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="GBP">🇬🇧 GBP</option>
+                                <option value="JPY">🇯🇵 JPY</option>
+                                <option value="XAU">🥇 OR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="economic-calendar-table" id="economicCalendar">
+                        <div class="real-calendar-links">
+                            <h4>📅 Calendriers Économiques</h4>
+                            <p id="filterStatus">Filtres actifs: toutes devises - Impact tous</p>
+                            
+                            <div class="calendar-notice">
+                                <p>⚠️ Les sites externes ne permettent pas de filtrer automatiquement par devise.</p>
+                                <p>📝 Une fois sur le site, utilisez leurs filtres pour sélectionner votre devise.</p>
+                            </div>
+                            
+                            <a href="https://www.investing.com/economic-calendar/" target="_blank" class="calendar-link primary">
+                                <div class="calendar-icon">💼</div>
+                                <div class="calendar-info">
+                                    <strong>Investing.com</strong>
+                                    <span id="investingText">Calendrier complet - Filtrer manuellement</span>
+                                </div>
+                            </a>
+                            
+                            <a href="https://www.forexfactory.com/calendar" target="_blank" class="calendar-link">
+                                <div class="calendar-icon">🏭</div>
+                                <div class="calendar-info">
+                                    <strong>Forex Factory</strong>
+                                    <span id="forexFactoryText">Calendrier Forex - Filtrer manuellement</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Impact des Annonces -->
+        <section id="impact" class="section">
+            <div class="container">
+                <h2>📊 Impact des Annonces Économiques</h2>
+                <div class="dashboard-card impact-analyzer">
+                    <div class="card-header">
+                        <h3>Analyseur d'Impact</h3>
+                    </div>
+                    <div class="analyzer-controls">
+                        <div class="control-group">
+                            <label>Devise:</label>
+                            <select id="currencySelect">
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="GBP">🇬🇧 GBP</option>
+                                <option value="JPY">🇯🇵 JPY</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>Annonce:</label>
+                            <select id="announcementSelect">
+                                <option value="NFP">Non-Farm Payrolls</option>
+                                <option value="CPI">Inflation CPI</option>
+                                <option value="GDP">PIB GDP</option>
+                                <option value="RATE">Taux intérêt</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>Résultat (%):</label>
+                            <input type="number" id="resultInput" placeholder="Ex: 2.5" step="0.1">
+                        </div>
+                        <div class="control-group">
+                            <label>Consensus Marché (%):</label>
+                            <input type="number" id="consensusInput" placeholder="Ex: 2.3" step="0.1">
+                        </div>
+                        <div class="control-group">
+                            <label>Résultat Précédent (%):</label>
+                            <input type="number" id="previousInput" placeholder="Ex: 2.1" step="0.1">
+                        </div>
+                        <button onclick="analyzeImpact()" class="analyze-btn">Analyser</button>
+                        <button onclick="openDataManager()" class="data-manager-btn">📅 Gérer les Données</button>
+                    </div>
+                    <div id="impactResults"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Historique Impact -->
+        <section id="history" class="section">
+            <div class="container">
+                <h2>📈 Historique des Impacts</h2>
+                <div class="dashboard-card history-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Tendances par Annonce</h3>
+                        <div class="history-controls">
+                            <select id="historyDevise">
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="GBP">🇬🇧 GBP</option>
+                                <option value="JPY">🇯🇵 JPY</option>
+                            </select>
+                            <select id="historyAnnonce">
+                                <option value="NFP">NFP</option>
+                                <option value="CPI">CPI</option>
+                                <option value="GDP">GDP</option>
+                                <option value="RATE">RATE</option>
+                            </select>
+                            <button onclick="updateHistoryChart()" class="history-btn">Actualiser</button>
+                        </div>
+                    </div>
+                    <div class="history-chart" id="historyChart">
+                        <!-- Graphique généré automatiquement -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Logo" class="footer-logo-img">
+                <p>Misterpips - Données Forex Réelles</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips. Données en temps réel.</p>
+        </div>
+    </footer>
+
+    <script src="historical-data.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Analyse d'impact
+        function analyzeImpact() {
+            const currency = document.getElementById('currencySelect').value;
+            const announcement = document.getElementById('announcementSelect').value;
+            const result = parseFloat(document.getElementById('resultInput').value) || 2.5;
+            const consensus = parseFloat(document.getElementById('consensusInput').value) || 2.3;
+            const previous = parseFloat(document.getElementById('previousInput').value) || 2.1;
+            
+            // Données historiques
+            const historical = HISTORICAL_DATA[currency][announcement] || [];
+            const results = historical.map(h => h.result);
+            const impacts = historical.map(h => h.impact);
+            
+            // Calculs statistiques
+            const mean = results.reduce((a,b) => a+b, 0) / results.length;
+            const variance = results.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / results.length;
+            const stdDev = Math.sqrt(variance);
+            
+            // Z-Score
+            const surprise = result - consensus;
+            const zScore = stdDev > 0 ? surprise / stdDev : 0;
+            
+            // Impact prédit
+            const correlation = 0.7;
+            const beta = correlation * (impacts.reduce((a,b) => Math.abs(a) + Math.abs(b), 0) / impacts.length) / stdDev;
+            const predictedImpact = beta * surprise;
+            
+            // Ajustement momentum
+            const momentum = (result - previous) / previous;
+            const momentumFactor = 1 + (momentum * 0.3);
+            const finalImpact = (predictedImpact * momentumFactor).toFixed(3);
+            
+            // Niveau de confiance
+            let confidence, probability;
+            if (Math.abs(zScore) >= 2) {
+                confidence = 'Très Forte';
+                probability = '95%';
+            } else if (Math.abs(zScore) >= 1.5) {
+                confidence = 'Forte';
+                probability = '87%';
+            } else if (Math.abs(zScore) >= 1) {
+                confidence = 'Modérée';
+                probability = '68%';
+            } else {
+                confidence = 'Faible';
+                probability = '50%';
+            }
+            
+            // Direction
+            let direction;
+            if (finalImpact > 0.5) direction = 'Hausse Forte';
+            else if (finalImpact > 0.2) direction = 'Hausse Modérée';
+            else if (finalImpact < -0.5) direction = 'Baisse Forte';
+            else if (finalImpact < -0.2) direction = 'Baisse Modérée';
+            else direction = 'Neutre';
+            
+            document.getElementById('impactResults').innerHTML = `
+                <div class='impact-summary'>
+                    <h4>Analyse ${announcement} sur ${currency}</h4>
+                    <div class='impact-stats'>
+                        <div class='stat-item'>
+                            <span class='stat-label'>Impact Prédit:</span>
+                            <span class='stat-value ${finalImpact > 0 ? 'positive' : finalImpact < 0 ? 'negative' : 'neutral'}'>${finalImpact > 0 ? '+' : ''}${finalImpact}%</span>
+                        </div>
+                        <div class='stat-item'>
+                            <span class='stat-label'>Z-Score:</span>
+                            <span class='stat-value ${zScore > 0 ? 'positive' : zScore < 0 ? 'negative' : 'neutral'}'>${zScore.toFixed(2)}</span>
+                        </div>
+                        <div class='stat-item'>
+                            <span class='stat-label'>Surprise:</span>
+                            <span class='stat-value ${surprise > 0 ? 'positive' : surprise < 0 ? 'negative' : 'neutral'}'>${surprise > 0 ? '+' : ''}${surprise.toFixed(2)}%</span>
+                        </div>
+                        <div class='stat-item'>
+                            <span class='stat-label'>Probabilité:</span>
+                            <span class='stat-value'>${probability}</span>
+                        </div>
+                        <div class='stat-item'>
+                            <span class='stat-label'>Prédiction:</span>
+                            <span class='stat-value'>${direction}</span>
+                        </div>
+                        <div class='stat-item'>
+                            <span class='stat-label'>Confiance:</span>
+                            <span class='stat-value'>${confidence}</span>
+                        </div>
+                    </div>
+                    <div class='historical-chart'>
+                        <h5>Historique 12 derniers mois</h5>
+                        <div class='chart-bars'>
+                            ${historical.map(item => `
+                                <div class='chart-bar'>
+                                    <div class='bar ${item.impact > 0 ? 'positive' : 'negative'}' 
+                                         style='height: ${Math.abs(item.impact) * 30 + 10}px'
+                                         title='${item.date}: ${item.impact}%'>
+                                    </div>
+                                    <span class='bar-label'>${item.date.split('-')[1]}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class='impact-explanation'>
+                        <p><strong>Méthode:</strong> Modèle économétrique (Z-Score + Régression + Momentum)</p>
+                        <p><strong>Analyse:</strong> Z-Score: ${zScore.toFixed(2)} | Surprise: ${surprise > 0 ? '+' : ''}${surprise.toFixed(2)}% vs consensus</p>
+                        <p><strong>Prédiction:</strong> ${direction} | Confiance: ${confidence} (${probability})</p>
+                    </div>
+                </div>
+            `;
+            
+            // Sauvegarder dans l'historique
+            addHistoricalData(currency, announcement, result, consensus, previous);
+            
+            // Mettre à jour l'historique
+            setTimeout(() => {
+                updateHistoryChart();
+            }, 500);
+        }
+
+        // Sessions de trading
+        function updateTradingSessions() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentDay = now.getDay();
+            
+            const isWeekend = currentDay === 0 || currentDay === 6;
+            
+            const sessions = [
+                { id: 'sydney', start: 22, end: 7 },
+                { id: 'tokyo', start: 1, end: 10 },
+                { id: 'london', start: 8, end: 17 },
+                { id: 'newyork', start: 14, end: 23 }
+            ];
+            
+            sessions.forEach(session => {
+                const status = document.getElementById(`${session.id}-status`);
+                
+                if (!status) return;
+                
+                let isActive = false;
+                if (session.start <= session.end) {
+                    isActive = currentHour >= session.start && currentHour < session.end;
+                } else {
+                    isActive = currentHour >= session.start || currentHour < session.end;
+                }
+                
+                if (isWeekend) {
+                    status.textContent = 'Weekend';
+                    status.className = 'session-status weekend';
+                } else if (isActive) {
+                    status.textContent = 'Ouverte';
+                    status.className = 'session-status active';
+                } else {
+                    status.textContent = 'Fermée';
+                    status.className = 'session-status';
+                }
+            });
+        }
+
+        // Gestionnaire de données
+        window.openDataManager = function() {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close" onclick="closeDataManager()">&times;</span>
+                    <h3>📅 Gestionnaire de Données</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" id="dataDate" value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <div class="form-group">
+                            <label>Devise:</label>
+                            <select id="dataDevise">
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="JPY">JPY</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Annonce:</label>
+                            <select id="dataAnnonce">
+                                <option value="NFP">NFP</option>
+                                <option value="CPI">CPI</option>
+                                <option value="GDP">GDP</option>
+                                <option value="RATE">RATE</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Résultat (%):</label>
+                            <input type="number" id="dataResult" step="0.1" placeholder="2.5">
+                        </div>
+                        <div class="form-group">
+                            <label>Consensus (%):</label>
+                            <input type="number" id="dataConsensus" step="0.1" placeholder="2.3">
+                        </div>
+                        <div class="form-group">
+                            <label>Précédent (%):</label>
+                            <input type="number" id="dataPrevious" step="0.1" placeholder="2.1">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button onclick="saveDataEntry()" class="btn-primary">💾 Sauvegarder</button>
+                        <button onclick="closeDataManager()" class="btn-secondary">❌ Fermer</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
+        
+        window.closeDataManager = function() {
+            const modal = document.querySelector('.modal');
+            if (modal) modal.remove();
+        };
+        
+        window.saveDataEntry = function() {
+            const date = document.getElementById('dataDate').value;
+            const devise = document.getElementById('dataDevise').value;
+            const annonce = document.getElementById('dataAnnonce').value;
+            const result = parseFloat(document.getElementById('dataResult').value);
+            const consensus = parseFloat(document.getElementById('dataConsensus').value);
+            const previous = parseFloat(document.getElementById('dataPrevious').value);
+            
+            if (!result || !consensus || !previous) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            addHistoricalDataWithDate(devise, annonce, result, consensus, previous, date);
+            closeDataManager();
+            updateHistoryChart();
+        };
+
+        // Mise à jour des liens calendrier
+        window.updateCalendarLinks = function() {
+            const impact = document.getElementById('impactFilter')?.value || 'all';
+            const currency = document.getElementById('currencyFilter')?.value || 'all';
+            const statusElement = document.getElementById('filterStatus');
+            
+            if (statusElement) {
+                const impactText = impact === 'all' ? 'tous' : impact;
+                const currencyText = currency === 'all' ? 'toutes devises' : currency;
+                statusElement.textContent = `Filtres actifs: ${currencyText} - Impact ${impactText}`;
+            }
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTradingSessions();
+            setInterval(updateTradingSessions, 30000);
+            
+            setTimeout(() => {
+                updateHistoryChart();
+                updateCalendarLinks();
+            }, 2000);
+            
+            const refreshCalendar = document.getElementById('refreshCalendar');
+            if (refreshCalendar) {
+                refreshCalendar.addEventListener('click', () => {
+                    const originalHTML = refreshCalendar.innerHTML;
+                    refreshCalendar.innerHTML = '<i class="fas fa-check" style="color: #4ecdc4;"></i>';
+                    setTimeout(() => {
+                        refreshCalendar.innerHTML = originalHTML;
+                    }, 1000);
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .session-card {
+            background: linear-gradient(135deg, rgba(30, 34, 45, 0.95), rgba(20, 25, 35, 0.95));
+            border: 2px solid rgba(0, 212, 255, 0.4);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .session-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 212, 255, 0.6);
+        }
+
+        .session-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .session-header i {
+            font-size: 1.5em;
+            color: #00d4ff;
+        }
+
+        .session-header h3 {
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .session-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .session-status.active {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+        }
+
+        .session-time {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+        }
+
+        .calendar-filters {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            background: rgba(30, 34, 45, 0.95);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .calendar-notice {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .calendar-notice p {
+            margin: 5px 0;
+            color: #ffc107;
+            font-size: 0.9em;
+        }
+
+        .calendar-link {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(30, 34, 45, 0.95), rgba(20, 25, 35, 0.95));
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-link:hover {
+            transform: translateY(-3px);
+            border-color: #00d4ff;
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .calendar-icon {
+            font-size: 2.5em;
+            margin-right: 20px;
+            min-width: 60px;
+        }
+
+        .calendar-info strong {
+            display: block;
+            font-size: 1.2em;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .data-manager-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 15px;
+        }
+
+        .refresh-btn {
+            transition: all 0.3s ease;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .sessions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .calendar-filters {
+                flex-direction: column;
+            }
+            
+            .analyzer-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,1 @@
+// Fichier supprimé - fonctionnalité intégrée dans index.html

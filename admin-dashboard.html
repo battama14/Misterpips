@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Misterpips</title>
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase, ref, set, get, remove, push } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        
+        window.firebaseDB = db;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbGet = get;
+        window.dbRemove = remove;
+        window.dbPush = push;
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== 'admin@misterpips.com') {
+                alert('🔒 Accès administrateur requis');
+                window.location.href = 'vip-space.html';
+            }
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo-container">
+                <img src="Misterpips.jpg" alt="Misterpips Admin" class="logo">
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#dashboard">📊 Dashboard</a></li>
+                    <li><a href="#news">📰 News</a></li>
+                    <li><a href="#testimonials">💬 Avis</a></li>
+                    <li><a href="#content">📝 Contenu</a></li>
+                    <li><a href="vip-space.html">🏠 Retour VIP</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>🔧 Dashboard Administrateur</h1>
+                <p>Gestion complète du site Misterpips</p>
+                <div class="status-indicator">
+                    <span id="syncStatus">🔄 Synchronisation active</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Dashboard -->
+        <section id="dashboard" class="section">
+            <div class="container">
+                <h2>📊 Statistiques</h2>
+                <div class="dashboard-card">
+                    <div class="stats-overview">
+                        <div class="stat-card">
+                            <h3>👥 Utilisateurs VIP</h3>
+                            <span id="vipUsers">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>📰 News Publiques</h3>
+                            <span id="publicNews">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>🔑 News VIP</h3>
+                            <span id="vipNewsCount">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>💬 Avis Clients</h3>
+                            <span id="testimonialsCount">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section News -->
+        <section id="news" class="section">
+            <div class="container">
+                <h2>📰 Gestion des Actualités</h2>
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-newspaper"></i> Ajouter une News</h3>
+                    </div>
+                    <form id="newsForm" class="admin-controls">
+                        <div class="form-group">
+                            <label>Titre de la News</label>
+                            <input type="text" id="newsTitle" placeholder="Nouvelle analyse EUR/USD" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contenu</label>
+                            <textarea id="newsContent" placeholder="Détails de l'actualité..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Priorité</label>
+                            <select id="newsPriority">
+                                <option value="low">Faible</option>
+                                <option value="medium">Moyenne</option>
+                                <option value="high">Élevée</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Type de Publication</label>
+                            <select id="newsType">
+                                <option value="public">Page Principale</option>
+                                <option value="vip">Espace VIP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL (optionnel)</label>
+                            <input type="url" id="newsImage" placeholder="https://exemple.com/image.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label>Ou télécharger une image</label>
+                            <input type="file" id="newsImageFile" accept="image/*" style="margin-bottom: 10px;">
+                            <button type="button" onclick="uploadNewsImage()" class="admin-btn" style="padding: 10px 20px; font-size: 0.9em;">
+                                <i class="fas fa-upload"></i> Télécharger Image
+                            </button>
+                        </div>
+                        <button type="submit" class="admin-btn">
+                            <i class="fas fa-plus"></i> Publier la News
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list"></i> News Publiées</h3>
+                        <button onclick="loadNews()" class="admin-btn" style="padding: 8px 16px; font-size: 0.9em;">
+                            <i class="fas fa-sync-alt"></i> Actualiser
+                        </button>
+                    </div>
+                    <div id="newsList" class="content-list">
+                        <!-- News chargées dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Avis -->
+        <section id="testimonials" class="section">
+            <div class="container">
+                <h2>💬 Gestion des Avis Clients</h2>
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-comments"></i> Ajouter un Avis</h3>
+                    </div>
+                    <form id="testimonialForm" class="admin-controls">
+                        <div class="form-group">
+                            <label>Texte de l'Avis</label>
+                            <textarea id="testimonialText" placeholder="Excellent service ! Je recommande vivement..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom du Client</label>
+                            <input type="text" id="testimonialAuthor" placeholder="Client VIP" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL (optionnel)</label>
+                            <input type="url" id="testimonialImage" placeholder="https://exemple.com/avatar.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label>Ou télécharger une image</label>
+                            <input type="file" id="testimonialImageFile" accept="image/*" style="margin-bottom: 10px;">
+                            <button type="button" onclick="uploadTestimonialImage()" class="admin-btn" style="padding: 10px 20px; font-size: 0.9em;">
+                                <i class="fas fa-upload"></i> Télécharger Image
+                            </button>
+                        </div>
+                        <button type="submit" class="admin-btn">
+                            <i class="fas fa-plus"></i> Ajouter l'Avis
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list"></i> Avis Existants</h3>
+                        <button onclick="loadTestimonials()" class="admin-btn" style="padding: 8px 16px; font-size: 0.9em;">
+                            <i class="fas fa-sync-alt"></i> Actualiser
+                        </button>
+                    </div>
+                    <div id="testimonialsList" class="content-list">
+                        <!-- Avis chargés dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Contenu -->
+        <section id="content" class="section">
+            <div class="container">
+                <h2>📝 Gestion du Contenu</h2>
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-edit"></i> Modifier les Sections du Site</h3>
+                    </div>
+                    <form id="contentForm" class="admin-controls">
+                        <div class="form-group">
+                            <label>Section à Modifier</label>
+                            <select id="sectionSelect">
+                                <option value="presentation">Présentation</option>
+                                <option value="apprentissage">Apprentissage</option>
+                                <option value="about">À propos de nous</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Titre de la Section</label>
+                            <input type="text" id="sectionTitle" placeholder="Titre qui apparaîtra sur le site">
+                        </div>
+                        <div class="form-group">
+                            <label>Contenu de la Section</label>
+                            <textarea id="sectionContent" placeholder="Contenu détaillé de la section..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL (optionnel)</label>
+                            <input type="url" id="sectionImage" placeholder="https://exemple.com/image.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label>Ou télécharger une image</label>
+                            <input type="file" id="sectionImageFile" accept="image/*" style="margin-bottom: 10px;">
+                            <button type="button" onclick="uploadSectionImage()" class="admin-btn" style="padding: 10px 20px; font-size: 0.9em;">
+                                <i class="fas fa-upload"></i> Télécharger Image
+                            </button>
+                        </div>
+                        <button type="submit" class="admin-btn">
+                            <i class="fas fa-save"></i> Sauvegarder les Modifications
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Admin" class="footer-logo-img">
+                <p>Misterpips - Administration</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips - Dashboard Administrateur</p>
+        </div>
+    </footer>
+
+    <script>
+        let news = [];
+        let vipNews = [];
+        let testimonials = [];
+        
+        // Fonctions de téléchargement d'images
+        async function uploadNewsImage() {
+            const fileInput = document.getElementById('newsImageFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Veuillez sélectionner une image');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('L\'image est trop volumineuse (max 5MB)');
+                return;
+            }
+            
+            updateStatus('🖼️ Traitement de l\'image...', false);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('newsImage').value = e.target.result;
+                updateStatus('✅ Image prête pour publication !');
+            };
+            reader.onerror = function() {
+                updateStatus('❌ Erreur lors du traitement de l\'image', false);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        async function uploadTestimonialImage() {
+            const fileInput = document.getElementById('testimonialImageFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Veuillez sélectionner une image');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('L\'image est trop volumineuse (max 5MB)');
+                return;
+            }
+            
+            updateStatus('🖼️ Traitement de l\'image...', false);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('testimonialImage').value = e.target.result;
+                updateStatus('✅ Image prête pour publication !');
+            };
+            reader.onerror = function() {
+                updateStatus('❌ Erreur lors du traitement de l\'image', false);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        async function uploadSectionImage() {
+            const fileInput = document.getElementById('sectionImageFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Veuillez sélectionner une image');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('L\'image est trop volumineuse (max 5MB)');
+                return;
+            }
+            
+            updateStatus('🖼️ Traitement de l\'image...', false);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('sectionImage').value = e.target.result;
+                updateStatus('✅ Image prête pour publication !');
+            };
+            reader.onerror = function() {
+                updateStatus('❌ Erreur lors du traitement de l\'image', false);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Rendre les fonctions accessibles globalement
+        window.uploadNewsImage = uploadNewsImage;
+        window.uploadTestimonialImage = uploadTestimonialImage;
+        window.uploadSectionImage = uploadSectionImage;
+
+        function updateStatus(message, isSuccess = true) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = message;
+            status.style.color = isSuccess ? '#4ecdc4' : '#ff6b6b';
+            if (isSuccess) {
+                setTimeout(() => {
+                    status.textContent = '🔄 Synchronisation active';
+                    status.style.color = '#00d4ff';
+                }, 3000);
+            }
+        }
+
+        // Gestion des news
+        document.getElementById('newsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('newsTitle').value;
+            const content = document.getElementById('newsContent').value;
+            const priority = document.getElementById('newsPriority').value;
+            const type = document.getElementById('newsType').value;
+            const image = document.getElementById('newsImage').value;
+            
+            const newNews = {
+                title,
+                content,
+                priority,
+                image: image || null,
+                date: new Date().toISOString(),
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                updateStatus('📰 Publication en cours...', false);
+                const collection = type === 'vip' ? 'vip_news' : 'public_news';
+                await window.dbPush(window.dbRef(window.firebaseDB, collection), newNews);
+                
+                document.getElementById('newsForm').reset();
+                updateStatus('✅ News publiée avec succès !');
+                loadNews();
+            } catch (error) {
+                updateStatus('❌ Erreur publication: ' + error.message, false);
+            }
+        });
+
+        // Gestion des avis
+        document.getElementById('testimonialForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const text = document.getElementById('testimonialText').value;
+            const author = document.getElementById('testimonialAuthor').value;
+            const image = document.getElementById('testimonialImage').value;
+            
+            const newTestimonial = {
+                text,
+                author,
+                image: image || "https://via.placeholder.com/300x200/1a1a2e/00d4ff?text=Avis+Client",
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                updateStatus('💬 Ajout en cours...', false);
+                await window.dbPush(window.dbRef(window.firebaseDB, 'testimonials'), newTestimonial);
+                
+                document.getElementById('testimonialForm').reset();
+                updateStatus('✅ Avis ajouté avec succès !');
+                loadTestimonials();
+            } catch (error) {
+                updateStatus('❌ Erreur ajout: ' + error.message, false);
+            }
+        });
+
+        // Gestion du contenu
+        document.getElementById('contentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const section = document.getElementById('sectionSelect').value;
+            const title = document.getElementById('sectionTitle').value;
+            const content = document.getElementById('sectionContent').value;
+            const image = document.getElementById('sectionImage').value;
+            
+            const sectionData = {
+                section,
+                title,
+                content,
+                media: image,
+                mediaType: 'url',
+                showConstruction: false,
+                lastModified: new Date().toISOString()
+            };
+            
+            try {
+                updateStatus('💾 Sauvegarde en cours...', false);
+                await window.dbSet(window.dbRef(window.firebaseDB, `page_sections/${section}`), sectionData);
+                
+                document.getElementById('contentForm').reset();
+                updateStatus('✅ Section sauvegardée !');
+            } catch (error) {
+                updateStatus('❌ Erreur sauvegarde: ' + error.message, false);
+            }
+        });
+
+        // Charger les données avec mise à jour temps réel
+        async function loadNews() {
+            try {
+                updateStatus('🔄 Chargement des news...', false);
+                
+                const publicRef = window.dbRef(window.firebaseDB, 'public_news');
+                const vipRef = window.dbRef(window.firebaseDB, 'vip_news');
+                
+                const publicSnapshot = await window.dbGet(publicRef);
+                const vipSnapshot = await window.dbGet(vipRef);
+                
+                news = publicSnapshot.exists() ? Object.keys(publicSnapshot.val()).map(key => ({id: key, ...publicSnapshot.val()[key], type: 'public'})) : [];
+                vipNews = vipSnapshot.exists() ? Object.keys(vipSnapshot.val()).map(key => ({id: key, ...vipSnapshot.val()[key], type: 'vip'})) : [];
+                
+                const allNews = [...news, ...vipNews].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                const list = document.getElementById('newsList');
+                list.innerHTML = '';
+                
+                if (allNews.length === 0) {
+                    list.innerHTML = '<div class="content-item"><p style="text-align: center; color: rgba(255,255,255,0.6);">Aucune news publiée</p></div>';
+                } else {
+                    allNews.forEach(item => {
+                        const newsDiv = document.createElement('div');
+                        newsDiv.className = 'content-item';
+                        newsDiv.innerHTML = `
+                            <div class="content-item-header">
+                                <div>
+                                    <h4>${item.title}</h4>
+                                    <p>${item.content.substring(0, 150)}...</p>
+                                    <div class="content-meta">
+                                        <span class="priority-badge priority-${item.priority}">${item.priority}</span>
+                                        <span class="type-badge type-${item.type}">${item.type}</span>
+                                        <span style="color: rgba(255,255,255,0.6); font-size: 0.8em;">${new Date(item.date).toLocaleDateString('fr-FR')}</span>
+                                    </div>
+                                </div>
+                                <button onclick="deleteNews('${item.id}', '${item.type}')" class="delete-btn">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(newsDiv);
+                    });
+                }
+                
+                // Mise à jour des statistiques
+                document.getElementById('publicNews').textContent = news.length;
+                document.getElementById('vipNewsCount').textContent = vipNews.length;
+                
+                updateStatus('✅ News chargées !');
+            } catch (error) {
+                console.error('Erreur chargement news:', error);
+                updateStatus('❌ Erreur chargement news', false);
+            }
+        }
+
+        async function loadTestimonials() {
+            try {
+                updateStatus('🔄 Chargement des avis...', false);
+                
+                const ref = window.dbRef(window.firebaseDB, 'testimonials');
+                const snapshot = await window.dbGet(ref);
+                
+                testimonials = snapshot.exists() ? Object.keys(snapshot.val()).map(key => ({id: key, ...snapshot.val()[key]})) : [];
+                
+                const list = document.getElementById('testimonialsList');
+                list.innerHTML = '';
+                
+                if (testimonials.length === 0) {
+                    list.innerHTML = '<div class="content-item"><p style="text-align: center; color: rgba(255,255,255,0.6);">Aucun avis client</p></div>';
+                } else {
+                    testimonials.forEach(item => {
+                        const testimonialDiv = document.createElement('div');
+                        testimonialDiv.className = 'content-item';
+                        testimonialDiv.innerHTML = `
+                            <div class="content-item-header">
+                                <div>
+                                    <p style="font-style: italic; margin-bottom: 15px; font-size: 1.1em; line-height: 1.6;">"${item.text}"</p>
+                                    <div class="content-meta">
+                                        <strong style="color: #ff6b6b;">- ${item.author}</strong>
+                                        <span style="color: rgba(255,255,255,0.6); font-size: 0.8em;">${new Date(item.timestamp).toLocaleDateString('fr-FR')}</span>
+                                    </div>
+                                </div>
+                                <button onclick="deleteTestimonial('${item.id}')" class="delete-btn">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(testimonialDiv);
+                    });
+                }
+                
+                // Mise à jour des statistiques
+                document.getElementById('testimonialsCount').textContent = testimonials.length;
+                
+                updateStatus('✅ Avis chargés !');
+            } catch (error) {
+                console.error('Erreur chargement avis:', error);
+                updateStatus('❌ Erreur chargement avis', false);
+            }
+        }
+
+        // Fonctions de suppression
+        window.deleteNews = async function(id, type) {
+            if (confirm('Supprimer cette news ?')) {
+                try {
+                    const collection = type === 'vip' ? 'vip_news' : 'public_news';
+                    await window.dbRemove(window.dbRef(window.firebaseDB, `${collection}/${id}`));
+                    updateStatus('✅ News supprimée !');
+                    loadNews();
+                } catch (error) {
+                    updateStatus('❌ Erreur suppression: ' + error.message, false);
+                }
+            }
+        };
+
+        window.deleteTestimonial = async function(id) {
+            if (confirm('Supprimer cet avis ?')) {
+                try {
+                    await window.dbRemove(window.dbRef(window.firebaseDB, `testimonials/${id}`));
+                    updateStatus('✅ Avis supprimé !');
+                    loadTestimonials();
+                } catch (error) {
+                    updateStatus('❌ Erreur suppression: ' + error.message, false);
+                }
+            }
+        };
+
+        // Charger section sélectionnée
+        document.getElementById('sectionSelect').addEventListener('change', async () => {
+            const section = document.getElementById('sectionSelect').value;
+            
+            try {
+                const ref = window.dbRef(window.firebaseDB, `page_sections/${section}`);
+                const snapshot = await window.dbGet(ref);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    document.getElementById('sectionTitle').value = data.title || '';
+                    document.getElementById('sectionContent').value = data.content || '';
+                    document.getElementById('sectionImage').value = data.media || '';
+                } else {
+                    document.getElementById('sectionTitle').value = '';
+                    document.getElementById('sectionContent').value = '';
+                    document.getElementById('sectionImage').value = '';
+                }
+            } catch (error) {
+                console.error('Erreur chargement section:', error);
+            }
+        });
+
+        // Statistiques en temps réel
+        async function updateRealTimeStats() {
+            try {
+                // Compter les utilisateurs VIP
+                const usersRef = window.dbRef(window.firebaseDB, 'users');
+                const usersSnapshot = await window.dbGet(usersRef);
+                let vipCount = 0;
+                
+                if (usersSnapshot.exists()) {
+                    const users = usersSnapshot.val();
+                    vipCount = Object.values(users).filter(user => user.isVIP).length;
+                }
+                
+                document.getElementById('vipUsers').textContent = vipCount;
+                
+                // Mettre à jour l'indicateur temps réel
+                const indicator = document.querySelector('.realtime-indicator');
+                if (indicator) {
+                    indicator.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> Mis à jour: ${new Date().toLocaleTimeString('fr-FR')}`;
+                }
+                
+            } catch (error) {
+                console.error('Erreur mise à jour stats:', error);
+            }
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ajouter l'indicateur temps réel
+            const indicator = document.createElement('div');
+            indicator.className = 'realtime-indicator';
+            indicator.innerHTML = '<i class="fas fa-broadcast-tower"></i> Temps réel actif';
+            document.body.appendChild(indicator);
+            
+            // Charger les données initiales
+            loadNews();
+            loadTestimonials();
+            updateRealTimeStats();
+            
+            // Mise à jour automatique toutes les 30 secondes
+            setInterval(() => {
+                updateRealTimeStats();
+                loadNews();
+                loadTestimonials();
+            }, 30000);
+            
+            // Navigation par hash
+            const hash = window.location.hash;
+            if (hash) {
+                const section = document.querySelector(hash);
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace VIP - Misterpips</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <link rel="apple-touch-icon" href="Misterpips.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('userEmail').textContent = user.email;
+                checkAdminAccess(user.email);
+            }
+        });
+        
+        function checkAdminAccess(email) {
+            const adminEmails = ['admin@misterpips.com', 'misterpips@admin.com'];
+            if (adminEmails.includes(email)) {
+                document.getElementById('adminSection').style.display = 'block';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="vip-container">
+        <header class="vip-header">
+            <div class="vip-logo">
+                <img src="Misterpips.jpg" alt="Misterpips VIP" class="logo">
+                <h1>🔑 Espace VIP</h1>
+            </div>
+            <div class="user-info">
+                <span id="userEmail">Chargement...</span>
+                <button onclick="logout()" class="logout-btn">🚪 Déconnexion</button>
+            </div>
+        </header>
+
+        <main class="vip-main">
+            <div class="welcome-section">
+                <h2>🎉 Bienvenue dans l'Espace VIP !</h2>
+                <p>Accédez à tous vos outils de trading professionnels</p>
+            </div>
+            
+            <!-- Section News VIP -->
+            <div class="vip-news-section">
+                <h2>📰 Actualités VIP Exclusives</h2>
+                <div id="vip-news-grid" class="vip-news-grid">
+                    <!-- Les news VIP seront chargées dynamiquement -->
+                </div>
+            </div>
+
+            <div class="vip-tools-grid">
+                <div class="vip-tool-card" onclick="window.location.href='dashboard.html'">
+                    <div class="tool-icon">📊</div>
+                    <h3>Dashboard Trading</h3>
+                    <p>Gérez vos trades, analysez vos performances et suivez vos objectifs</p>
+                    <div class="tool-features">
+                        <span>✅ Graphiques avancés</span>
+                        <span>✅ Gestion multi-comptes</span>
+                        <span>✅ Export Excel</span>
+                    </div>
+                </div>
+
+                <div class="vip-tool-card" onclick="window.location.href='mobile-dashboard.html'">
+                    <div class="tool-icon">📱</div>
+                    <h3>Dashboard Mobile</h3>
+                    <p>Version mobile optimisée pour trader en déplacement</p>
+                    <div class="tool-features">
+                        <span>✅ Interface tactile</span>
+                        <span>✅ Notifications push</span>
+                        <span>✅ Sync temps réel</span>
+                    </div>
+                </div>
+
+                <div class="vip-tool-card" onclick="window.location.href='planning-forex.html'">
+                    <div class="tool-icon">📅</div>
+                    <h3>Planning Forex</h3>
+                    <p>Sessions de trading, calendrier économique et analyses d'impact</p>
+                    <div class="tool-features">
+                        <span>✅ Sessions en temps réel</span>
+                        <span>✅ Calendrier économique</span>
+                        <span>✅ Analyse d'impact</span>
+                    </div>
+                </div>
+
+                <div class="vip-tool-card" onclick="openChatVIP()">
+                    <div class="tool-icon">💬</div>
+                    <h3>Chat VIP</h3>
+                    <p>Communiquez avec l'équipe et les autres membres VIP</p>
+                    <div class="tool-features">
+                        <span>✅ Support prioritaire</span>
+                        <span>✅ Communauté VIP</span>
+                        <span>✅ Conseils exclusifs</span>
+                    </div>
+                </div>
+
+                <div class="vip-tool-card" onclick="openResources()">
+                    <div class="tool-icon">📚</div>
+                    <h3>Ressources VIP</h3>
+                    <p>Ebooks, formations et analyses exclusives</p>
+                    <div class="tool-features">
+                        <span>✅ Formations avancées</span>
+                        <span>✅ Analyses quotidiennes</span>
+                        <span>✅ Stratégies exclusives</span>
+                    </div>
+                </div>
+
+                <div class="vip-tool-card" onclick="openSettings()">
+                    <div class="tool-icon">⚙️</div>
+                    <h3>Paramètres</h3>
+                    <p>Configurez votre compte et vos préférences</p>
+                    <div class="tool-features">
+                        <span>✅ Profil personnalisé</span>
+                        <span>✅ Notifications</span>
+                        <span>✅ Sécurité</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Admin (cachée par défaut) -->
+            <div id="adminSection" class="admin-section" style="display: none;">
+                <h2>🔧 Administration</h2>
+                <div class="admin-tools">
+                    <button onclick="openUserManagement()" class="admin-btn">👥 Gestion Utilisateurs</button>
+                    <button onclick="openAnalytics()" class="admin-btn">📈 Statistiques</button>
+                    <button onclick="openSystemSettings()" class="admin-btn">⚙️ Système</button>
+                    <button onclick="openContentManager()" class="admin-btn">📰 Alimenter le Site</button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="vip-footer">
+            <p>&copy; 2025 Misterpips VIP - Accès Exclusif</p>
+        </footer>
+    </div>
+
+    <script>
+        function logout() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                sessionStorage.clear();
+                localStorage.removeItem('authenticated');
+                window.location.href = 'index.html';
+            }
+        }
+
+        function openChatVIP() {
+            alert('💬 Chat VIP disponible dans le Dashboard');
+            window.location.href = 'dashboard.html';
+        }
+
+        function openResources() {
+            alert('📚 Ressources VIP en cours de développement');
+        }
+
+        function openSettings() {
+            alert('⚙️ Paramètres disponibles dans le Dashboard');
+            window.location.href = 'dashboard.html';
+        }
+
+        function openUserManagement() {
+            window.open('admin-dashboard.html#users', '_blank');
+        }
+
+        function openAnalytics() {
+            window.open('admin-dashboard.html#dashboard', '_blank');
+        }
+
+        function openSystemSettings() {
+            window.open('admin-dashboard.html#content', '_blank');
+        }
+        
+        function openContentManager() {
+            window.open('admin-dashboard.html#news', '_blank');
+        }
+        
+        // Charger les news VIP
+        async function loadVIPNews() {
+            try {
+                const { getDatabase, ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+                
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+                    authDomain: "misterpips-b71fb.firebaseapp.com",
+                    databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+                    projectId: "misterpips-b71fb",
+                    storageBucket: "misterpips-b71fb.firebasestorage.app",
+                    messagingSenderId: "574231126409",
+                    appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+                };
+                
+                const app = initializeApp(firebaseConfig, 'vip-news-app');
+                const database = getDatabase(app);
+                
+                const vipNewsRef = ref(database, 'vip_news');
+                const snapshot = await get(vipNewsRef);
+                
+                const grid = document.getElementById('vip-news-grid');
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    grid.innerHTML = '<p class="no-news">Aucune actualité VIP pour le moment</p>';
+                    return;
+                }
+                
+                const newsData = snapshot.val();
+                const news = Object.keys(newsData).map(key => ({id: key, ...newsData[key]}));
+                
+                news.sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 4) // Limiter à 4 news VIP
+                    .forEach(item => {
+                        const newsItem = document.createElement('div');
+                        newsItem.className = 'vip-news-item';
+                        newsItem.innerHTML = `
+                            <h3>${item.title}</h3>
+                            ${item.image ? `<div class="news-image"><img src="${item.image}" alt="${item.title}" style="width: 100%; height: auto; max-height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px;"></div>` : ''}
+                            <div class="news-content">${item.content}</div>
+                            <div class="news-meta">
+                                <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                                <div class="news-date">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                            </div>
+                        `;
+                        grid.appendChild(newsItem);
+                    });
+                    
+                console.log('✅ News VIP chargées:', news.length);
+            } catch (error) {
+                console.error('Erreur chargement news VIP:', error);
+                const grid = document.getElementById('vip-news-grid');
+                if (grid) {
+                    grid.innerHTML = '<p class="error-message">Erreur de chargement des actualités VIP</p>';
+                }
+            }
+        }
+        
+        // Charger les news au démarrage
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVIPNews();
+        });
+    </script>
+
+    <style>
+        .vip-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+        }
+
+        .vip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(15, 15, 15, 0.95);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .vip-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .vip-logo .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #00d4ff;
+        }
+
+        .vip-logo h1 {
+            color: #00d4ff;
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .vip-main {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .welcome-section h2 {
+            font-size: 2.5em;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .vip-tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .vip-tool-card {
+            background: linear-gradient(135deg, rgba(30, 34, 45, 0.95), rgba(20, 25, 35, 0.95));
+            border: 2px solid rgba(0, 212, 255, 0.4);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .vip-tool-card:hover {
+            transform: translateY(-10px);
+            border-color: #00d4ff;
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .tool-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .vip-tool-card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .vip-tool-card p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .tool-features {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tool-features span {
+            color: #4ecdc4;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .admin-section {
+            background: rgba(255, 107, 107, 0.1);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .admin-section h2 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        .admin-tools {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* VIP News Section */
+        .vip-news-section {
+            margin-bottom: 50px;
+        }
+        
+        .vip-news-section h2 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .vip-news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .vip-news-item {
+            background: rgba(30, 34, 45, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .vip-news-item:hover {
+            transform: translateY(-5px);
+            border-color: #00d4ff;
+            box-shadow: 0 15px 30px rgba(0, 212, 255, 0.2);
+        }
+        
+        .vip-news-item h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .vip-news-item .news-content {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .vip-news-item .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .news-priority {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .priority-high {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .priority-medium {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+        
+        .priority-low {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+        }
+        
+        .news-date {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+        }
+        
+        .no-news, .error-message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            padding: 40px;
+            grid-column: 1 / -1;
+        }
+
+        .admin-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .vip-footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(15, 15, 15, 0.95);
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .vip-header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .vip-main {
+                padding: 20px;
+            }
+
+            .vip-tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-tools {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</body>
+</html>

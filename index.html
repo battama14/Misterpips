@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misterpips - Trading Professionnel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Misterpips">
+    <link rel="apple-touch-icon" href="Misterpips.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        
+        window.firebaseAuth = { auth, signInWithEmailAndPassword };
+        window.firebaseDB = database;
+        window.dbRef = ref;
+        window.dbGet = get;
+        window.dbSet = set;
+    </script>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="Misterpips.jpg" alt="Misterpips Logo" class="logo">
+        </div>
+        <nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#presentation">Présentation</a></li>
+                <li><a href="#apprentissage">Apprentissage</a></li>
+                <li><a href="#about">À propos</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="#vip" class="vip-login-nav" id="vipLoginNav">🔑 CONNEXION VIP</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Bienvenue chez Misterpips</h1>
+                <p>Votre partenaire pour maîtriser l'art du trading</p>
+                <div class="cta-buttons">
+                    <a href="#vip" class="cta-button">Rejoindre notre programme VIP</a>
+                    <a href="https://t.me/misterpips_support" class="telegram-button" target="_blank">
+                        <i class="fab fa-telegram"></i> Support Telegram
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="presentation" class="section">
+            <div class="container">
+                <h2>Présentation</h2>
+                <div class="section-content">
+                    <div class="construction-container">
+                        <div class="construction-icon">
+                            <i class="fas fa-hard-hat"></i>
+                        </div>
+                        <h3>Section en construction</h3>
+                        <p>Notre équipe travaille actuellement sur du contenu exceptionnel pour cette section.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section News Publiques -->
+        <section id="news" class="section">
+            <div class="container">
+                <h2>Actualités</h2>
+                <div id="public-news-grid" class="news-grid">
+                    <!-- Les news publiques seront chargées dynamiquement -->
+                </div>
+            </div>
+        </section>
+
+        <section id="apprentissage" class="section">
+            <div class="container">
+                <h2>Apprentissage</h2>
+                <div class="learning-content">
+                    <div class="priority-ebook">
+                        <div class="ebook-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3>📚 Ebook Fondamental - À lire en PREMIER !</h3>
+                        <div class="ebook-highlight">
+                            <p><strong>IMPORTANT:</strong> Cette ebook doit être lu et analysé en premier avant d'aller plus loin dans l'apprentissage.</p>
+                            <a href="https://github.com/battama14/Misterpips/raw/e664f568b9b95d9853368e723f31f2cc9f9ff1c6/pips%20book2.pdf" class="ebook-button" download="Ebook-Misterpips-Fondamental.pdf" target="_blank">
+                                <i class="fas fa-download"></i> Télécharger l'Ebook Fondamental
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Avis Clients -->
+        <section id="testimonials" class="section">
+            <div class="container">
+                <h2>Avis de nos Clients</h2>
+                <div id="testimonials-grid" class="testimonials-grid">
+                    <!-- Les avis seront chargés dynamiquement -->
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="section">
+            <div class="container">
+                <h2>À propos de nous</h2>
+                <div class="section-content">
+                    <div class="construction-container">
+                        <div class="construction-icon">
+                            <i class="fas fa-user-hard-hat"></i>
+                        </div>
+                        <h3>Section en construction</h3>
+                        <p>Notre équipe travaille actuellement sur du contenu exceptionnel pour cette section.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="section">
+            <div class="container">
+                <h2>Nous contacter</h2>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <h3>Rejoignez notre communauté</h3>
+                        <div class="contact-links">
+                            <div class="social-icons-grid">
+                                <a href="https://www.instagram.com/EVAN4SLM/" class="social-icon-link instagram-icon" target="_blank">
+                                    <i class="fab fa-instagram"></i>
+                                    <span>@EVAN4SLM</span>
+                                </a>
+                                <a href="https://www.tiktok.com/@MISTERPIPS3" class="social-icon-link tiktok-icon" target="_blank">
+                                    <i class="fab fa-tiktok"></i>
+                                    <span>@MISTERPIPS3</span>
+                                </a>
+                                <a href="https://t.me/misterpips_support" class="social-icon-link telegram-icon" target="_blank">
+                                    <i class="fab fa-telegram-plane"></i>
+                                    <span>Support</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="vip" class="section vip-section">
+            <div class="container">
+                <h2>Programme VIP</h2>
+                <div class="vip-content">
+                    <div class="vip-hero">
+                        <div class="vip-icon">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h3>Espace VIP Exclusif</h3>
+                        <p>Accédez à nos outils professionnels de trading, analyses avancées et dashboard personnalisé.</p>
+                        <form id="vip-form" class="vip-form">
+                            <input type="email" id="vip-email" placeholder="Email VIP" required>
+                            <input type="password" id="vip-password" placeholder="Mot de passe" required>
+                            <button type="submit" class="vip-dashboard-button">
+                                <i class="fas fa-key"></i> Accéder à l'espace VIP
+                            </button>
+                        </form>
+                        <div class="vip-support-section">
+                            <p class="support-text">Pas encore membre VIP ? Fais ta demande ici</p>
+                            <button id="contactSupportBtn" class="support-button">
+                                <i class="fas fa-headset"></i> Contacter le Support
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="Misterpips.jpg" alt="Misterpips Logo" class="footer-logo-img">
+                <p>Misterpips - Votre partenaire de trading</p>
+            </div>
+            <div class="social-links">
+                <a href="https://www.instagram.com/EVAN4SLM/" target="_blank" class="social-link instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://www.tiktok.com/@MISTERPIPS3" target="_blank" class="social-link tiktok">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+                <a href="https://t.me/misterpips_support" target="_blank" class="social-link telegram">
+                    <i class="fab fa-telegram-plane"></i>
+                </a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Misterpips. Tous droits réservés.</p>
+            <p class="disclaimer">Le trading comporte des risques. Les performances passées ne préjugent pas des performances futures.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Charger les news et avis après que Firebase soit prêt
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                loadPublicNews();
+                loadTestimonials();
+            }, 2000);
+        });
+        
+        async function loadPublicNews() {
+            try {
+                const newsRef = window.dbRef(window.firebaseDB, 'public_news');
+                const newsSnapshot = await window.dbGet(newsRef);
+                const news = newsSnapshot.exists() ? Object.keys(newsSnapshot.val()).map(key => ({id: key, ...newsSnapshot.val()[key]})) : [];
+                
+                const grid = document.getElementById('public-news-grid');
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                
+                if (news.length === 0) {
+                    grid.innerHTML = '<p class="no-news">Aucune actualité pour le moment</p>';
+                    return;
+                }
+                
+                news.sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 6)
+                    .forEach(item => {
+                        const newsItem = document.createElement('div');
+                        newsItem.className = 'news-item';
+                        newsItem.innerHTML = `
+                            <h3>${item.title}</h3>
+                            ${item.image ? `<div class="news-image"><img src="${item.image}" alt="${item.title}" style="width: 100%; height: auto; max-height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px;"></div>` : ''}
+                            <div class="news-content">${item.content}</div>
+                            <div class="news-meta">
+                                <span class="news-priority priority-${item.priority}">${item.priority.toUpperCase()}</span>
+                                <div class="news-date">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                            </div>
+                        `;
+                        grid.appendChild(newsItem);
+                    });
+                    
+                console.log('✅ News publiques chargées:', news.length);
+            } catch (error) {
+                console.error('Erreur chargement news publiques:', error);
+                const grid = document.getElementById('public-news-grid');
+                if (grid) {
+                    grid.innerHTML = '<p class="error-message">Erreur de chargement des actualités</p>';
+                }
+            }
+        }
+        
+        async function loadTestimonials() {
+            try {
+                const testimonialsRef = window.dbRef(window.firebaseDB, 'testimonials');
+                const testimonialsSnapshot = await window.dbGet(testimonialsRef);
+                const testimonials = testimonialsSnapshot.exists() ? Object.keys(testimonialsSnapshot.val()).map(key => ({id: key, ...testimonialsSnapshot.val()[key]})) : [];
+                
+                const grid = document.getElementById('testimonials-grid');
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                
+                if (testimonials.length === 0) {
+                    grid.innerHTML = '<p class="no-testimonials">Aucun avis pour le moment</p>';
+                    return;
+                }
+                
+                testimonials.forEach(testimonial => {
+                    const item = document.createElement('div');
+                    item.className = 'testimonial-item';
+                    item.innerHTML = `
+                        ${testimonial.image ? `<div class="testimonial-image"><img src="${testimonial.image}" alt="${testimonial.author}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;"></div>` : '<div class="testimonial-avatar">👤</div>'}
+                        <div class="testimonial-content">"${testimonial.text}"</div>
+                        <div class="testimonial-author">- ${testimonial.author}</div>
+                        <div class="testimonial-date">${new Date(testimonial.timestamp).toLocaleDateString('fr-FR')}</div>
+                    `;
+                    grid.appendChild(item);
+                });
+                
+                console.log('✅ Avis clients chargés:', testimonials.length);
+            } catch (error) {
+                console.error('Erreur chargement avis:', error);
+                const grid = document.getElementById('testimonials-grid');
+                if (grid) {
+                    grid.innerHTML = '<p class="error-message">Erreur de chargement des avis</p>';
+                }
+            }
+        }
+    </script>
+    <script type="module">
+        import { setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        await setPersistence(window.firebaseAuth.auth, browserSessionPersistence);
+        
+        document.getElementById('vip-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('vip-email').value;
+            const password = document.getElementById('vip-password').value;
+            
+            try {
+                const userCredential = await window.firebaseAuth.signInWithEmailAndPassword(window.firebaseAuth.auth, email, password);
+                const user = userCredential.user;
+                
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+                sessionStorage.setItem('authenticated', 'true');
+                
+                const userRef = window.dbRef(window.firebaseDB, `users/${user.uid}`);
+                const userSnapshot = await window.dbGet(userRef);
+                
+                const isFirstLogin = !userSnapshot.exists() || !userSnapshot.val().hasLoggedIn;
+                
+                await window.dbSet(userRef, {
+                    email: user.email,
+                    isVIP: true,
+                    plan: 'VIP',
+                    hasLoggedIn: true,
+                    lastLogin: new Date().toISOString()
+                });
+                
+                // Détection mobile
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                                (window.innerWidth <= 768 && window.innerHeight <= 1024);
+                
+                if (isFirstLogin) {
+                    alert('FÉLICITATIONS ! Bienvenue dans la famille VIP - Misterpips');
+                }
+                
+                window.location.href = 'vip-space.html';
+            } catch (error) {
+                alert('Identifiants incorrects: ' + error.message);
+            }
+        });
+        
+        document.getElementById('contactSupportBtn').addEventListener('click', () => {
+            if (confirm('Pour devenir membre VIP, contactez notre support sur Telegram @misterpips_support\n\nVoulez-vous ouvrir Telegram maintenant ?')) {
+                window.open('https://t.me/misterpips_support', '_blank');
+            }
+        });
+        
+
+    </script>
+</body>
+</html>
