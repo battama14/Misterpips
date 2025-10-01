@@ -1,5 +1,5 @@
-// Mobile Firebase - Version compatible SES
-console.log('🔥 Mobile Firebase chargé');
+// Version mobile complète avec toutes les corrections
+console.log('📱 Mobile complet chargé');
 
 var mobileFirebase = {
     db: null,
@@ -8,10 +8,22 @@ var mobileFirebase = {
     isConnected: false
 };
 
+var mobileData = {
+    trades: [],
+    capital: 1000,
+    currentAccount: 'compte1',
+    settings: {
+        capital: 1000,
+        riskPerTrade: 2,
+        dailyTarget: 1,
+        notifications: 'all',
+        nickname: ''
+    }
+};
+
 function initMobileFirebase() {
-    console.log('🚀 Init Firebase mobile');
+    console.log('🚀 Init Firebase mobile complet');
     
-    // Attendre que Firebase soit disponible
     var attempts = 0;
     var maxAttempts = 50;
     
@@ -23,7 +35,6 @@ function initMobileFirebase() {
             mobileFirebase.auth = window.firebaseAuth;
             mobileFirebase.isConnected = true;
             
-            // Récupérer l'utilisateur
             var firebaseUID = sessionStorage.getItem('firebaseUID');
             var userEmail = sessionStorage.getItem('userEmail');
             
@@ -48,31 +59,27 @@ function initMobileFirebase() {
 
 function loadMobileDataFromFirebase() {
     if (!mobileFirebase.isConnected || !mobileFirebase.currentUser) {
-        console.log('📱 Mode local - Firebase non disponible');
         loadMobileDataLocal();
         return;
     }
     
     try {
-        var currentAccount = 'compte1';
-        var accountRef = window.dbRef(mobileFirebase.db, 'users/' + mobileFirebase.currentUser.uid + '/accounts/' + currentAccount);
+        var accountRef = window.dbRef(mobileFirebase.db, 'users/' + mobileFirebase.currentUser.uid + '/accounts/' + mobileData.currentAccount);
         
         window.dbGet(accountRef).then(function(snapshot) {
             if (snapshot.exists()) {
                 var data = snapshot.val();
                 mobileData.trades = data.trades || [];
                 mobileData.capital = data.capital || 1000;
-                mobileData.settings = data.settings || { capital: 1000, riskPerTrade: 2 };
-                mobileData.currentAccount = currentAccount;
+                mobileData.settings = Object.assign(mobileData.settings, data.settings || {});
                 
                 console.log('☁️ Données PC synchronisées vers mobile:', mobileData.trades.length, 'trades');
                 updateMobileDisplay();
             } else {
-                console.log('📱 Aucune donnée PC, création nouveau compte');
                 loadMobileDataLocal();
             }
         }).catch(function(error) {
-            console.error('❌ Erreur sync PC vers mobile:', error);
+            console.error('❌ Erreur sync:', error);
             loadMobileDataLocal();
         });
     } catch (error) {
@@ -83,32 +90,26 @@ function loadMobileDataFromFirebase() {
 
 function saveMobileDataToFirebase() {
     if (!mobileFirebase.isConnected || !mobileFirebase.currentUser) {
-        console.log('💾 Sauvegarde locale uniquement');
         saveMobileDataLocal();
         return;
     }
     
     try {
-        var currentAccount = mobileData.currentAccount || 'compte1';
         var dataToSave = {
             trades: mobileData.trades,
             capital: mobileData.capital,
-            settings: {
-                capital: mobileData.capital,
-                riskPerTrade: mobileData.settings ? mobileData.settings.riskPerTrade : 2,
-                dailyTarget: mobileData.settings ? mobileData.settings.dailyTarget : 1
-            },
+            settings: mobileData.settings,
             lastUpdated: new Date().toISOString(),
             platform: 'mobile'
         };
         
-        var accountRef = window.dbRef(mobileFirebase.db, 'users/' + mobileFirebase.currentUser.uid + '/accounts/' + currentAccount);
+        var accountRef = window.dbRef(mobileFirebase.db, 'users/' + mobileFirebase.currentUser.uid + '/accounts/' + mobileData.currentAccount);
         
         window.dbSet(accountRef, dataToSave).then(function() {
-            console.log('☁️ Données mobile synchronisées avec PC');
+            console.log('☁️ Mobile synchronisé avec PC');
             saveMobileDataLocal();
         }).catch(function(error) {
-            console.error('❌ Erreur sync Firebase:', error);
+            console.error('❌ Erreur sync:', error);
             saveMobileDataLocal();
         });
     } catch (error) {
@@ -119,13 +120,10 @@ function saveMobileDataToFirebase() {
 
 function loadMobileDataLocal() {
     try {
-        var saved = localStorage.getItem('mobile_data_firebase');
+        var saved = localStorage.getItem('mobile_data_complete');
         if (saved) {
             var data = JSON.parse(saved);
-            mobileData.trades = data.trades || [];
-            mobileData.settings = data.settings || { capital: 1000, riskPerTrade: 2 };
-            mobileData.capital = data.settings ? data.settings.capital : 1000;
-            console.log('📱 Données chargées depuis localStorage:', mobileData.trades.length, 'trades');
+            mobileData = Object.assign(mobileData, data);
         }
     } catch (error) {
         console.error('❌ Erreur localStorage:', error);
@@ -135,31 +133,21 @@ function loadMobileDataLocal() {
 
 function saveMobileDataLocal() {
     try {
-        var dataToSave = {
-            trades: mobileData.trades,
-            settings: {
-                capital: mobileData.capital,
-                riskPerTrade: mobileData.settings ? mobileData.settings.riskPerTrade : 2
-            },
-            lastUpdated: new Date().toISOString()
-        };
-        localStorage.setItem('mobile_data_firebase', JSON.stringify(dataToSave));
-        console.log('💾 Données sauvegardées en localStorage');
+        localStorage.setItem('mobile_data_complete', JSON.stringify(mobileData));
     } catch (error) {
-        console.error('❌ Erreur sauvegarde localStorage:', error);
+        console.error('❌ Erreur sauvegarde locale:', error);
     }
 }
 
 function sendMobileChatMessage(message) {
     if (!mobileFirebase.isConnected || !mobileFirebase.currentUser) {
-        console.log('💬 Chat non disponible - Firebase déconnecté');
         showMobileNotification('Chat non disponible');
         return;
     }
     
     try {
         var messagesRef = window.dbRef(mobileFirebase.db, 'chat_messages');
-        var nickname = mobileFirebase.currentUser.email.split('@')[0] || 'Mobile User';
+        var nickname = mobileData.settings.nickname || mobileFirebase.currentUser.email.split('@')[0];
         
         var messageData = {
             userId: mobileFirebase.currentUser.uid,
@@ -171,34 +159,30 @@ function sendMobileChatMessage(message) {
         };
         
         window.dbPush(messagesRef, messageData).then(function() {
-            console.log('💬 Message envoyé depuis mobile vers PC');
+            console.log('💬 Message mobile → PC envoyé');
             showMobileNotification('Message envoyé !');
         }).catch(function(error) {
-            console.error('❌ Erreur envoi message:', error);
-            showMobileNotification('Erreur envoi message');
+            console.error('❌ Erreur chat:', error);
+            showMobileNotification('Erreur envoi');
         });
     } catch (error) {
         console.error('❌ Erreur chat:', error);
-        showMobileNotification('Erreur chat');
     }
 }
 
 function loadMobileChatMessages() {
-    if (!mobileFirebase.isConnected) {
-        return;
-    }
+    if (!mobileFirebase.isConnected) return;
     
     try {
         var messagesRef = window.dbRef(mobileFirebase.db, 'chat_messages');
         
         window.dbOnValue(messagesRef, function(snapshot) {
             if (snapshot.exists()) {
-                var messages = snapshot.val();
-                displayMobileChatMessages(messages);
+                displayMobileChatMessages(snapshot.val());
             }
         });
     } catch (error) {
-        console.error('❌ Erreur chargement chat:', error);
+        console.error('❌ Erreur chat:', error);
     }
 }
 
@@ -209,32 +193,18 @@ function displayMobileChatMessages(messages) {
     var messageArray = [];
     for (var key in messages) {
         if (messages.hasOwnProperty(key)) {
-            messageArray.push({
-                id: key,
-                userId: messages[key].userId,
-                nickname: messages[key].nickname,
-                message: messages[key].message,
-                timestamp: messages[key].timestamp
-            });
+            messageArray.push(Object.assign({id: key}, messages[key]));
         }
     }
     
-    // Trier par timestamp
-    messageArray.sort(function(a, b) {
-        return a.timestamp - b.timestamp;
-    });
-    
-    // Prendre les 50 derniers messages
+    messageArray.sort(function(a, b) { return a.timestamp - b.timestamp; });
     var recentMessages = messageArray.slice(-50);
     
     var html = '';
     for (var i = 0; i < recentMessages.length; i++) {
         var msg = recentMessages[i];
         var isOwn = msg.userId === mobileFirebase.currentUser.uid;
-        var time = new Date(msg.timestamp).toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        var time = new Date(msg.timestamp).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
         
         html += '<div class="chat-message ' + (isOwn ? 'own' : 'other') + '">';
         html += '<div class="message-header">';
@@ -249,68 +219,30 @@ function displayMobileChatMessages(messages) {
     container.scrollTop = container.scrollHeight;
 }
 
-// Variables globales
-var mobileData = {
-    trades: [],
-    capital: 1000,
-    settings: {
-        capital: 1000,
-        riskPerTrade: 2,
-        dailyTarget: 1
-    }
-};
-
 function initMobileInterface() {
-    console.log('🎨 Init interface mobile');
+    console.log('🎨 Init interface mobile complète');
     
-    // Menu
     var menuToggle = document.getElementById('menuToggle');
     var mobileMenu = document.getElementById('mobileMenu');
     var closeMenu = document.getElementById('closeMenu');
     
     if (menuToggle && mobileMenu) {
-        menuToggle.onclick = function() {
-            mobileMenu.classList.add('open');
-        };
+        menuToggle.onclick = function() { mobileMenu.classList.add('open'); };
     }
-    
     if (closeMenu && mobileMenu) {
-        closeMenu.onclick = function() {
-            mobileMenu.classList.remove('open');
-        };
+        closeMenu.onclick = function() { mobileMenu.classList.remove('open'); };
     }
     
-    // Boutons trade
     var newTradeBtn = document.getElementById('newTradeBtn');
     var addTradeBtn = document.getElementById('addTradeBtn');
     var closeTradeModal = document.getElementById('closeTradeModal');
     var saveMobileTradeBtn = document.getElementById('saveMobileTradeBtn');
     
-    if (newTradeBtn) {
-        newTradeBtn.onclick = function() {
-            showMobileTradeModal();
-        };
-    }
+    if (newTradeBtn) newTradeBtn.onclick = showMobileTradeModal;
+    if (addTradeBtn) addTradeBtn.onclick = showMobileTradeModal;
+    if (closeTradeModal) closeTradeModal.onclick = hideMobileTradeModal;
+    if (saveMobileTradeBtn) saveMobileTradeBtn.onclick = saveMobileTrade;
     
-    if (addTradeBtn) {
-        addTradeBtn.onclick = function() {
-            showMobileTradeModal();
-        };
-    }
-    
-    if (closeTradeModal) {
-        closeTradeModal.onclick = function() {
-            hideMobileTradeModal();
-        };
-    }
-    
-    if (saveMobileTradeBtn) {
-        saveMobileTradeBtn.onclick = function() {
-            saveMobileTrade();
-        };
-    }
-    
-    // Chat
     var mobileChatToggle = document.getElementById('mobileChatToggle');
     var mobileChatWindow = document.getElementById('mobileChatWindow');
     var closeMobileChat = document.getElementById('closeMobileChat');
@@ -318,17 +250,11 @@ function initMobileInterface() {
     var mobileChatInput = document.getElementById('mobileChatInput');
     
     if (mobileChatToggle && mobileChatWindow) {
-        mobileChatToggle.onclick = function() {
-            mobileChatWindow.classList.toggle('show');
-        };
+        mobileChatToggle.onclick = function() { mobileChatWindow.classList.toggle('show'); };
     }
-    
     if (closeMobileChat && mobileChatWindow) {
-        closeMobileChat.onclick = function() {
-            mobileChatWindow.classList.remove('show');
-        };
+        closeMobileChat.onclick = function() { mobileChatWindow.classList.remove('show'); };
     }
-    
     if (sendMobileMessage) {
         sendMobileMessage.onclick = function() {
             var input = document.getElementById('mobileChatInput');
@@ -339,7 +265,6 @@ function initMobileInterface() {
             }
         };
     }
-    
     if (mobileChatInput) {
         mobileChatInput.onkeypress = function(e) {
             if (e.key === 'Enter') {
@@ -352,31 +277,21 @@ function initMobileInterface() {
         };
     }
     
-    // Paramètres
     var saveSettingsBtn = document.getElementById('saveSettingsBtn');
-    if (saveSettingsBtn) {
-        saveSettingsBtn.onclick = function() {
-            saveMobileSettings();
-        };
-    }
+    if (saveSettingsBtn) saveSettingsBtn.onclick = saveMobileSettings;
     
-    // Navigation bottom
     var navBtns = document.querySelectorAll('.nav-btn');
     for (var i = 0; i < navBtns.length; i++) {
         navBtns[i].addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Retirer active de tous les boutons
             for (var j = 0; j < navBtns.length; j++) {
                 navBtns[j].classList.remove('active');
             }
-            
-            // Ajouter active au bouton cliqué
             this.classList.add('active');
             
-            // Déterminer la section à afficher
-            var sectionId = 'dashboard';
             var iconText = this.querySelector('.nav-icon').textContent;
+            var sectionId = 'dashboard';
             
             if (iconText === '📈') sectionId = 'trades';
             else if (iconText === '📅') sectionId = 'calendar';
@@ -387,17 +302,51 @@ function initMobileInterface() {
         });
     }
     
-    // Charger le chat
     loadMobileChatMessages();
+    console.log('✅ Interface mobile complète initialisée');
+}
+
+function showMobileSection(sectionId) {
+    console.log('🔄 Navigation vers:', sectionId);
     
-    console.log('✅ Interface mobile initialisée');
+    var sections = document.querySelectorAll('.section');
+    for (var i = 0; i < sections.length; i++) {
+        sections[i].classList.remove('active');
+    }
+    
+    var targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        
+        switch(sectionId) {
+            case 'dashboard':
+                updateMobileCharts();
+                break;
+            case 'trades':
+                updateMobileTradesList();
+                break;
+            case 'calendar':
+                updateMobileCalendar();
+                break;
+            case 'objectives':
+                updateMobileObjectives();
+                break;
+            case 'ranking':
+                loadRealMobileRanking();
+                break;
+            case 'settings':
+                updateMobileSettings();
+                break;
+        }
+    }
+    
+    var mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenu) mobileMenu.classList.remove('open');
 }
 
 function showMobileTradeModal() {
     var modal = document.getElementById('mobileTradeModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
+    if (modal) modal.classList.add('show');
 }
 
 function hideMobileTradeModal() {
@@ -411,10 +360,10 @@ function hideMobileTradeModal() {
 
 function saveMobileTrade() {
     var currency = document.getElementById('mobileCurrency') ? document.getElementById('mobileCurrency').value : 'EUR/USD';
-    var entryPoint = document.getElementById('mobileEntryPoint') ? parseFloat(document.getElementById('mobileEntryPoint').value) : 1.0000;
-    var stopLoss = document.getElementById('mobileStopLoss') ? parseFloat(document.getElementById('mobileStopLoss').value) : 0.9950;
-    var takeProfit = document.getElementById('mobileTakeProfit') ? parseFloat(document.getElementById('mobileTakeProfit').value) : 1.0050;
-    var lotSize = document.getElementById('mobileLotSize') ? parseFloat(document.getElementById('mobileLotSize').value) : 0.1;
+    var entryPoint = document.getElementById('mobileEntryPoint') ? parseFloat(document.getElementById('mobileEntryPoint').value) : 0;
+    var stopLoss = document.getElementById('mobileStopLoss') ? parseFloat(document.getElementById('mobileStopLoss').value) : 0;
+    var takeProfit = document.getElementById('mobileTakeProfit') ? parseFloat(document.getElementById('mobileTakeProfit').value) : 0;
+    var lotSize = document.getElementById('mobileLotSize') ? parseFloat(document.getElementById('mobileLotSize').value) : 0;
     
     if (!currency || !entryPoint || !stopLoss || !takeProfit || !lotSize) {
         alert('Veuillez remplir tous les champs');
@@ -442,17 +391,106 @@ function saveMobileTrade() {
     showMobileNotification('Trade ajouté !');
 }
 
+function closeMobileTrade(tradeId) {
+    var result = prompt('Résultat (TP/SL/BE):', 'TP');
+    if (!result) return;
+    
+    for (var i = 0; i < mobileData.trades.length; i++) {
+        if (mobileData.trades[i].id === tradeId) {
+            var trade = mobileData.trades[i];
+            trade.status = 'closed';
+            trade.result = result.toUpperCase();
+            trade.closeDate = new Date().toISOString();
+            
+            if (result.toUpperCase() === 'TP') {
+                trade.closePrice = trade.takeProfit;
+            } else if (result.toUpperCase() === 'SL') {
+                trade.closePrice = trade.stopLoss;
+            } else {
+                trade.closePrice = trade.entryPoint;
+            }
+            
+            var entryPoint = parseFloat(trade.entryPoint);
+            var closePrice = parseFloat(trade.closePrice);
+            var lotSize = parseFloat(trade.lotSize);
+            var priceDiff = closePrice - entryPoint;
+            var isLong = parseFloat(trade.takeProfit) > entryPoint;
+            if (!isLong) priceDiff = -priceDiff;
+            
+            if (trade.currency === 'XAU/USD') {
+                trade.pnl = priceDiff * lotSize * 100;
+            } else if (trade.currency.includes('JPY')) {
+                trade.pnl = priceDiff * lotSize * 1000;
+            } else {
+                trade.pnl = priceDiff * lotSize * 100000;
+            }
+            
+            trade.pnl = parseFloat(trade.pnl.toFixed(2));
+            break;
+        }
+    }
+    
+    saveMobileDataToFirebase();
+    updateMobileDisplay();
+    showMobileNotification('Trade clôturé en ' + result);
+}
+
+function editMobileTrade(tradeId) {
+    for (var i = 0; i < mobileData.trades.length; i++) {
+        if (mobileData.trades[i].id === tradeId) {
+            var trade = mobileData.trades[i];
+            var newEntry = prompt('Nouvelle entrée:', trade.entryPoint);
+            var newSL = prompt('Nouveau Stop Loss:', trade.stopLoss);
+            var newTP = prompt('Nouveau Take Profit:', trade.takeProfit);
+            
+            if (newEntry && newSL && newTP) {
+                trade.entryPoint = parseFloat(newEntry);
+                trade.stopLoss = parseFloat(newSL);
+                trade.takeProfit = parseFloat(newTP);
+                
+                saveMobileDataToFirebase();
+                updateMobileDisplay();
+                showMobileNotification('Trade modifié !');
+            }
+            break;
+        }
+    }
+}
+
+function deleteMobileTrade(tradeId) {
+    if (confirm('Supprimer ce trade ?')) {
+        for (var i = 0; i < mobileData.trades.length; i++) {
+            if (mobileData.trades[i].id === tradeId) {
+                mobileData.trades.splice(i, 1);
+                saveMobileDataToFirebase();
+                updateMobileDisplay();
+                showMobileNotification('Trade supprimé !');
+                break;
+            }
+        }
+    }
+}
+
 function saveMobileSettings() {
+    var nickname = document.getElementById('mobileNicknameInput') ? document.getElementById('mobileNicknameInput').value : '';
     var capital = document.getElementById('mobileCapitalInput') ? parseFloat(document.getElementById('mobileCapitalInput').value) : 1000;
     var risk = document.getElementById('mobileRiskInput') ? parseFloat(document.getElementById('mobileRiskInput').value) : 2;
     var dailyTarget = document.getElementById('mobileDailyTargetInput') ? parseFloat(document.getElementById('mobileDailyTargetInput').value) : 1;
+    var notifications = document.getElementById('mobileNotificationsInput') ? document.getElementById('mobileNotificationsInput').value : 'all';
     
     mobileData.capital = capital || 1000;
     mobileData.settings = {
         capital: capital || 1000,
         riskPerTrade: risk || 2,
-        dailyTarget: dailyTarget || 1
+        dailyTarget: dailyTarget || 1,
+        notifications: notifications,
+        nickname: nickname
     };
+    
+    if (nickname && mobileFirebase.currentUser) {
+        var userRef = window.dbRef(mobileFirebase.db, 'users/' + mobileFirebase.currentUser.uid);
+        window.dbSet(userRef, { nickname: nickname, isVIP: true });
+    }
     
     saveMobileDataToFirebase();
     updateMobileDisplay();
@@ -464,6 +502,68 @@ function updateMobileDisplay() {
     updateMobileTradesList();
     updateMobileObjectives();
     updateMobileCharts();
+}
+
+function updateMobileStats() {
+    var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
+    var totalPnL = closedTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
+    var winRate = closedTrades.length > 0 ? 
+        (closedTrades.filter(function(t) { return (parseFloat(t.pnl) || 0) > 0; }).length / closedTrades.length * 100) : 0;
+    var currentCapital = mobileData.capital + totalPnL;
+    
+    var capitalEl = document.getElementById('mobileCapital');
+    var winRateEl = document.getElementById('mobileWinRate');
+    var pnlEl = document.getElementById('mobilePnL');
+    
+    if (capitalEl) capitalEl.textContent = '$' + currentCapital.toFixed(2);
+    if (winRateEl) winRateEl.textContent = winRate.toFixed(1) + '%';
+    if (pnlEl) {
+        pnlEl.textContent = '$' + totalPnL.toFixed(2);
+        pnlEl.className = totalPnL >= 0 ? 'stat-value positive' : 'stat-value negative';
+    }
+}
+
+function updateMobileTradesList() {
+    var container = document.getElementById('mobileTradesList');
+    if (!container) return;
+    
+    if (mobileData.trades.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;"><div style="font-size: 48px; margin-bottom: 20px;">📈</div><h3>Aucun trade</h3><p>Commencez par ajouter votre premier trade</p></div>';
+        return;
+    }
+    
+    var recentTrades = mobileData.trades.slice(-10).reverse();
+    var html = '';
+    
+    for (var i = 0; i < recentTrades.length; i++) {
+        var trade = recentTrades[i];
+        var pnl = parseFloat(trade.pnl || 0);
+        var pnlClass = pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : '';
+        
+        html += '<div class="trade-card">';
+        html += '<div class="trade-header">';
+        html += '<span class="trade-pair">' + trade.currency + '</span>';
+        html += '<span class="trade-status ' + trade.status + '">' + trade.status.toUpperCase() + '</span>';
+        html += '</div>';
+        html += '<div class="trade-details">';
+        html += '<div class="trade-detail"><span class="trade-detail-label">Date:</span><span>' + trade.date + '</span></div>';
+        html += '<div class="trade-detail"><span class="trade-detail-label">Entrée:</span><span>' + trade.entryPoint + '</span></div>';
+        html += '<div class="trade-detail"><span class="trade-detail-label">Lot:</span><span>' + trade.lotSize + '</span></div>';
+        html += '<div class="trade-detail"><span class="trade-detail-label">P&L:</span><span class="trade-pnl ' + pnlClass + '">$' + pnl.toFixed(2) + '</span></div>';
+        html += '</div>';
+        
+        html += '<div class="trade-actions">';
+        if (trade.status === 'open') {
+            html += '<button class="action-btn close" onclick="closeMobileTrade(\'' + trade.id + '\')">🔒 Clôturer</button>';
+        }
+        html += '<button class="action-btn edit" onclick="editMobileTrade(\'' + trade.id + '\')">✏️ Modifier</button>';
+        html += '<button class="action-btn delete" onclick="deleteMobileTrade(\'' + trade.id + '\')">🗑️ Supprimer</button>';
+        html += '</div>';
+        
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
 }
 
 function updateMobileCharts() {
@@ -553,198 +653,6 @@ function initMobileWinRateChart() {
     });
 }
 
-function updateMobileStats() {
-    var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
-    var totalPnL = closedTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
-    var winRate = closedTrades.length > 0 ? 
-        (closedTrades.filter(function(t) { return (parseFloat(t.pnl) || 0) > 0; }).length / closedTrades.length * 100) : 0;
-    var currentCapital = mobileData.capital + totalPnL;
-    
-    var capitalEl = document.getElementById('mobileCapital');
-    var winRateEl = document.getElementById('mobileWinRate');
-    var pnlEl = document.getElementById('mobilePnL');
-    
-    if (capitalEl) capitalEl.textContent = '$' + currentCapital.toFixed(2);
-    if (winRateEl) winRateEl.textContent = winRate.toFixed(1) + '%';
-    if (pnlEl) {
-        pnlEl.textContent = '$' + totalPnL.toFixed(2);
-        pnlEl.className = totalPnL >= 0 ? 'stat-value positive' : 'stat-value negative';
-    }
-    
-    console.log('📊 Stats mises à jour:', { capital: currentCapital, winRate: winRate, pnl: totalPnL });
-}
-
-function updateMobileTradesList() {
-    var container = document.getElementById('mobileTradesList');
-    if (!container) return;
-    
-    if (mobileData.trades.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;"><div style="font-size: 48px; margin-bottom: 20px;">📈</div><h3>Aucun trade</h3><p>Commencez par ajouter votre premier trade</p></div>';
-        return;
-    }
-    
-    var recentTrades = mobileData.trades.slice(-10).reverse();
-    var html = '';
-    
-    for (var i = 0; i < recentTrades.length; i++) {
-        var trade = recentTrades[i];
-        var pnl = parseFloat(trade.pnl || 0);
-        var pnlClass = pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : '';
-        
-        html += '<div class="trade-card">';
-        html += '<div class="trade-header">';
-        html += '<span class="trade-pair">' + trade.currency + '</span>';
-        html += '<span class="trade-status ' + trade.status + '">' + trade.status.toUpperCase() + '</span>';
-        html += '</div>';
-        html += '<div class="trade-details">';
-        html += '<div class="trade-detail"><span class="trade-detail-label">Date:</span><span>' + trade.date + '</span></div>';
-        html += '<div class="trade-detail"><span class="trade-detail-label">Entrée:</span><span>' + trade.entryPoint + '</span></div>';
-        html += '<div class="trade-detail"><span class="trade-detail-label">Lot:</span><span>' + trade.lotSize + '</span></div>';
-        html += '<div class="trade-detail"><span class="trade-detail-label">P&L:</span><span class="trade-pnl ' + pnlClass + '">$' + pnl.toFixed(2) + '</span></div>';
-        html += '</div>';
-        
-        if (trade.status === 'open') {
-            html += '<div class="trade-actions">';
-            html += '<button class="action-btn close" onclick="closeMobileTrade(\'' + trade.id + '\')">🔒 Clôturer</button>';
-            html += '</div>';
-        }
-        
-        html += '</div>';
-    }
-    
-    container.innerHTML = html;
-}
-
-function updateMobileObjectives() {
-    var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
-    var totalPnL = closedTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
-    var currentCapital = mobileData.capital + totalPnL;
-    
-    var dailyTarget = (currentCapital * (mobileData.settings.dailyTarget || 1) / 100);
-    var monthlyTarget = (currentCapital * ((mobileData.settings.dailyTarget || 1) * 20) / 100);
-    
-    var today = new Date().toISOString().split('T')[0];
-    var todayTrades = mobileData.trades.filter(function(t) { return t.date === today && t.status === 'closed'; });
-    var todayPnL = todayTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
-    
-    var dailyProgress = dailyTarget > 0 ? Math.min((todayPnL / dailyTarget) * 100, 100) : 0;
-    
-    var dailyTargetEl = document.getElementById('mobileDailyTarget');
-    var monthlyTargetEl = document.getElementById('mobileMonthlyTarget');
-    var dailyProgressEl = document.getElementById('mobileDailyProgress');
-    var dailyPercentEl = document.getElementById('mobileDailyPercent');
-    
-    if (dailyTargetEl) dailyTargetEl.textContent = '$' + dailyTarget.toFixed(0);
-    if (monthlyTargetEl) monthlyTargetEl.textContent = '$' + monthlyTarget.toFixed(0);
-    if (dailyProgressEl) dailyProgressEl.style.width = dailyProgress + '%';
-    if (dailyPercentEl) dailyPercentEl.textContent = dailyProgress.toFixed(1) + '%';
-}
-
-function closeMobileTrade(tradeId) {
-    var result = prompt('Résultat (TP/SL/BE):', 'TP');
-    if (!result) return;
-    
-    for (var i = 0; i < mobileData.trades.length; i++) {
-        if (mobileData.trades[i].id === tradeId) {
-            var trade = mobileData.trades[i];
-            trade.status = 'closed';
-            trade.result = result.toUpperCase();
-            trade.closeDate = new Date().toISOString();
-            
-            // Calcul P&L simple
-            if (result.toUpperCase() === 'TP') {
-                trade.pnl = Math.abs(trade.takeProfit - trade.entryPoint) * trade.lotSize * 100;
-            } else if (result.toUpperCase() === 'SL') {
-                trade.pnl = -Math.abs(trade.entryPoint - trade.stopLoss) * trade.lotSize * 100;
-            } else {
-                trade.pnl = 0;
-            }
-            
-            break;
-        }
-    }
-    
-    saveMobileDataToFirebase();
-    updateMobileDisplay();
-    showMobileNotification('Trade clôturé en ' + result);
-}
-
-function showMobileNotification(message) {
-    // Vibration
-    if (navigator.vibrate) {
-        navigator.vibrate([100, 50, 100]);
-    }
-    
-    // Son (si possible)
-    try {
-        var audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
-        audio.volume = 0.3;
-        audio.play().catch(function() {});
-    } catch (e) {}
-    
-    var notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #00d4ff, #5b86e5); color: white; padding: 15px 20px; border-radius: 25px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4); animation: slideInBounce 0.5s ease;';
-    document.body.appendChild(notification);
-    
-    setTimeout(function() {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(-50%) translateY(-20px)';
-        setTimeout(function() {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
-}
-
-function showMobileSection(sectionId) {
-    console.log('🔄 Navigation vers section:', sectionId);
-    
-    // Masquer toutes les sections
-    var sections = document.querySelectorAll('.section');
-    for (var i = 0; i < sections.length; i++) {
-        sections[i].classList.remove('active');
-    }
-    
-    // Afficher la section demandée
-    var targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.classList.add('active');
-        console.log('✅ Section affichée:', sectionId);
-        
-        // Charger le contenu spécifique à la section
-        switch(sectionId) {
-            case 'dashboard':
-                updateMobileCharts();
-                break;
-            case 'trades':
-                updateMobileTradesList();
-                break;
-            case 'calendar':
-                updateMobileCalendar();
-                break;
-            case 'objectives':
-                updateMobileObjectives();
-                break;
-            case 'ranking':
-                loadRealMobileRanking();
-                break;
-            case 'settings':
-                updateMobileSettings();
-                break;
-        }
-    } else {
-        console.error('❌ Section non trouvée:', sectionId);
-    }
-    
-    // Fermer le menu mobile
-    var mobileMenu = document.getElementById('mobileMenu');
-    if (mobileMenu) {
-        mobileMenu.classList.remove('open');
-    }
-}
-
 function updateMobileCalendar() {
     var container = document.getElementById('mobileCalendar');
     var monthYear = document.getElementById('monthYearMobile');
@@ -758,19 +666,15 @@ function updateMobileCalendar() {
     });
     
     var firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    var lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     var startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     
     var html = '';
-    
-    // En-têtes des jours
     var dayHeaders = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
     for (var i = 0; i < dayHeaders.length; i++) {
         html += '<div class="calendar-day-header">' + dayHeaders[i] + '</div>';
     }
     
-    // Jours du calendrier
     for (var i = 0; i < 42; i++) {
         var dayDate = new Date(startDate);
         dayDate.setDate(startDate.getDate() + i);
@@ -805,6 +709,31 @@ function updateMobileCalendar() {
     container.innerHTML = html;
 }
 
+function updateMobileObjectives() {
+    var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
+    var totalPnL = closedTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
+    var currentCapital = mobileData.capital + totalPnL;
+    
+    var dailyTarget = (currentCapital * (mobileData.settings.dailyTarget || 1) / 100);
+    var monthlyTarget = (currentCapital * ((mobileData.settings.dailyTarget || 1) * 20) / 100);
+    
+    var today = new Date().toISOString().split('T')[0];
+    var todayTrades = mobileData.trades.filter(function(t) { return t.date === today && t.status === 'closed'; });
+    var todayPnL = todayTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
+    
+    var dailyProgress = dailyTarget > 0 ? Math.min((todayPnL / dailyTarget) * 100, 100) : 0;
+    
+    var dailyTargetEl = document.getElementById('mobileDailyTarget');
+    var monthlyTargetEl = document.getElementById('mobileMonthlyTarget');
+    var dailyProgressEl = document.getElementById('mobileDailyProgress');
+    var dailyPercentEl = document.getElementById('mobileDailyPercent');
+    
+    if (dailyTargetEl) dailyTargetEl.textContent = '$' + dailyTarget.toFixed(0);
+    if (monthlyTargetEl) monthlyTargetEl.textContent = '$' + monthlyTarget.toFixed(0);
+    if (dailyProgressEl) dailyProgressEl.style.width = dailyProgress + '%';
+    if (dailyPercentEl) dailyPercentEl.textContent = dailyProgress.toFixed(1) + '%';
+}
+
 function loadRealMobileRanking() {
     var container = document.getElementById('mobileRankingList');
     if (!container) return;
@@ -816,17 +745,11 @@ function loadRealMobileRanking() {
     
     try {
         var usersRef = window.dbRef(mobileFirebase.db, 'users');
-        var dashboardsRef = window.dbRef(mobileFirebase.db, 'dashboards');
         
-        Promise.all([window.dbGet(usersRef), window.dbGet(dashboardsRef)]).then(function(results) {
-            var usersSnapshot = results[0];
-            var dashboardsSnapshot = results[1];
-            
-            if (usersSnapshot.exists() && dashboardsSnapshot.exists()) {
-                var users = usersSnapshot.val();
-                var dashboards = dashboardsSnapshot.val();
-                var rankings = calculateRealRankings(users, dashboards);
-                displayRealRanking(rankings);
+        window.dbGet(usersRef).then(function(snapshot) {
+            if (snapshot.exists()) {
+                var users = snapshot.val();
+                calculateRealRankings(users);
             } else {
                 updateMobileRanking();
             }
@@ -840,38 +763,67 @@ function loadRealMobileRanking() {
     }
 }
 
-function calculateRealRankings(users, dashboards) {
+function calculateRealRankings(users) {
     var today = new Date().toISOString().split('T')[0];
     var rankings = [];
+    var processed = 0;
+    var totalUsers = 0;
+    
+    for (var userId in users) {
+        if (users[userId].isVIP) totalUsers++;
+    }
+    
+    if (totalUsers === 0) {
+        updateMobileRanking();
+        return;
+    }
     
     for (var userId in users) {
         if (users[userId].isVIP) {
-            var userDashboard = dashboards[userId];
-            var dailyPnL = 0;
-            var tradeCount = 0;
-            
-            if (userDashboard && userDashboard.trades) {
-                var todayTrades = userDashboard.trades.filter(function(t) {
-                    return t.date === today && t.status === 'closed';
+            (function(uid, userData) {
+                var accountRef = window.dbRef(mobileFirebase.db, 'users/' + uid + '/accounts/compte1');
+                
+                window.dbGet(accountRef).then(function(snapshot) {
+                    var dailyPnL = 0;
+                    var tradeCount = 0;
+                    
+                    if (snapshot.exists()) {
+                        var accountData = snapshot.val();
+                        if (accountData.trades) {
+                            var todayTrades = accountData.trades.filter(function(t) {
+                                return t.date === today && t.status === 'closed';
+                            });
+                            dailyPnL = todayTrades.reduce(function(sum, t) {
+                                return sum + (parseFloat(t.pnl) || 0);
+                            }, 0);
+                            tradeCount = todayTrades.length;
+                        }
+                    }
+                    
+                    var displayName = userData.nickname || userData.email.split('@')[0] || 'Membre VIP';
+                    rankings.push({
+                        name: displayName,
+                        dailyPnL: dailyPnL,
+                        tradeCount: tradeCount,
+                        userId: uid
+                    });
+                    
+                    processed++;
+                    if (processed === totalUsers) {
+                        rankings.sort(function(a, b) { return b.dailyPnL - a.dailyPnL; });
+                        displayRealRanking(rankings);
+                    }
+                }).catch(function(error) {
+                    console.error('❌ Erreur user data:', error);
+                    processed++;
+                    if (processed === totalUsers) {
+                        rankings.sort(function(a, b) { return b.dailyPnL - a.dailyPnL; });
+                        displayRealRanking(rankings);
+                    }
                 });
-                dailyPnL = todayTrades.reduce(function(sum, t) {
-                    return sum + (parseFloat(t.pnl) || 0);
-                }, 0);
-                tradeCount = todayTrades.length;
-            }
-            
-            var displayName = users[userId].nickname || users[userId].email.split('@')[0] || 'Membre VIP';
-            rankings.push({
-                name: displayName,
-                dailyPnL: dailyPnL,
-                tradeCount: tradeCount,
-                userId: userId
-            });
+            })(userId, users[userId]);
         }
     }
-    
-    rankings.sort(function(a, b) { return b.dailyPnL - a.dailyPnL; });
-    return rankings;
 }
 
 function displayRealRanking(rankings) {
@@ -933,25 +885,56 @@ function updateMobileRanking() {
 }
 
 function updateMobileSettings() {
+    var nicknameInput = document.getElementById('mobileNicknameInput');
     var capitalInput = document.getElementById('mobileCapitalInput');
     var riskInput = document.getElementById('mobileRiskInput');
     var dailyTargetInput = document.getElementById('mobileDailyTargetInput');
+    var notificationsInput = document.getElementById('mobileNotificationsInput');
     
+    if (nicknameInput) nicknameInput.value = mobileData.settings.nickname || '';
     if (capitalInput) capitalInput.value = mobileData.capital || 1000;
     if (riskInput) riskInput.value = mobileData.settings.riskPerTrade || 2;
     if (dailyTargetInput) dailyTargetInput.value = mobileData.settings.dailyTarget || 1;
+    if (notificationsInput) notificationsInput.value = mobileData.settings.notifications || 'all';
 }
 
-// Fonctions globales
+function showMobileNotification(message) {
+    if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+    }
+    
+    try {
+        var audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        audio.volume = 0.3;
+        audio.play().catch(function() {});
+    } catch (e) {}
+    
+    var notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #00d4ff, #5b86e5); color: white; padding: 15px 20px; border-radius: 25px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4); animation: slideInBounce 0.5s ease;';
+    document.body.appendChild(notification);
+    
+    setTimeout(function() {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(-50%) translateY(-20px)';
+        setTimeout(function() {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
 window.showSection = showMobileSection;
 window.closeMobileTrade = closeMobileTrade;
+window.editMobileTrade = editMobileTrade;
+window.deleteMobileTrade = deleteMobileTrade;
 
-// Initialisation
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 DOM chargé, initialisation Firebase mobile...');
+    console.log('📱 DOM chargé, initialisation mobile complète...');
     setTimeout(function() {
         initMobileFirebase();
     }, 500);
 });
 
-console.log('✅ Mobile Firebase prêt');
+console.log('✅ Mobile complet prêt');

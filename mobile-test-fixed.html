@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        .btn {
+            background: linear-gradient(45deg, #00d4ff, #5b86e5);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+        }
+        .stats {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .trade-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+        }
+        #status {
+            background: rgba(0,212,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .positive { color: #4ecdc4; }
+        .negative { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <h1>📱 Test Mobile Fixed</h1>
+    
+    <div id="status">🔄 Initialisation...</div>
+    
+    <div class="stats">
+        <h3>📊 Statistiques</h3>
+        <div>Capital: <span id="capital">$1000</span></div>
+        <div>Trades: <span id="tradeCount">0</span></div>
+        <div>P&L: <span id="pnl" class="positive">$0</span></div>
+    </div>
+    
+    <button class="btn" id="testBtn">🧪 Test Bouton</button>
+    <button class="btn" id="addBtn">➕ Ajouter Trade</button>
+    <button class="btn" id="loadBtn">📥 Charger</button>
+    <button class="btn" id="clearBtn">🗑️ Effacer</button>
+    <button class="btn" id="dashBtn">🚀 Dashboard</button>
+    
+    <div id="trades">
+        <h3>📈 Trades</h3>
+        <div id="tradesList"></div>
+    </div>
+    
+    <script>
+        var trades = [];
+        
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            console.log(message);
+        }
+        
+        function testButton() {
+            updateStatus('✅ Bouton fonctionne !');
+        }
+        
+        function addDemoTrade() {
+            var pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD'];
+            var randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+            var randomPnL = (Math.random() - 0.5) * 200;
+            
+            var trade = {
+                id: Date.now(),
+                pair: randomPair,
+                entry: (1 + Math.random() * 0.1).toFixed(5),
+                pnl: randomPnL,
+                status: Math.random() > 0.3 ? 'closed' : 'open',
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
+            };
+            
+            trades.push(trade);
+            saveTrades();
+            updateDisplay();
+            updateStatus('✅ Trade ' + randomPair + ' ajouté');
+        }
+        
+        function loadTrades() {
+            try {
+                var saved = localStorage.getItem('mobile_trades_fixed');
+                if (saved) {
+                    trades = JSON.parse(saved);
+                    updateDisplay();
+                    updateStatus('✅ ' + trades.length + ' trades chargés');
+                } else {
+                    updateStatus('⚠️ Aucune donnée');
+                }
+            } catch (error) {
+                updateStatus('❌ Erreur: ' + error.message);
+            }
+        }
+        
+        function saveTrades() {
+            try {
+                localStorage.setItem('mobile_trades_fixed', JSON.stringify(trades));
+            } catch (error) {
+                updateStatus('❌ Erreur sauvegarde');
+            }
+        }
+        
+        function clearData() {
+            if (confirm('Effacer toutes les données ?')) {
+                trades = [];
+                localStorage.removeItem('mobile_trades_fixed');
+                updateDisplay();
+                updateStatus('🗑️ Données effacées');
+            }
+        }
+        
+        function updateDisplay() {
+            var closedTrades = trades.filter(function(t) { return t.status === 'closed'; });
+            var totalPnL = closedTrades.reduce(function(sum, t) { return sum + (t.pnl || 0); }, 0);
+            var currentCapital = 1000 + totalPnL;
+            
+            document.getElementById('capital').textContent = '$' + currentCapital.toFixed(2);
+            document.getElementById('tradeCount').textContent = trades.length;
+            
+            var pnlEl = document.getElementById('pnl');
+            pnlEl.textContent = '$' + totalPnL.toFixed(2);
+            pnlEl.className = totalPnL >= 0 ? 'positive' : 'negative';
+            
+            var tradesList = document.getElementById('tradesList');
+            if (trades.length === 0) {
+                tradesList.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Aucun trade</div>';
+                return;
+            }
+            
+            var recentTrades = trades.slice(-5).reverse();
+            var html = '';
+            for (var i = 0; i < recentTrades.length; i++) {
+                var trade = recentTrades[i];
+                var pnlClass = (trade.pnl || 0) >= 0 ? 'positive' : 'negative';
+                html += '<div class="trade-item">';
+                html += '<strong>' + trade.pair + '</strong> - ' + trade.status;
+                html += '<br>Entry: ' + trade.entry + ' | Date: ' + trade.date;
+                html += '<br>P&L: <span class="' + pnlClass + '">$' + (trade.pnl || 0).toFixed(2) + '</span>';
+                html += '<br><small>Ajouté à ' + trade.time + '</small>';
+                html += '</div>';
+            }
+            tradesList.innerHTML = html;
+        }
+        
+        function goToDashboard() {
+            updateStatus('🚀 Redirection...');
+            setTimeout(function() {
+                window.location.href = 'mobile-dashboard.html';
+            }, 1000);
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('✅ Page chargée');
+            loadTrades();
+            
+            // Event listeners
+            document.getElementById('testBtn').onclick = testButton;
+            document.getElementById('addBtn').onclick = addDemoTrade;
+            document.getElementById('loadBtn').onclick = loadTrades;
+            document.getElementById('clearBtn').onclick = clearData;
+            document.getElementById('dashBtn').onclick = goToDashboard;
+            
+            // Test tactile
+            document.addEventListener('touchstart', function() {
+                updateStatus('👆 Tactile détecté');
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>

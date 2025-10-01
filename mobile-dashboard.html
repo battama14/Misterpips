@@ -48,11 +48,7 @@
                 sessionStorage.setItem('userEmail', user.email);
                 console.log('✅ Utilisateur connecté:', user.email);
             } else {
-                // Mode démo pour mobile
-                const tempUID = 'mobile_demo_' + Date.now();
-                sessionStorage.setItem('firebaseUID', tempUID);
-                sessionStorage.setItem('userEmail', 'demo@mobile.com');
-                console.log('📱 Mode démo activé');
+                window.location.href = 'mobile-login.html';
             }
         });
     </script>
@@ -93,7 +89,8 @@
             <li><a href="#objectives" onclick="showSection('objectives')">🎯 Objectifs</a></li>
             <li><a href="#ranking" onclick="showSection('ranking')">🏆 Classement</a></li>
             <li><a href="#settings" onclick="showSection('settings')">⚙️ Paramètres</a></li>
-            <li><a href="index.html">🚪 Déconnexion</a></li>
+            <li><a href="#profile" onclick="showSection('profile')">👤 Profil</a></li>
+            <li><a href="mobile-login.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
 
@@ -197,6 +194,10 @@
             
             <div class="settings-list">
                 <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNicknameInput" placeholder="Votre pseudo">
+                </div>
+                <div class="setting-item">
                     <label>Capital initial ($)</label>
                     <input type="number" id="mobileCapitalInput" value="1000">
                 </div>
@@ -207,6 +208,14 @@
                 <div class="setting-item">
                     <label>Objectif journalier (%)</label>
                     <input type="number" id="mobileDailyTargetInput" value="1" step="0.1">
+                </div>
+                <div class="setting-item">
+                    <label>Notifications</label>
+                    <select id="mobileNotificationsInput">
+                        <option value="all">Toutes</option>
+                        <option value="trades">Trades uniquement</option>
+                        <option value="none">Aucune</option>
+                    </select>
                 </div>
                 <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
             </div>
@@ -293,6 +302,6 @@
         </div>
     </div>
 
-    <script src="mobile-firebase.js"></script>
+    <script src="mobile-complete.js"></script>
 </body>
 </html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile Optimized</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        .btn {
+            background: linear-gradient(45deg, #00d4ff, #5b86e5);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .stats {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(0,212,255,0.3);
+        }
+        .trade-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+        }
+        #status {
+            background: rgba(0,212,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #00d4ff;
+        }
+        .positive { color: #4ecdc4; }
+        .negative { color: #ff6b6b; }
+        h1 { color: #00d4ff; text-align: center; }
+        h3 { color: #00d4ff; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h1>📱 Test Mobile Misterpips Optimized</h1>
+    
+    <div id="status">🔄 Initialisation...</div>
+    
+    <div class="stats">
+        <h3>📊 Statistiques</h3>
+        <div>Capital: <span id="capital">$1000</span></div>
+        <div>Trades: <span id="tradeCount">0</span></div>
+        <div>P&L: <span id="pnl" class="positive">$0</span></div>
+    </div>
+    
+    <button class="btn" onclick="testButton()">🧪 Test Bouton</button>
+    <button class="btn" onclick="addDemoTrade()">➕ Ajouter Trade Démo</button>
+    <button class="btn" onclick="loadTrades()">📥 Charger Trades</button>
+    <button class="btn" onclick="clearData()">🗑️ Effacer Données</button>
+    <button class="btn" onclick="goToMobileDashboard()">🚀 Aller au Dashboard</button>
+    
+    <div id="trades">
+        <h3>📈 Trades</h3>
+        <div id="tradesList"></div>
+    </div>
+    
+    <script>
+        let trades = [];
+        
+        function updateStatus(message, isError = false) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = message;
+            statusEl.style.background = isError ? 'rgba(255,107,107,0.1)' : 'rgba(0,212,255,0.1)';
+            statusEl.style.borderColor = isError ? '#ff6b6b' : '#00d4ff';
+            console.log(message);
+        }
+        
+        function testButton() {
+            updateStatus('✅ Bouton fonctionne parfaitement !');
+            
+            // Test vibration si disponible
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+            
+            // Test notification
+            setTimeout(() => {
+                showNotification('Test réussi !');
+            }, 500);
+        }
+        
+        function addDemoTrade() {
+            const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD'];
+            const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+            const randomPnL = (Math.random() - 0.5) * 200; // -100 à +100
+            
+            const trade = {
+                id: Date.now(),
+                pair: randomPair,
+                entry: (1 + Math.random() * 0.1).toFixed(5),
+                pnl: randomPnL,
+                status: Math.random() > 0.3 ? 'closed' : 'open',
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})
+            };
+            
+            trades.push(trade);
+            saveTrades();
+            updateDisplay();
+            updateStatus(`✅ Trade ${randomPair} ajouté (P&L: $${randomPnL.toFixed(2)})`);
+        }
+        
+        function loadTrades() {
+            try {
+                const saved = localStorage.getItem('mobile_trades_optimized_test');
+                if (saved) {
+                    trades = JSON.parse(saved);
+                    updateDisplay();
+                    updateStatus(`✅ ${trades.length} trades chargés depuis localStorage`);
+                } else {
+                    updateStatus('⚠️ Aucune donnée sauvegardée trouvée');
+                }
+            } catch (error) {
+                updateStatus('❌ Erreur chargement: ' + error.message, true);
+            }
+        }
+        
+        function saveTrades() {
+            try {
+                localStorage.setItem('mobile_trades_optimized_test', JSON.stringify(trades));
+                console.log('💾 Trades sauvegardés:', trades.length);
+            } catch (error) {
+                updateStatus('❌ Erreur sauvegarde: ' + error.message, true);
+            }
+        }
+        
+        function clearData() {
+            if (confirm('Effacer toutes les données ?')) {
+                trades = [];
+                localStorage.removeItem('mobile_trades_optimized_test');
+                updateDisplay();
+                updateStatus('🗑️ Données effacées');
+            }
+        }
+        
+        function updateDisplay() {
+            // Statistiques\n            const closedTrades = trades.filter(t => t.status === 'closed');\n            const totalPnL = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);\n            const currentCapital = 1000 + totalPnL;\n            \n            document.getElementById('capital').textContent = `$${currentCapital.toFixed(2)}`;\n            document.getElementById('tradeCount').textContent = trades.length;\n            \n            const pnlEl = document.getElementById('pnl');\n            pnlEl.textContent = `$${totalPnL.toFixed(2)}`;\n            pnlEl.className = totalPnL >= 0 ? 'positive' : 'negative';\n            \n            // Liste des trades\n            const tradesList = document.getElementById('tradesList');\n            if (trades.length === 0) {\n                tradesList.innerHTML = '<div style=\"text-align: center; color: #888; padding: 20px;\">Aucun trade</div>';\n                return;\n            }\n            \n            tradesList.innerHTML = trades.slice(-5).reverse().map(trade => {\n                const pnlClass = (trade.pnl || 0) >= 0 ? 'positive' : 'negative';\n                return `\n                    <div class=\"trade-item\">\n                        <strong>${trade.pair}</strong> - ${trade.status}\n                        <br>Entry: ${trade.entry} | Date: ${trade.date}\n                        <br>P&L: <span class=\"${pnlClass}\">$${(trade.pnl || 0).toFixed(2)}</span>\n                        <br><small>Ajouté à ${trade.time}</small>\n                    </div>\n                `;\n            }).join('');\n        }\n        \n        function goToMobileDashboard() {\n            updateStatus('🚀 Redirection vers le dashboard mobile...');\n            setTimeout(() => {\n                window.location.href = 'mobile-dashboard.html';\n            }, 1000);\n        }\n        \n        function showNotification(message) {\n            const notification = document.createElement('div');\n            notification.style.cssText = `\n                position: fixed;\n                top: 20px;\n                left: 50%;\n                transform: translateX(-50%);\n                background: linear-gradient(45deg, #00d4ff, #5b86e5);\n                color: white;\n                padding: 15px 20px;\n                border-radius: 25px;\n                z-index: 9999;\n                font-weight: bold;\n                box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);\n                animation: slideIn 0.3s ease;\n            `;\n            notification.textContent = message;\n            document.body.appendChild(notification);\n            \n            setTimeout(() => {\n                notification.style.animation = 'slideOut 0.3s ease';\n                setTimeout(() => notification.remove(), 300);\n            }, 2000);\n        }\n        \n        // Initialisation\n        document.addEventListener('DOMContentLoaded', () => {\n            updateStatus('✅ Page de test chargée');\n            loadTrades();\n            \n            // Test tactile\n            document.addEventListener('touchstart', () => {\n                updateStatus('👆 Écran tactile détecté et fonctionnel');\n            }, { once: true });\n            \n            // Test de performance\n            setTimeout(() => {\n                const loadTime = performance.now();\n                updateStatus(`⚡ Page chargée en ${loadTime.toFixed(0)}ms`);\n            }, 100);\n        });\n        \n        // Styles d'animation\n        const style = document.createElement('style');\n        style.textContent = `\n            @keyframes slideIn {\n                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }\n                to { transform: translateX(-50%) translateY(0); opacity: 1; }\n            }\n            @keyframes slideOut {\n                from { transform: translateX(-50%) translateY(0); opacity: 1; }\n                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }\n            }\n        `;\n        document.head.appendChild(style);\n        \n        // Debug global\n        window.debugTest = () => {\n            console.log('=== DEBUG TEST MOBILE ===');\n            console.log('Trades:', trades);\n            console.log('LocalStorage:', localStorage.getItem('mobile_trades_optimized_test'));\n            console.log('Screen:', screen.width + 'x' + screen.height);\n            console.log('User Agent:', navigator.userAgent);\n            console.log('========================');\n        };\n    </script>\n</body>\n</html>
