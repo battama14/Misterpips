@@ -547,18 +547,27 @@ class MobileTradingDashboard {
     }
 
     setupEventListeners() {
-        document.getElementById('menuToggle').onclick = () => {
-            document.getElementById('mobileMenu').classList.add('open');
-        };
+        // Vérifier l'existence des éléments avant d'attacher les événements
+        const menuToggle = document.getElementById('menuToggle');
+        const closeMenu = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        if (menuToggle && mobileMenu) {
+            menuToggle.onclick = () => mobileMenu.classList.add('open');
+        }
+        if (closeMenu && mobileMenu) {
+            closeMenu.onclick = () => mobileMenu.classList.remove('open');
+        }
 
-        document.getElementById('closeMenu').onclick = () => {
-            document.getElementById('mobileMenu').classList.remove('open');
-        };
-
-        document.getElementById('newTradeBtn').onclick = () => this.showTradeModal();
-        document.getElementById('addTradeBtn').onclick = () => this.showTradeModal();
-        document.getElementById('closeTradeModal').onclick = () => this.hideTradeModal();
-        document.getElementById('saveMobileTradeBtn').onclick = () => this.saveTrade();
+        const newTradeBtn = document.getElementById('newTradeBtn');
+        const addTradeBtn = document.getElementById('addTradeBtn');
+        const closeTradeModal = document.getElementById('closeTradeModal');
+        const saveMobileTradeBtn = document.getElementById('saveMobileTradeBtn');
+        
+        if (newTradeBtn) newTradeBtn.onclick = () => this.showTradeModal();
+        if (addTradeBtn) addTradeBtn.onclick = () => this.showTradeModal();
+        if (closeTradeModal) closeTradeModal.onclick = () => this.hideTradeModal();
+        if (saveMobileTradeBtn) saveMobileTradeBtn.onclick = () => this.saveTrade();
 
         document.getElementById('prevMonthMobile').onclick = () => {
             this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
@@ -1296,27 +1305,27 @@ let mobileDashboard;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📱 Initialisation du dashboard mobile...');
     
-    let attempts = 0;
-    const maxAttempts = 50;
+    // Initialiser immédiatement
+    initBasicElements();
     
-    const checkAuth = setInterval(() => {
-        attempts++;
-        const firebaseUID = sessionStorage.getItem('firebaseUID');
-        const userEmail = sessionStorage.getItem('userEmail');
-        
-        if (firebaseUID && userEmail) {
-            console.log('✅ Authentification détectée:', userEmail);
+    // Créer un utilisateur par défaut si nécessaire
+    if (!sessionStorage.getItem('firebaseUID')) {
+        const tempUID = 'mobile_user_' + Date.now();
+        sessionStorage.setItem('firebaseUID', tempUID);
+        sessionStorage.setItem('userEmail', 'mobile@user.com');
+        console.log('👤 Utilisateur temporaire créé');
+    }
+    
+    // Initialiser le dashboard avec délai
+    setTimeout(() => {
+        try {
             mobileDashboard = new MobileTradingDashboard();
             window.mobileDashboard = mobileDashboard;
-            clearInterval(checkAuth);
-        } else if (attempts >= maxAttempts) {
-            console.log('⚠️ Timeout authentification, redirection...');
-            clearInterval(checkAuth);
-            window.location.href = 'index.html';
+            console.log('✅ Dashboard mobile initialisé');
+        } catch (error) {
+            console.error('❌ Erreur initialisation:', error);
         }
-    }, 100);
-    
-    initBasicElements();
+    }, 500);
 });
 
 function initBasicElements() {
