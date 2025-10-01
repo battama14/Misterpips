@@ -455,6 +455,94 @@ function updateMobileDisplay() {
     updateMobileStats();
     updateMobileTradesList();
     updateMobileObjectives();
+    updateMobileCharts();
+}
+
+function updateMobileCharts() {
+    initMobilePerformanceChart();
+    initMobileWinRateChart();
+}
+
+function initMobilePerformanceChart() {
+    var ctx = document.getElementById('mobilePerformanceChart');
+    if (!ctx) return;
+    
+    var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
+    if (closedTrades.length === 0) {
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        return;
+    }
+    
+    var cumulativePnL = 0;
+    var data = [];
+    var labels = [];
+    
+    for (var i = 0; i < closedTrades.length; i++) {
+        cumulativePnL += parseFloat(closedTrades[i].pnl || 0);
+        data.push(cumulativePnL);
+        labels.push('T' + (i + 1));
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                borderColor: '#00d4ff',
+                backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: {
+                    ticks: { 
+                        color: '#ffffff',
+                        callback: function(value) { return '$' + value; }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+function initMobileWinRateChart() {
+    var ctx = document.getElementById('mobileWinRateChart');
+    if (!ctx) return;
+    
+    var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
+    if (closedTrades.length === 0) {
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        return;
+    }
+    
+    var wins = closedTrades.filter(function(t) { return (parseFloat(t.pnl) || 0) > 0; }).length;
+    var losses = closedTrades.length - wins;
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [wins, losses],
+                backgroundColor: ['#4ecdc4', '#ff6b6b'],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
 }
 
 function updateMobileStats() {
@@ -574,9 +662,21 @@ function closeMobileTrade(tradeId) {
 }
 
 function showMobileNotification(message) {
+    // Vibration
+    if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+    }
+    
+    // Son (si possible)
+    try {
+        var audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        audio.volume = 0.3;
+        audio.play().catch(function() {});
+    } catch (e) {}
+    
     var notification = document.createElement('div');
     notification.textContent = message;
-    notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #00d4ff, #5b86e5); color: white; padding: 15px 20px; border-radius: 25px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);';
+    notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #00d4ff, #5b86e5); color: white; padding: 15px 20px; border-radius: 25px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4); animation: slideInBounce 0.5s ease;';
     document.body.appendChild(notification);
     
     setTimeout(function() {
@@ -587,7 +687,7 @@ function showMobileNotification(message) {
                 notification.parentNode.removeChild(notification);
             }
         }, 300);
-    }, 2000);
+    }, 3000);
 }
 
 function showMobileSection(sectionId) {
@@ -607,6 +707,9 @@ function showMobileSection(sectionId) {
         
         // Charger le contenu spécifique à la section
         switch(sectionId) {
+            case 'dashboard':
+                updateMobileCharts();
+                break;
             case 'trades':
                 updateMobileTradesList();
                 break;
@@ -617,7 +720,7 @@ function showMobileSection(sectionId) {
                 updateMobileObjectives();
                 break;
             case 'ranking':
-                updateMobileRanking();
+                loadRealMobileRanking();
                 break;
             case 'settings':
                 updateMobileSettings();
@@ -694,15 +797,105 @@ function updateMobileCalendar() {
     container.innerHTML = html;
 }
 
+function loadRealMobileRanking() {
+    var container = document.getElementById('mobileRankingList');
+    if (!container) return;
+    
+    if (!mobileFirebase.isConnected) {
+        updateMobileRanking();
+        return;
+    }
+    
+    try {
+        var usersRef = window.dbRef(mobileFirebase.db, 'users');
+        var dashboardsRef = window.dbRef(mobileFirebase.db, 'dashboards');
+        
+        Promise.all([window.dbGet(usersRef), window.dbGet(dashboardsRef)]).then(function(results) {
+            var usersSnapshot = results[0];
+            var dashboardsSnapshot = results[1];
+            
+            if (usersSnapshot.exists() && dashboardsSnapshot.exists()) {
+                var users = usersSnapshot.val();
+                var dashboards = dashboardsSnapshot.val();
+                var rankings = calculateRealRankings(users, dashboards);
+                displayRealRanking(rankings);
+            } else {
+                updateMobileRanking();
+            }
+        }).catch(function(error) {
+            console.error('❌ Erreur classement:', error);
+            updateMobileRanking();
+        });
+    } catch (error) {
+        console.error('❌ Erreur Firebase ranking:', error);
+        updateMobileRanking();
+    }
+}
+
+function calculateRealRankings(users, dashboards) {
+    var today = new Date().toISOString().split('T')[0];
+    var rankings = [];
+    
+    for (var userId in users) {
+        if (users[userId].isVIP) {
+            var userDashboard = dashboards[userId];
+            var dailyPnL = 0;
+            var tradeCount = 0;
+            
+            if (userDashboard && userDashboard.trades) {
+                var todayTrades = userDashboard.trades.filter(function(t) {
+                    return t.date === today && t.status === 'closed';
+                });
+                dailyPnL = todayTrades.reduce(function(sum, t) {
+                    return sum + (parseFloat(t.pnl) || 0);
+                }, 0);
+                tradeCount = todayTrades.length;
+            }
+            
+            var displayName = users[userId].nickname || users[userId].email.split('@')[0] || 'Membre VIP';
+            rankings.push({
+                name: displayName,
+                dailyPnL: dailyPnL,
+                tradeCount: tradeCount,
+                userId: userId
+            });
+        }
+    }
+    
+    rankings.sort(function(a, b) { return b.dailyPnL - a.dailyPnL; });
+    return rankings;
+}
+
+function displayRealRanking(rankings) {
+    var container = document.getElementById('mobileRankingList');
+    if (!container) return;
+    
+    var html = '';
+    for (var i = 0; i < rankings.length; i++) {
+        var trader = rankings[i];
+        var isCurrentUser = trader.userId === (mobileFirebase.currentUser ? mobileFirebase.currentUser.uid : '');
+        var pnlClass = trader.dailyPnL >= 0 ? 'positive' : 'negative';
+        
+        html += '<div class="ranking-item' + (isCurrentUser ? ' current-user' : '') + '">';
+        html += '<div class="ranking-position">' + (i + 1) + '</div>';
+        html += '<div class="ranking-info">';
+        html += '<div class="ranking-name">' + trader.name + (isCurrentUser ? ' (Vous)' : '') + '</div>';
+        html += '<div class="ranking-trades">' + trader.tradeCount + ' trades</div>';
+        html += '</div>';
+        html += '<div class="ranking-pnl ' + pnlClass + '">$' + trader.dailyPnL.toFixed(2) + '</div>';
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
 function updateMobileRanking() {
     var container = document.getElementById('mobileRankingList');
     if (!container) return;
     
-    // Calculer le P&L de l'utilisateur actuel
     var closedTrades = mobileData.trades.filter(function(t) { return t.status === 'closed'; });
     var userPnL = closedTrades.reduce(function(sum, t) { return sum + (parseFloat(t.pnl) || 0); }, 0);
     
-    // Classement démo avec l'utilisateur
     var rankings = [
         { name: 'Trader Pro', dailyPnL: 250.50, tradeCount: 8, userId: 'demo1' },
         { name: 'Expert FX', dailyPnL: 180.25, tradeCount: 5, userId: 'demo2' },
@@ -710,7 +903,6 @@ function updateMobileRanking() {
         { name: 'Master Pips', dailyPnL: -45.30, tradeCount: 15, userId: 'demo3' }
     ];
     
-    // Trier par P&L
     rankings.sort(function(a, b) { return b.dailyPnL - a.dailyPnL; });
     
     var html = '';
