@@ -52,33 +52,42 @@ class VIPRanking {
 
             for (const [uid, userData] of vipUsers) {
                 try {
-                    // Chercher les trades dans plusieurs emplacements
-                    const tradePaths = [
-                        `dashboards/${uid}/trades`,
-                        `trading_data/${uid}/trades`,
-                        `users/${uid}/trades`
-                    ];
-
+                    // Chercher les trades dans la structure correcte
+                    const accountRef = ref(window.firebaseDB, `users/${uid}/accounts/compte1`);
+                    const accountSnapshot = await get(accountRef);
+                    
                     let userTrades = [];
-                    for (const path of tradePaths) {
-                        const tradesRef = ref(window.firebaseDB, path);
-                        const tradesSnapshot = await get(tradesRef);
-                        
-                        if (tradesSnapshot.exists()) {
-                            const trades = tradesSnapshot.val();
-                            userTrades = Array.isArray(trades) ? trades : Object.values(trades);
-                            break;
+                    let dailyPnL = 0;
+                    
+                    if (accountSnapshot.exists()) {
+                        const accountData = accountSnapshot.val();
+                        if (accountData.trades && Array.isArray(accountData.trades) && accountData.trades.length > 0) {
+                            userTrades = accountData.trades;
+                            
+                            // Calculer seulement les trades fermés d'aujourd'hui
+                            const todayTrades = userTrades.filter(trade => 
+                                trade && trade.date === today && 
+                                (trade.status === 'closed' || trade.status === 'completed')
+                            );
+                            
+                            dailyPnL = todayTrades.reduce((total, trade) => 
+                                total + (parseFloat(trade.pnl) || 0), 0
+                            );
+                        } else {
+                            // Pas de trades = 0€
+                            userTrades = [];
+                            dailyPnL = 0;
                         }
+                    } else {
+                        // Pas de compte = 0€
+                        userTrades = [];
+                        dailyPnL = 0;
                     }
 
-                    // Calculer les stats
+                    // Les stats sont déjà calculées ci-dessus
                     const todayTrades = userTrades.filter(trade => 
                         trade && trade.date === today && 
                         (trade.status === 'closed' || trade.status === 'completed')
-                    );
-
-                    const dailyPnL = todayTrades.reduce((total, trade) => 
-                        total + (parseFloat(trade.pnl) || 0), 0
                     );
 
                     const totalTrades = userTrades.length;

@@ -146,7 +146,7 @@ function sendMobileChatMessage(message) {
     }
     
     try {
-        var messagesRef = window.dbRef(mobileFirebase.db, 'chat_messages');
+        var messagesRef = window.dbRef(mobileFirebase.db, 'vip_chat');
         var nickname = mobileData.settings.nickname || mobileFirebase.currentUser.email.split('@')[0];
         
         var messageData = {
@@ -174,7 +174,7 @@ function loadMobileChatMessages() {
     if (!mobileFirebase.isConnected) return;
     
     try {
-        var messagesRef = window.dbRef(mobileFirebase.db, 'chat_messages');
+        var messagesRef = window.dbRef(mobileFirebase.db, 'vip_chat');
         
         window.dbOnValue(messagesRef, function(snapshot) {
             if (snapshot.exists()) {
@@ -273,6 +273,30 @@ function initMobileInterface() {
                     sendMobileChatMessage(message);
                     this.value = '';
                 }
+            }
+        };
+    }
+    
+    var emojiBtn = document.getElementById('emojiBtn');
+    var fileBtn = document.getElementById('fileBtn');
+    var fileInput = document.getElementById('fileInput');
+    var emojiPicker = document.getElementById('emojiPicker');
+    
+    if (emojiBtn && emojiPicker) {
+        emojiBtn.onclick = function() {
+            emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
+        };
+    }
+    
+    if (fileBtn && fileInput) {
+        fileBtn.onclick = function() {
+            fileInput.click();
+        };
+        
+        fileInput.onchange = function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                handleMobileFileUpload(file);
             }
         };
     }
@@ -789,7 +813,7 @@ function calculateRealRankings(users) {
                     
                     if (snapshot.exists()) {
                         var accountData = snapshot.val();
-                        if (accountData.trades) {
+                        if (accountData.trades && accountData.trades.length > 0) {
                             var todayTrades = accountData.trades.filter(function(t) {
                                 return t.date === today && t.status === 'closed';
                             });
@@ -797,7 +821,13 @@ function calculateRealRankings(users) {
                                 return sum + (parseFloat(t.pnl) || 0);
                             }, 0);
                             tradeCount = todayTrades.length;
+                        } else {
+                            dailyPnL = 0;
+                            tradeCount = 0;
                         }
+                    } else {
+                        dailyPnL = 0;
+                        tradeCount = 0;
                     }
                     
                     var displayName = userData.nickname || userData.email.split('@')[0] || 'Membre VIP';
@@ -925,10 +955,50 @@ function showMobileNotification(message) {
     }, 3000);
 }
 
+function addEmoji(emoji) {
+    var input = document.getElementById('mobileChatInput');
+    if (input) {
+        input.value += emoji;
+        input.focus();
+    }
+    var emojiPicker = document.getElementById('emojiPicker');
+    if (emojiPicker) {
+        emojiPicker.style.display = 'none';
+    }
+}
+
+function handleMobileFileUpload(file) {
+    if (file.size > 10 * 1024 * 1024) {
+        showMobileNotification('Fichier trop volumineux (max 10MB)');
+        return;
+    }
+    
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var fileData = {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data: e.target.result
+        };
+        
+        var message = '[FICHIER] ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+        sendMobileChatMessage(message);
+        showMobileNotification('Fichier envoyé !');
+    };
+    
+    if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+    } else {
+        reader.readAsArrayBuffer(file);
+    }
+}
+
 window.showSection = showMobileSection;
 window.closeMobileTrade = closeMobileTrade;
 window.editMobileTrade = editMobileTrade;
 window.deleteMobileTrade = deleteMobileTrade;
+window.addEmoji = addEmoji;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 DOM chargé, initialisation mobile complète...');

@@ -298,8 +298,31 @@
         <div class="chat-messages" id="mobileChatMessages"></div>
         <div class="chat-input-container">
             <input type="text" id="mobileChatInput" placeholder="Votre message...">
+            <button id="emojiBtn" class="emoji-btn">😀</button>
+            <button id="fileBtn" class="file-btn">📁</button>
             <button id="sendMobileMessage" class="send-btn">🚀</button>
         </div>
+        <div id="emojiPicker" class="emoji-picker">
+            <div class="emoji-grid">
+                <span class="emoji" onclick="addEmoji('😀')">😀</span>
+                <span class="emoji" onclick="addEmoji('😂')">😂</span>
+                <span class="emoji" onclick="addEmoji('😍')">😍</span>
+                <span class="emoji" onclick="addEmoji('😎')">😎</span>
+                <span class="emoji" onclick="addEmoji('😭')">😭</span>
+                <span class="emoji" onclick="addEmoji('😡')">😡</span>
+                <span class="emoji" onclick="addEmoji('👍')">👍</span>
+                <span class="emoji" onclick="addEmoji('👎')">👎</span>
+                <span class="emoji" onclick="addEmoji('❤️')">❤️</span>
+                <span class="emoji" onclick="addEmoji('🔥')">🔥</span>
+                <span class="emoji" onclick="addEmoji('💰')">💰</span>
+                <span class="emoji" onclick="addEmoji('📈')">📈</span>
+                <span class="emoji" onclick="addEmoji('📉')">📉</span>
+                <span class="emoji" onclick="addEmoji('🎆')">🎆</span>
+                <span class="emoji" onclick="addEmoji('🎉')">🎉</span>
+                <span class="emoji" onclick="addEmoji('🚀')">🚀</span>
+            </div>
+        </div>
+        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
     </div>
 
     <script src="mobile-complete.js"></script>
