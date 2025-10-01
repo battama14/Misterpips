@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+        }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .test-btn {
+            background: #00d4ff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+        }
+        .success { background: #4ecdc4; }
+        .error { background: #ff6b6b; }
+        .warning { background: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Mobile Dashboard - Misterpips Optimized</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Authentification</h3>
+        <button class="test-btn" onclick="testAuth()">Simuler Auth VIP</button>
+        <div id="authStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test Firebase</h3>
+        <button class="test-btn" onclick="testFirebase()">Tester Firebase</button>
+        <div id="firebaseStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test LocalStorage</h3>
+        <button class="test-btn" onclick="testLocalStorage()">Tester LocalStorage</button>
+        <div id="localStorageStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Actions</h3>
+        <button class="test-btn" onclick="goToMobileDashboard()">Aller au Dashboard Mobile</button>
+        <button class="test-btn" onclick="clearAllData()">Effacer toutes les données</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        
+        window.firebaseAuth = auth;
+        window.firebaseDB = db;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbGet = get;
+        
+        console.log('Firebase initialisé pour les tests');
+    </script>
+    
+    <script>
+        function showStatus(elementId, message, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function testAuth() {
+            const testUID = 'test_user_' + Date.now();
+            const testEmail = 'test@misterpips.com';
+            
+            sessionStorage.setItem('firebaseUID', testUID);
+            sessionStorage.setItem('userEmail', testEmail);
+            sessionStorage.setItem('isVIP', 'true');
+            sessionStorage.setItem('authenticated', 'true');
+            
+            localStorage.setItem('firebaseUID', testUID);
+            localStorage.setItem('userEmail', testEmail);
+            localStorage.setItem('isVIP', 'true');
+            localStorage.setItem('authenticated', 'true');
+            
+            showStatus('authStatus', `✅ Auth simulée: ${testEmail}`, 'success');
+        }
+        
+        async function testFirebase() {
+            try {
+                if (!window.firebaseDB) {
+                    showStatus('firebaseStatus', '❌ Firebase DB non disponible', 'error');
+                    return;
+                }
+                
+                const testRef = window.dbRef(window.firebaseDB, 'test/mobile_test');
+                await window.dbSet(testRef, {
+                    timestamp: Date.now(),
+                    message: 'Test mobile dashboard optimized'
+                });
+                
+                const snapshot = await window.dbGet(testRef);
+                if (snapshot.exists()) {
+                    showStatus('firebaseStatus', '✅ Firebase fonctionne correctement', 'success');
+                } else {
+                    showStatus('firebaseStatus', '⚠️ Problème lecture Firebase', 'warning');
+                }
+            } catch (error) {
+                showStatus('firebaseStatus', `❌ Erreur Firebase: ${error.message}`, 'error');
+            }
+        }
+        
+        function testLocalStorage() {
+            try {
+                const testData = {
+                    trades: [
+                        {
+                            id: 'test_1',
+                            date: new Date().toISOString().split('T')[0],
+                            currency: 'EUR/USD',
+                            entryPoint: 1.0850,
+                            stopLoss: 1.0800,
+                            takeProfit: 1.0900,
+                            lotSize: 0.1,
+                            status: 'closed',
+                            pnl: 25.50
+                        }
+                    ],
+                    settings: {
+                        capital: 1000,
+                        riskPerTrade: 2,
+                        dailyTarget: 1
+                    }
+                };
+                
+                const testUID = sessionStorage.getItem('firebaseUID') || 'test_user';
+                localStorage.setItem(`dashboard_${testUID}`, JSON.stringify(testData));
+                
+                const saved = localStorage.getItem(`dashboard_${testUID}`);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    showStatus('localStorageStatus', `✅ LocalStorage OK - ${parsed.trades.length} trades`, 'success');
+                } else {
+                    showStatus('localStorageStatus', '❌ Problème LocalStorage', 'error');
+                }
+            } catch (error) {
+                showStatus('localStorageStatus', `❌ Erreur LocalStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        function goToMobileDashboard() {
+            if (!sessionStorage.getItem('firebaseUID')) {
+                alert('Lancez d\'abord le test d\'authentification !');
+                return;
+            }
+            window.location.href = 'mobile-dashboard.html';
+        }
+        
+        function clearAllData() {
+            if (confirm('Effacer toutes les données de test ?')) {
+                sessionStorage.clear();
+                localStorage.clear();
+                alert('Données effacées !');
+                location.reload();
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testFirebase();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
