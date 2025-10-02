@@ -45,7 +45,7 @@ class MobileUnifiedSync {
                 this.initUserManager();
             } else {
                 console.log('❌ Utilisateur non-VIP, redirection...');
-                window.location.href = 'index-fixed.html';
+                window.location.href = 'index.html';
             }
         } catch (error) {
             console.error('❌ Erreur vérification VIP:', error);
@@ -55,7 +55,7 @@ class MobileUnifiedSync {
 
     handleNoAuth() {
         console.log('❌ Aucun utilisateur connecté, redirection...');
-        window.location.href = 'index-fixed.html';
+        window.location.href = 'index.html';
     }
 
     initUserManager() {
