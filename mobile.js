@@ -806,22 +806,52 @@ class MobileTradingDashboard {
         const closeTradeModal = document.getElementById('closeTradeModal');
         const saveMobileTradeBtn = document.getElementById('saveMobileTradeBtn');
         
-        if (newTradeBtn) newTradeBtn.onclick = () => this.showTradeModal();
-        if (addTradeBtn) addTradeBtn.onclick = () => this.showTradeModal();
-        if (closeTradeModal) closeTradeModal.onclick = () => this.hideTradeModal();
-        if (saveMobileTradeBtn) saveMobileTradeBtn.onclick = () => this.saveTrade();
+        if (newTradeBtn) {
+            newTradeBtn.onchange = () => this.showTradeModal();
+            newTradeBtn.onclick = () => this.showTradeModal();
+        }
+        if (addTradeBtn) {
+            addTradeBtn.onchange = () => this.showTradeModal();
+            addTradeBtn.onclick = () => this.showTradeModal();
+        }
+        if (closeTradeModal) {
+            closeTradeModal.onchange = () => this.hideTradeModal();
+            closeTradeModal.onclick = () => this.hideTradeModal();
+        }
+        if (saveMobileTradeBtn) {
+            saveMobileTradeBtn.onchange = () => this.saveTrade();
+            saveMobileTradeBtn.onclick = () => this.saveTrade();
+        }
 
-        document.getElementById('prevMonthMobile').onclick = () => {
-            this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
-            this.renderCalendar();
-        };
+        const prevMonthBtn = document.getElementById('prevMonthMobile');
+        if (prevMonthBtn) {
+            prevMonthBtn.onchange = () => {
+                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
+                this.renderCalendar();
+            };
+            prevMonthBtn.onclick = () => {
+                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
+                this.renderCalendar();
+            };
+        }
 
-        document.getElementById('nextMonthMobile').onclick = () => {
-            this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
-            this.renderCalendar();
-        };
+        const nextMonthBtn = document.getElementById('nextMonthMobile');
+        if (nextMonthBtn) {
+            nextMonthBtn.onchange = () => {
+                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
+                this.renderCalendar();
+            };
+            nextMonthBtn.onclick = () => {
+                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
+                this.renderCalendar();
+            };
+        }
 
-        document.getElementById('saveSettingsBtn').onclick = () => this.saveSettings();
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        if (saveSettingsBtn) {
+            saveSettingsBtn.onchange = () => this.saveSettings();
+            saveSettingsBtn.onclick = () => this.saveSettings();
+        }
         
         // Gestion des comptes - sélecteur dans le header
         const headerAccountSelect = document.querySelector('.mobile-header #mobileAccountSelect');
@@ -837,38 +867,60 @@ class MobileTradingDashboard {
         
         const addAccountBtn = document.getElementById('mobileAddAccountBtn');
         if (addAccountBtn) {
+            addAccountBtn.onchange = () => this.addNewAccount();
             addAccountBtn.onclick = () => this.addNewAccount();
         }
         
         const deleteAccountBtn = document.getElementById('mobileDeleteAccountBtn');
         if (deleteAccountBtn) {
+            deleteAccountBtn.onchange = () => this.deleteAccount();
             deleteAccountBtn.onclick = () => this.deleteAccount();
         }
 
-        document.getElementById('mobileChatToggle').onclick = () => {
-            document.getElementById('mobileChatWindow').classList.toggle('show');
-        };
+        const mobileChatToggle = document.getElementById('mobileChatToggle');
+        if (mobileChatToggle) {
+            mobileChatToggle.onchange = () => document.getElementById('mobileChatWindow').classList.toggle('show');
+            mobileChatToggle.onclick = () => document.getElementById('mobileChatWindow').classList.toggle('show');
+        }
 
-        document.getElementById('closeMobileChat').onclick = () => {
-            document.getElementById('mobileChatWindow').classList.remove('show');
-        };
+        const closeMobileChat = document.getElementById('closeMobileChat');
+        if (closeMobileChat) {
+            closeMobileChat.onchange = () => document.getElementById('mobileChatWindow').classList.remove('show');
+            closeMobileChat.onclick = () => document.getElementById('mobileChatWindow').classList.remove('show');
+        }
 
-        document.getElementById('sendMobileMessage').onclick = () => this.sendChatMessage();
+        const sendMobileMessage = document.getElementById('sendMobileMessage');
+        if (sendMobileMessage) {
+            sendMobileMessage.onchange = () => this.sendChatMessage();
+            sendMobileMessage.onclick = () => this.sendChatMessage();
+        }
         
-        document.getElementById('mobileChatInput').onkeypress = (e) => {
-            if (e.key === 'Enter') this.sendChatMessage();
-        };
+        const mobileChatInput = document.getElementById('mobileChatInput');
+        if (mobileChatInput) {
+            mobileChatInput.onkeypress = (e) => {
+                if (e.key === 'Enter') this.sendChatMessage();
+            };
+        }
         
         // Emoji mobile
         const mobileEmojiBtn = document.getElementById('mobileEmojiBtn');
         const mobileEmojiPanel = document.getElementById('mobileEmojiPanel');
         
         if (mobileEmojiBtn && mobileEmojiPanel) {
+            mobileEmojiBtn.onchange = () => {
+                mobileEmojiPanel.style.display = mobileEmojiPanel.style.display === 'block' ? 'none' : 'block';
+            };
             mobileEmojiBtn.onclick = () => {
                 mobileEmojiPanel.style.display = mobileEmojiPanel.style.display === 'block' ? 'none' : 'block';
             };
             
             mobileEmojiPanel.querySelectorAll('.emoji-item').forEach(emoji => {
+                emoji.onchange = () => {
+                    const input = document.getElementById('mobileChatInput');
+                    input.value += emoji.textContent;
+                    mobileEmojiPanel.style.display = 'none';
+                    input.focus();
+                };
                 emoji.onclick = () => {
                     const input = document.getElementById('mobileChatInput');
                     input.value += emoji.textContent;
