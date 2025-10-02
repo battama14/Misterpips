@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="mobile-clean.css?v=2025">
     <link rel="stylesheet" href="mobile-trade-styles.css">
     <link rel="stylesheet" href="mobile-ranking-styles-fix.css">
+    <link rel="stylesheet" href="mobile-chat-styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,24 +37,7 @@
         window.firebaseDB = db;
         window.firebaseAuth = auth;
         
-        onAuthStateChanged(auth, async (user) => {
-            const waitForUserManager = () => {
-                if (window.userManager) {
-                    if (user) {
-                        window.userManager.loginUser(user.email, user.uid);
-                        console.log('✅ Utilisateur connecté:', user.email);
-                    } else {
-                        const tempUID = 'mobile_user_fixed';
-                        const tempEmail = 'mobile@misterpips.com';
-                        window.userManager.loginUser(tempEmail, tempUID);
-                        console.log('📱 Mode démo activé avec UID fixe');
-                    }
-                } else {
-                    setTimeout(waitForUserManager, 100);
-                }
-            };
-            waitForUserManager();
-        });
+        // L'authentification est maintenant gérée par mobile-sync-unified.js
     </script>
 </head>
 <body>
@@ -209,7 +193,128 @@
             <div class="settings-list">
                 <div class="setting-item">
                     <label>Capital initial ($)</label>
-                    <input type="number" id="mobileCapitalInput" value="1000">
+                    <input type="number" id="mobileCapitalInput" value="1000" min="100" step="10">
+                </div>
+                
+                <div class="setting-item">
+                    <label>Objectif journalier ($)</label>
+                    <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
+                </div>
+                
+                <div class="setting-item">
+                    <label>Notifications</label>
+                    <label class="switch">
+                        <input type="checkbox" id="mobileNotifications" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Mode sombre</label>
+                    <label class="switch">
+                        <input type="checkbox" id="mobileDarkMode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <button class="primary-btn" id="saveSettingsBtn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Trade -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📈 Nouveau Trade</h3>
+                <button class="close-modal" id="closeTradeModal">✕</button>
+            </div>
+            
+            <form id="tradeForm" class="trade-form">
+                <div class="form-group">
+                    <label>Paire</label>
+                    <select id="tradePair" required>
+                        <option value="">Sélectionner...</option>
+                        <option value="EUR/USD">EUR/USD</option>
+                        <option value="GBP/USD">GBP/USD</option>
+                        <option value="USD/JPY">USD/JPY</option>
+                        <option value="AUD/USD">AUD/USD</option>
+                        <option value="USD/CAD">USD/CAD</option>
+                        <option value="NZD/USD">NZD/USD</option>
+                        <option value="EUR/GBP">EUR/GBP</option>
+                        <option value="EUR/JPY">EUR/JPY</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="tradeType" required>
+                        <option value="BUY">🟢 BUY</option>
+                        <option value="SELL">🔴 SELL</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Lot Size</label>
+                    <input type="number" id="tradeLot" step="0.01" min="0.01" value="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Prix d'entrée</label>
+                    <input type="number" id="tradeEntry" step="0.00001" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Take Profit</label>
+                    <input type="number" id="tradeTp" step="0.00001">
+                </div>
+                
+                <div class="form-group">
+                    <label>Stop Loss</label>
+                    <input type="number" id="tradeSl" step="0.00001">
+                </div>
+                
+                <div class="form-group">
+                    <label>Résultat ($)</label>
+                    <input type="number" id="tradeResult" step="0.01" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" id="cancelTradeBtn">Annuler</button>
+                    <button type="submit" class="primary-btn">💾 Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Navigation Bottom -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-section="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-section="trades">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Trades</span>
+        </button>
+        <button class="nav-btn" data-section="calendar">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Calendrier</span>
+        </button>
+        <button class="nav-btn" data-section="ranking">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-label">Classement</span>
+        </button>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="mobile-sync-unified.js"></script>
+    <script src="mobile-complete.js"></script>
+    <script src="mobile-ranking-vip-only.js"></script>
+    <script src="mobile-chat-optimized.js"></script>
+    <script src="mobile-final-fix.js"></script>
+</body>
+</html>="number" id="mobileCapitalInput" value="1000">
                 </div>
                 <div class="setting-item">
                     <label>Risque par trade (%)</label>

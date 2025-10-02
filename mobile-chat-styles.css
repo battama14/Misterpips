@@ -1,0 +1,212 @@
+/* Chat Mobile Optimisé */
+.mobile-chat-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border: none;
+    color: white;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    z-index: 1000;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-chat-toggle:active {
+    transform: scale(0.95);
+}
+
+.mobile-chat-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.mobile-chat-header {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.chat-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-close-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.mobile-chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.mobile-chat-message {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.message-user {
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+.message-time {
+    color: #666;
+}
+
+.message-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #333;
+}
+
+.mobile-chat-input {
+    display: flex;
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #eee;
+    gap: 10px;
+}
+
+#mobileChatInput {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 14px;
+    outline: none;
+    background: #f8f9fa;
+}
+
+#mobileChatInput:focus {
+    border-color: #00d4ff;
+    background: white;
+}
+
+.chat-send-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border: none;
+    color: white;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chat-send-btn:active {
+    transform: scale(0.95);
+}
+
+.mobile-emoji-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+}
+
+.emoji-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.emoji-btn:active {
+    background: #e9ecef;
+    transform: scale(1.1);
+}
+
+/* Scrollbar personnalisée */
+.mobile-chat-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.mobile-chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mobile-chat-messages::-webkit-scrollbar-thumb {
+    background: #00d4ff;
+    border-radius: 2px;
+}
+
+/* Animation d'ouverture */
+.mobile-chat-container {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .mobile-chat-container {
+        height: 75vh;
+    }
+    
+    .mobile-chat-toggle {
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+    }
+}
