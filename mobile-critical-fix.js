@@ -213,25 +213,30 @@ function saveTrade() {
 }
 
 function sendChatMessage() {
-    const input = document.getElementById('mobileMessageInput');
-    const message = input?.value.trim();
-    
-    if (!message) {
-        console.log('❌ Message vide');
-        return;
-    }
-    
-    console.log('📤 Envoi message:', message);
-    
-    // Utiliser le dashboard mobile si disponible
-    if (window.mobileDashboard) {
-        window.mobileDashboard.sendChatMessage();
+    // Utiliser la nouvelle fonction de chat fixée
+    if (window.sendMobileChatMessage) {
+        window.sendMobileChatMessage();
     } else {
-        // Fallback simple
-        if (input) {
-            input.value = '';
+        const input = document.getElementById('mobileMessageInput');
+        const message = input?.value.trim();
+        
+        if (!message) {
+            console.log('❌ Message vide');
+            return;
         }
-        alert('Message envoyé: ' + message);
+        
+        console.log('📤 Envoi message fallback:', message);
+        
+        // Utiliser le dashboard mobile si disponible
+        if (window.mobileDashboard) {
+            window.mobileDashboard.sendChatMessage();
+        } else {
+            // Fallback simple
+            if (input) {
+                input.value = '';
+            }
+            alert('Message envoyé: ' + message);
+        }
     }
 }
 
