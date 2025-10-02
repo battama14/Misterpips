@@ -421,7 +421,7 @@ class MobileTradingDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const messagesRef = ref(window.firebaseDB, 'vip_chat');
+                const messagesRef = ref(window.firebaseDB, 'vip_chat_v2');
                 
                 onValue(messagesRef, (snapshot) => {
                     if (snapshot.exists()) {
@@ -526,7 +526,7 @@ class MobileTradingDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, push } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const messagesRef = ref(window.firebaseDB, 'vip_chat');
+                const messagesRef = ref(window.firebaseDB, 'vip_chat_v2');
                 
                 const nickname = window.nicknameManager.getNickname() || 'Mobile User';
                 
@@ -658,6 +658,109 @@ class MobileTradingDashboard {
         }
     }
 
+    editTrade(index) {
+        const trade = this.trades[index];
+        if (!trade) return;
+        
+        const modal = document.getElementById('mobileTradeModal');
+        const form = document.getElementById('mobileTradeForm');
+        
+        document.getElementById('mobileCurrency').value = trade.currency;
+        document.getElementById('mobileEntryPoint').value = trade.entryPoint;
+        document.getElementById('mobileStopLoss').value = trade.stopLoss;
+        document.getElementById('mobileTakeProfit').value = trade.takeProfit;
+        document.getElementById('mobileLotSize').value = trade.lotSize;
+        
+        const saveBtn = document.getElementById('saveMobileTradeBtn');
+        saveBtn.textContent = '✏️ Modifier';
+        saveBtn.onclick = () => this.saveEditedTrade(index);
+        
+        modal.classList.add('show');
+    }
+    
+    saveEditedTrade(index) {
+        const trade = this.trades[index];
+        if (!trade) return;
+        
+        trade.currency = document.getElementById('mobileCurrency').value;
+        trade.entryPoint = parseFloat(document.getElementById('mobileEntryPoint').value);
+        trade.stopLoss = parseFloat(document.getElementById('mobileStopLoss').value);
+        trade.takeProfit = parseFloat(document.getElementById('mobileTakeProfit').value);
+        trade.lotSize = parseFloat(document.getElementById('mobileLotSize').value);
+        
+        this.saveData();
+        this.hideTradeModal();
+        this.updateAll();
+        this.showNotification('Trade modifié !');
+        
+        const saveBtn = document.getElementById('saveMobileTradeBtn');
+        saveBtn.textContent = '💾 Sauvegarder';
+        saveBtn.onclick = () => this.saveTrade();
+    }
+    
+    closeTrade(index) {
+        const trade = this.trades[index];
+        if (!trade || trade.status !== 'open') return;
+        
+        const result = prompt('Résultat du trade (TP/SL/BE):', 'TP');
+        if (!result) return;
+        
+        trade.result = result.toUpperCase();
+        trade.status = 'closed';
+        
+        if (result === 'TP') {
+            trade.closePrice = trade.takeProfit;
+        } else if (result === 'SL') {
+            trade.closePrice = trade.stopLoss;
+        } else if (result === 'BE') {
+            trade.closePrice = trade.entryPoint;
+        }
+        
+        trade.pnl = this.calculatePnL(trade);
+        
+        this.saveData();
+        this.updateAll();
+        this.showNotification(`Trade ${trade.currency} clôturé en ${result}`);
+    }
+    
+    deleteTrade(index) {
+        const trade = this.trades[index];
+        if (!trade) return;
+        
+        if (confirm(`Supprimer le trade ${trade.currency} ?`)) {
+            this.trades.splice(index, 1);
+            this.saveData();
+            this.updateAll();
+            this.showNotification('Trade supprimé !');
+        }
+    }
+    
+    calculatePnL(trade) {
+        const entryPoint = parseFloat(trade.entryPoint);
+        const closePrice = parseFloat(trade.closePrice);
+        const lotSize = parseFloat(trade.lotSize);
+        const currency = trade.currency;
+        
+        if (!entryPoint || !closePrice || !lotSize) return 0;
+        
+        let priceDiff = closePrice - entryPoint;
+        const isLong = parseFloat(trade.takeProfit) > entryPoint;
+        if (!isLong) priceDiff = -priceDiff;
+        
+        let pnl = 0;
+        if (currency === 'XAU/USD') {
+            pnl = priceDiff * lotSize * 100;
+        } else if (currency.includes('JPY')) {
+            const pipDiff = priceDiff * 100;
+            pnl = pipDiff * lotSize * 10;
+        } else {
+            const pipDiff = priceDiff * 10000;
+            pnl = pipDiff * lotSize * 10;
+        }
+        
+        return parseFloat(pnl.toFixed(2));
+    }
+
     showNotification(message) {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -695,6 +798,21 @@ class MobileTradingDashboard {
         if (closeMenu && mobileMenu) {
             closeMenu.onclick = () => mobileMenu.classList.remove('open');
         }
+        
+        // Ajouter des événements tactiles pour la navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                btn.click();
+            });
+        });
+        
+        document.querySelectorAll('.menu-list a').forEach(link => {
+            link.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                link.click();
+            });
+        });
 
         const newTradeBtn = document.getElementById('newTradeBtn');
         const addTradeBtn = document.getElementById('addTradeBtn');
@@ -753,11 +871,30 @@ class MobileTradingDashboard {
         document.getElementById('mobileChatInput').onkeypress = (e) => {
             if (e.key === 'Enter') this.sendChatMessage();
         };
+        
+        // Emoji mobile
+        const mobileEmojiBtn = document.getElementById('mobileEmojiBtn');
+        const mobileEmojiPanel = document.getElementById('mobileEmojiPanel');
+        
+        if (mobileEmojiBtn && mobileEmojiPanel) {
+            mobileEmojiBtn.onclick = () => {
+                mobileEmojiPanel.style.display = mobileEmojiPanel.style.display === 'block' ? 'none' : 'block';
+            };
+            
+            mobileEmojiPanel.querySelectorAll('.emoji-item').forEach(emoji => {
+                emoji.onclick = () => {
+                    const input = document.getElementById('mobileChatInput');
+                    input.value += emoji.textContent;
+                    mobileEmojiPanel.style.display = 'none';
+                    input.focus();
+                };
+            });
+        }
 
         document.onclick = (e) => {
             const menu = document.getElementById('mobileMenu');
             const menuBtn = document.getElementById('menuToggle');
-            if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+            if (menu && menuBtn && !menu.contains(e.target) && !menuBtn.contains(e.target)) {
                 menu.classList.remove('open');
             }
         };
@@ -1443,19 +1580,40 @@ function handleSwipe() {
 
 // Navigation entre sections
 function showSection(sectionId) {
+    console.log('Switching to section:', sectionId);
+    
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
     
-    document.getElementById(sectionId).classList.add('active');
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        console.log('Section activated:', sectionId);
+    } else {
+        console.error('Section not found:', sectionId);
+    }
     
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+    const activeBtn = document.querySelector(`[onclick*="showSection('${sectionId}')"`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
     
-    document.getElementById('mobileMenu').classList.remove('open');
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenu) {
+        mobileMenu.classList.remove('open');
+    }
+    
+    // Mettre à jour le dashboard mobile si nécessaire
+    if (window.mobileDashboard && sectionId !== 'dashboard') {
+        setTimeout(() => {
+            window.mobileDashboard.updateAll();
+        }, 100);
+    }
 }
 
 // Initialisation
