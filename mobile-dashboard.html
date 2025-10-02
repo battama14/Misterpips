@@ -340,6 +340,33 @@
         </div>
     </div>
 
+    <script>
+        // Navigation mobile simple
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('nav' + sectionId.charAt(0).toUpperCase() + sectionId.slice(1)).classList.add('active');
+            document.getElementById('mobileMenu').classList.remove('open');
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navigation bottom
+            document.getElementById('navDashboard').onclick = () => showSection('dashboard');
+            document.getElementById('navTrades').onclick = () => showSection('trades');
+            document.getElementById('navCalendar').onclick = () => showSection('calendar');
+            document.getElementById('navObjectives').onclick = () => showSection('objectives');
+            document.getElementById('navRanking').onclick = () => showSection('ranking');
+            
+            // Menu hamburger
+            document.getElementById('menuDashboard').onclick = () => showSection('dashboard');
+            document.getElementById('menuTrades').onclick = () => showSection('trades');
+            document.getElementById('menuCalendar').onclick = () => showSection('calendar');
+            document.getElementById('menuObjectives').onclick = () => showSection('objectives');
+            document.getElementById('menuRanking').onclick = () => showSection('ranking');
+            document.getElementById('menuSettings').onclick = () => showSection('settings');
+        });
+    </script>
     <script src="nickname-manager.js"></script>
     <script src="user-manager.js"></script>
     <script src="mobile.js"></script>
