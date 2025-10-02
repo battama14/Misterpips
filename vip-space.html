@@ -79,9 +79,9 @@
                     <h3>Dashboard Trading</h3>
                     <p>Gérez vos trades, analysez vos performances et suivez vos objectifs</p>
                     <div class="tool-features">
-                        <span>✅ Graphiques avancés</span>
-                        <span>✅ Gestion multi-comptes</span>
-                        <span>✅ Export Excel</span>
+                        <div class="feature-item">✅ Graphiques avancés</div>
+                        <div class="feature-item">✅ Gestion multi-comptes</div>
+                        <div class="feature-item">✅ Export Excel</div>
                     </div>
                 </div>
 
@@ -90,9 +90,9 @@
                     <h3>Dashboard Mobile</h3>
                     <p>Version mobile optimisée pour trader en déplacement</p>
                     <div class="tool-features">
-                        <span>✅ Interface tactile</span>
-                        <span>✅ Notifications push</span>
-                        <span>✅ Sync temps réel</span>
+                        <div class="feature-item">✅ Interface tactile</div>
+                        <div class="feature-item">✅ Notifications push</div>
+                        <div class="feature-item">✅ Sync temps réel</div>
                     </div>
                 </div>
 
@@ -101,9 +101,9 @@
                     <h3>Planning Forex</h3>
                     <p>Sessions de trading, calendrier économique et analyses d'impact</p>
                     <div class="tool-features">
-                        <span>✅ Sessions en temps réel</span>
-                        <span>✅ Calendrier économique</span>
-                        <span>✅ Analyse d'impact</span>
+                        <div class="feature-item">✅ Sessions en temps réel</div>
+                        <div class="feature-item">✅ Calendrier économique</div>
+                        <div class="feature-item">✅ Analyse d'impact</div>
                     </div>
                 </div>
 
@@ -112,9 +112,9 @@
                     <h3>Chat VIP</h3>
                     <p>Communiquez avec l'équipe et les autres membres VIP</p>
                     <div class="tool-features">
-                        <span>✅ Support prioritaire</span>
-                        <span>✅ Communauté VIP</span>
-                        <span>✅ Conseils exclusifs</span>
+                        <div class="feature-item">✅ Support prioritaire</div>
+                        <div class="feature-item">✅ Communauté VIP</div>
+                        <div class="feature-item">✅ Conseils exclusifs</div>
                     </div>
                 </div>
 
@@ -123,9 +123,9 @@
                     <h3>Ressources VIP</h3>
                     <p>Ebooks, formations et analyses exclusives</p>
                     <div class="tool-features">
-                        <span>✅ Formations avancées</span>
-                        <span>✅ Analyses quotidiennes</span>
-                        <span>✅ Stratégies exclusives</span>
+                        <div class="feature-item">✅ Formations avancées</div>
+                        <div class="feature-item">✅ Analyses quotidiennes</div>
+                        <div class="feature-item">✅ Stratégies exclusives</div>
                     </div>
                 </div>
 
@@ -134,9 +134,9 @@
                     <h3>Paramètres</h3>
                     <p>Configurez votre compte et vos préférences</p>
                     <div class="tool-features">
-                        <span>✅ Profil personnalisé</span>
-                        <span>✅ Notifications</span>
-                        <span>✅ Sécurité</span>
+                        <div class="feature-item">✅ Profil personnalisé</div>
+                        <div class="feature-item">✅ Notifications</div>
+                        <div class="feature-item">✅ Sécurité</div>
                     </div>
                 </div>
             </div>
@@ -377,12 +377,17 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            align-items: flex-start;
         }
 
-        .tool-features span {
+        .feature-item {
             color: #4ecdc4;
             font-size: 0.9em;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            text-align: left;
+            width: 100%;
         }
 
         .admin-section {

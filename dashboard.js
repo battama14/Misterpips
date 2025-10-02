@@ -92,6 +92,11 @@ class SimpleTradingDashboard {
         if (firebaseUID) {
             this.currentUser = firebaseUID;
         }
+        
+        // Initialiser le gestionnaire de pseudo
+        await window.nicknameManager.initialize();
+        await window.nicknameManager.ensureNickname();
+        
         await this.loadData();
         this.setupEventListeners();
         this.setupRealtimeSync();

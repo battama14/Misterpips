@@ -1,0 +1,84 @@
+/* Styles pour la gestion des comptes mobile */
+
+.account-info {
+    padding: 10px 20px;
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.account-selector {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.account-selector option {
+    background: #1a1a1a;
+    color: white;
+}
+
+.account-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.account-controls select {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+}
+
+.secondary-btn {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.danger-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.secondary-btn:active,
+.danger-btn:active {
+    transform: scale(0.95);
+}
+
+/* Responsive pour les petits écrans */
+@media (max-width: 360px) {
+    .account-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .account-controls select {
+        width: 100%;
+    }
+    
+    .secondary-btn,
+    .danger-btn {
+        width: 100%;
+        padding: 10px;
+    }
+}

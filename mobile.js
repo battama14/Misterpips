@@ -11,13 +11,23 @@ class MobileTradingDashboard {
             weeklyTarget: 3,
             monthlyTarget: 15
         };
+        this.accounts = {
+            'compte1': { name: 'Compte Principal', capital: 1000 },
+            'compte2': { name: 'Compte Démo', capital: 500 },
+            'compte3': { name: 'Compte Swing', capital: 2000 }
+        };
         this.currentCalendarDate = new Date();
         this.init();
     }
 
     async init() {
+        // Initialiser le gestionnaire de pseudo
+        await window.nicknameManager.initialize();
+        await window.nicknameManager.ensureNickname();
+        
         await this.loadData();
         this.setupEventListeners();
+        this.updateAccountDisplay();
         this.updateStats();
         this.renderTrades();
         this.renderCalendar();
@@ -38,6 +48,8 @@ class MobileTradingDashboard {
                     const data = snapshot.val();
                     this.trades = data.trades || [];
                     this.settings = { ...this.settings, ...data.settings };
+                    this.accounts = data.accounts || this.accounts;
+                    this.currentAccount = data.currentAccount || this.currentAccount;
                     console.log('📱 Données chargées depuis Firebase:', this.trades.length, 'trades');
                     return;
                 }
@@ -48,6 +60,8 @@ class MobileTradingDashboard {
                 const data = JSON.parse(savedData);
                 this.trades = data.trades || [];
                 this.settings = { ...this.settings, ...data.settings };
+                this.accounts = data.accounts || this.accounts;
+                this.currentAccount = data.currentAccount || this.currentAccount;
                 console.log('📱 Données chargées depuis localStorage:', this.trades.length, 'trades');
             }
         } catch (error) {
@@ -60,6 +74,8 @@ class MobileTradingDashboard {
             const data = {
                 trades: this.trades,
                 settings: this.settings,
+                accounts: this.accounts,
+                currentAccount: this.currentAccount,
                 lastUpdated: new Date().toISOString()
             };
 
@@ -82,7 +98,8 @@ class MobileTradingDashboard {
         const totalPnL = closedTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
         const winRate = closedTrades.length > 0 ? 
             (closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length / closedTrades.length * 100).toFixed(1) : 0;
-        const currentCapital = this.settings.capital + totalPnL;
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const currentCapital = initialCapital + totalPnL;
 
         document.getElementById('mobileCapital').textContent = `$${currentCapital.toFixed(2)}`;
         document.getElementById('mobileWinRate').textContent = `${winRate}%`;
@@ -96,9 +113,10 @@ class MobileTradingDashboard {
         const container = document.getElementById('mobileTradesList');
         const recentTrades = this.trades.slice(-10).reverse();
 
-        container.innerHTML = recentTrades.map(trade => {
+        container.innerHTML = recentTrades.map((trade, index) => {
             const pnl = parseFloat(trade.pnl || 0);
             const pnlClass = pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : '';
+            const tradeIndex = this.trades.indexOf(trade);
             
             return `
                 <div class="trade-card">
@@ -123,6 +141,13 @@ class MobileTradingDashboard {
                             <span class="trade-detail-label">P&L:</span>
                             <span class="trade-pnl ${pnlClass}">$${pnl.toFixed(2)}</span>
                         </div>
+                    </div>
+                    <div class="trade-actions">
+                        <button class="btn-edit" onclick="mobileDashboard.editTrade(${tradeIndex})">✏️ Modifier</button>
+                        ${trade.status === 'open' ? 
+                            `<button class="btn-close" onclick="mobileDashboard.closeTrade(${tradeIndex})">🔒 Clôturer</button>` : 
+                            `<button class="btn-delete" onclick="mobileDashboard.deleteTrade(${tradeIndex})">🗑️ Supprimer</button>`
+                        }
                     </div>
                 </div>
             `;
@@ -184,7 +209,8 @@ class MobileTradingDashboard {
     updateObjectives() {
         const closedTrades = this.trades.filter(t => t.status === 'closed');
         const totalPnL = closedTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
-        const currentCapital = this.settings.capital + totalPnL;
+        const initialCapital = this.accounts[this.currentAccount]?.capital || this.settings.capital;
+        const currentCapital = initialCapital + totalPnL;
 
         const dailyTarget = (currentCapital * this.settings.dailyTarget / 100);
         const weeklyTarget = (currentCapital * this.settings.weeklyTarget / 100);
@@ -303,16 +329,23 @@ class MobileTradingDashboard {
             console.error('Erreur chargement classement:', error);
         }
 
+        // Calculer les données utilisateur actuelles
         const today = new Date().toISOString().split('T')[0];
         const todayTrades = this.trades.filter(t => t.date === today && t.status === 'closed');
         const dailyPnL = todayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        const totalPnL = this.trades.filter(t => t.status === 'closed').reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+        const winRate = this.trades.filter(t => t.status === 'closed').length > 0 ? 
+            (this.trades.filter(t => t.status === 'closed' && parseFloat(t.pnl || 0) > 0).length / this.trades.filter(t => t.status === 'closed').length * 100) : 0;
+        
+        const userNickname = window.nicknameManager.getNickname() || 'Vous';
         
         const demoRankings = [
-            { name: 'Trader Pro', dailyPnL: 250.50, tradeCount: 8, userId: 'demo1' },
-            { name: 'Expert FX', dailyPnL: 180.25, tradeCount: 5, userId: 'demo2' },
-            { name: 'Vous', dailyPnL: dailyPnL, tradeCount: todayTrades.length, userId: this.currentUser },
-            { name: 'Master Pips', dailyPnL: -45.30, tradeCount: 15, userId: 'demo3' }
-        ].sort((a, b) => b.dailyPnL - a.dailyPnL);
+            { name: 'Trader Pro', dailyPnL: 250.50, totalPnL: 2500, tradeCount: 8, winRate: 75, userId: 'demo1' },
+            { name: 'Expert FX', dailyPnL: 180.25, totalPnL: 1800, tradeCount: 5, winRate: 80, userId: 'demo2' },
+            { name: userNickname, dailyPnL: dailyPnL, totalPnL: totalPnL, tradeCount: todayTrades.length, winRate: winRate.toFixed(1), userId: this.currentUser },
+            { name: 'Master Pips', dailyPnL: -45.30, totalPnL: 950, tradeCount: 15, winRate: 60, userId: 'demo3' },
+            { name: 'Gold Trader', dailyPnL: 75.80, totalPnL: 1200, tradeCount: 3, winRate: 85, userId: 'demo4' }
+        ].sort((a, b) => b.totalPnL - a.totalPnL);
         
         this.displayRanking(demoRankings);
     }
@@ -322,30 +355,40 @@ class MobileTradingDashboard {
         const rankings = [];
         
         for (const [userId, userData] of Object.entries(users)) {
-            if (userData.isVIP) {
-                const userDashboard = dashboards[userId];
-                let dailyPnL = 0;
-                let tradeCount = 0;
+            const userDashboard = dashboards[userId];
+            let dailyPnL = 0;
+            let totalPnL = 0;
+            let tradeCount = 0;
+            let winRate = 0;
+            
+            if (userDashboard && userDashboard.trades) {
+                const todayTrades = userDashboard.trades.filter(t => 
+                    t.date === today && t.status === 'closed'
+                );
+                const closedTrades = userDashboard.trades.filter(t => t.status === 'closed');
                 
-                if (userDashboard && userDashboard.trades) {
-                    const todayTrades = userDashboard.trades.filter(t => 
-                        t.date === today && t.status === 'closed'
-                    );
-                    dailyPnL = todayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
-                    tradeCount = todayTrades.length;
+                dailyPnL = todayTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+                totalPnL = closedTrades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0);
+                tradeCount = todayTrades.length;
+                
+                if (closedTrades.length > 0) {
+                    const winningTrades = closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length;
+                    winRate = (winningTrades / closedTrades.length * 100).toFixed(1);
                 }
-                
-                const displayName = userData.nickname || userData.email?.split('@')[0] || 'Membre VIP';
-                rankings.push({
-                    name: displayName,
-                    dailyPnL,
-                    tradeCount,
-                    userId
-                });
             }
+            
+            const displayName = userData.profile?.nickname || userData.email?.split('@')[0] || 'Membre VIP';
+            rankings.push({
+                name: displayName,
+                dailyPnL,
+                totalPnL,
+                tradeCount,
+                winRate,
+                userId
+            });
         }
         
-        rankings.sort((a, b) => b.dailyPnL - a.dailyPnL);
+        rankings.sort((a, b) => b.totalPnL - a.totalPnL);
         return rankings;
     }
 
@@ -354,16 +397,21 @@ class MobileTradingDashboard {
         
         container.innerHTML = rankings.map((trader, index) => {
             const isCurrentUser = trader.userId === this.currentUser || trader.name === 'Vous';
-            const pnlClass = trader.dailyPnL > 0 ? 'positive' : trader.dailyPnL < 0 ? 'negative' : '';
+            const totalPnlClass = trader.totalPnL > 0 ? 'positive' : trader.totalPnL < 0 ? 'negative' : '';
+            const dailyPnlClass = trader.dailyPnL > 0 ? 'positive' : trader.dailyPnL < 0 ? 'negative' : '';
             
             return `
                 <div class="ranking-item ${isCurrentUser ? 'current-user' : ''}">
                     <div class="ranking-position">${index + 1}</div>
                     <div class="ranking-info">
                         <div class="ranking-name">${trader.name}${isCurrentUser ? ' (Vous)' : ''}</div>
-                        <div class="ranking-trades">${trader.tradeCount} trades</div>
+                        <div class="ranking-stats">
+                            <span class="ranking-trades">${trader.tradeCount} trades</span>
+                            <span class="ranking-winrate">${trader.winRate}% WR</span>
+                        </div>
+                        <div class="ranking-daily">Aujourd'hui: <span class="${dailyPnlClass}">$${trader.dailyPnL.toFixed(2)}</span></div>
                     </div>
-                    <div class="ranking-pnl ${pnlClass}">$${trader.dailyPnL.toFixed(2)}</div>
+                    <div class="ranking-total ${totalPnlClass}">$${trader.totalPnL.toFixed(0)}</div>
                 </div>
             `;
         }).join('');
@@ -480,8 +528,7 @@ class MobileTradingDashboard {
                 const { ref, push } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
                 const messagesRef = ref(window.firebaseDB, 'vip_chat');
                 
-                const userEmail = sessionStorage.getItem('userEmail') || 'Mobile User';
-                const nickname = userEmail.split('@')[0] || 'Mobile User';
+                const nickname = window.nicknameManager.getNickname() || 'Mobile User';
                 
                 await push(messagesRef, {
                     userId: this.currentUser,
@@ -519,6 +566,96 @@ class MobileTradingDashboard {
         setTimeout(() => {
             this.initCharts();
         }, 100);
+    }
+
+    updateAccountDisplay() {
+        // Mettre à jour les deux sélecteurs de compte
+        const selectors = [
+            document.querySelector('.mobile-header #mobileAccountSelect'),
+            document.querySelector('#settings #mobileAccountSelect')
+        ];
+        
+        selectors.forEach(accountSelect => {
+            if (accountSelect) {
+                accountSelect.innerHTML = '';
+                Object.keys(this.accounts).forEach(accountId => {
+                    const option = document.createElement('option');
+                    option.value = accountId;
+                    option.textContent = this.accounts[accountId].name;
+                    if (accountId === this.currentAccount) {
+                        option.selected = true;
+                    }
+                    accountSelect.appendChild(option);
+                });
+            }
+        });
+    }
+    
+    switchAccount(accountId) {
+        if (!accountId || accountId === this.currentAccount) return;
+        
+        if (this.accounts[this.currentAccount]) {
+            this.accounts[this.currentAccount].trades = [...this.trades];
+            this.accounts[this.currentAccount].settings = { ...this.settings };
+        }
+        
+        this.currentAccount = accountId;
+        
+        if (this.accounts[accountId]) {
+            this.trades = this.accounts[accountId].trades || [];
+            this.settings = this.accounts[accountId].settings || { ...this.settings, capital: this.accounts[accountId].capital };
+        }
+        
+        this.saveData();
+        this.updateAll();
+        
+        this.showNotification(`Compte changé: ${this.accounts[accountId]?.name || accountId}`);
+    }
+    
+    addNewAccount() {
+        const name = prompt('Nom du nouveau compte:');
+        if (!name) return;
+        
+        const capital = parseFloat(prompt('Capital initial ($):')) || 1000;
+        
+        let accountId;
+        let counter = Object.keys(this.accounts).length + 1;
+        do {
+            accountId = 'compte' + counter;
+            counter++;
+        } while (this.accounts[accountId]);
+        
+        this.accounts[accountId] = { 
+            name, 
+            capital,
+            trades: [],
+            settings: { ...this.settings, capital }
+        };
+        
+        this.saveData();
+        this.updateAccountDisplay();
+        this.showNotification(`Compte "${name}" créé avec succès!`);
+    }
+    
+    deleteAccount() {
+        if (Object.keys(this.accounts).length <= 1) {
+            alert('Impossible de supprimer le dernier compte');
+            return;
+        }
+        
+        const accountName = this.accounts[this.currentAccount].name;
+        if (confirm(`Supprimer le compte "${accountName}" et toutes ses données ?`)) {
+            delete this.accounts[this.currentAccount];
+            
+            this.currentAccount = Object.keys(this.accounts)[0];
+            this.trades = [];
+            
+            this.saveData();
+            this.updateAccountDisplay();
+            this.updateAll();
+            
+            this.showNotification(`Compte "${accountName}" supprimé définitivement`);
+        }
     }
 
     showNotification(message) {
@@ -580,6 +717,28 @@ class MobileTradingDashboard {
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => this.saveSettings();
+        
+        // Gestion des comptes - sélecteur dans le header
+        const headerAccountSelect = document.querySelector('.mobile-header #mobileAccountSelect');
+        if (headerAccountSelect) {
+            headerAccountSelect.onchange = (e) => this.switchAccount(e.target.value);
+        }
+        
+        // Gestion des comptes - sélecteur dans les paramètres
+        const settingsAccountSelect = document.querySelector('#settings #mobileAccountSelect');
+        if (settingsAccountSelect) {
+            settingsAccountSelect.onchange = (e) => this.switchAccount(e.target.value);
+        }
+        
+        const addAccountBtn = document.getElementById('mobileAddAccountBtn');
+        if (addAccountBtn) {
+            addAccountBtn.onclick = () => this.addNewAccount();
+        }
+        
+        const deleteAccountBtn = document.getElementById('mobileDeleteAccountBtn');
+        if (deleteAccountBtn) {
+            deleteAccountBtn.onclick = () => this.deleteAccount();
+        }
 
         document.getElementById('mobileChatToggle').onclick = () => {
             document.getElementById('mobileChatWindow').classList.toggle('show');
