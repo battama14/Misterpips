@@ -99,19 +99,31 @@ class MobileRankingFix {
             for (const [uid, userData] of Object.entries(users)) {
                 if (!userData.isVIP && userData.plan !== 'VIP') continue;
                 
-                // Récupérer les trades de l'utilisateur
+                // Chercher les trades dans plusieurs emplacements
                 let userTrades = [];
                 try {
+                    // Essayer d'abord users/uid/trades
                     const tradesRef = ref(window.firebaseDB, `users/${uid}/trades`);
                     const tradesSnapshot = await get(tradesRef);
                     if (tradesSnapshot.exists()) {
-                        userTrades = Object.values(tradesSnapshot.val() || {});
+                        const tradesData = tradesSnapshot.val();
+                        userTrades = Array.isArray(tradesData) ? tradesData : Object.values(tradesData || {});
+                    }
+                    
+                    // Si pas de trades, essayer dashboards/uid/trades
+                    if (userTrades.length === 0) {
+                        const dashboardRef = ref(window.firebaseDB, `dashboards/${uid}/trades`);
+                        const dashboardSnapshot = await get(dashboardRef);
+                        if (dashboardSnapshot.exists()) {
+                            const dashboardData = dashboardSnapshot.val();
+                            userTrades = Array.isArray(dashboardData) ? dashboardData : Object.values(dashboardData || {});
+                        }
                     }
                 } catch (error) {
-                    console.log(`Pas de trades pour ${uid}`);
+                    console.log(`Erreur trades pour ${uid}:`, error);
                 }
 
-                const closedTrades = userTrades.filter(t => t.status === 'closed');
+                const closedTrades = userTrades.filter(t => t && t.status === 'closed');
                 const todayTrades = closedTrades.filter(t => t.date === today);
                 const dailyPnL = todayTrades.reduce((sum, t) => sum + (parseFloat(t.pnl) || 0), 0);
                 const winningTrades = closedTrades.filter(t => (parseFloat(t.pnl) || 0) > 0).length;
@@ -131,6 +143,7 @@ class MobileRankingFix {
                     nickname = userData.displayName || userData.email?.split('@')[0] || 'Trader VIP';
                 }
 
+                // Ajouter tous les utilisateurs VIP, même sans trades
                 rankings.push({
                     uid: uid,
                     name: nickname,
