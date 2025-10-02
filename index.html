@@ -347,7 +347,12 @@
                     alert('FÉLICITATIONS ! Bienvenue dans la famille VIP - Misterpips');
                 }
                 
-                window.location.href = 'vip-space.html';
+                // Redirection selon le type d'appareil
+                if (isMobile) {
+                    window.location.href = 'mobile-dashboard2.html';
+                } else {
+                    window.location.href = 'vip-space.html';
+                }
             } catch (error) {
                 alert('Identifiants incorrects: ' + error.message);
             }
