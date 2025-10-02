@@ -787,19 +787,28 @@ class MobileTradingDashboard {
     }
 
     setupEventListeners() {
-        // Menu mobile
-        const menuToggle = document.getElementById('menuToggle');
-        const closeMenu = document.getElementById('closeMenu');
-        const mobileMenu = document.getElementById('mobileMenu');
+        // Menu mobile - événements globaux
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'menuToggle' || e.target.closest('#menuToggle')) {
+                console.log('🍔 Menu toggle click');
+                document.getElementById('mobileMenu')?.classList.add('open');
+            }
+            if (e.target.id === 'closeMenu' || e.target.closest('#closeMenu')) {
+                console.log('❌ Menu close click');
+                document.getElementById('mobileMenu')?.classList.remove('open');
+            }
+        });
         
-        if (menuToggle && mobileMenu) {
-            menuToggle.addEventListener('click', () => mobileMenu.classList.add('open'));
-            menuToggle.addEventListener('touchend', () => mobileMenu.classList.add('open'));
-        }
-        if (closeMenu && mobileMenu) {
-            closeMenu.addEventListener('click', () => mobileMenu.classList.remove('open'));
-            closeMenu.addEventListener('touchend', () => mobileMenu.classList.remove('open'));
-        }
+        document.addEventListener('touchend', (e) => {
+            if (e.target.id === 'menuToggle' || e.target.closest('#menuToggle')) {
+                console.log('🍔 Menu toggle touch');
+                document.getElementById('mobileMenu')?.classList.add('open');
+            }
+            if (e.target.id === 'closeMenu' || e.target.closest('#closeMenu')) {
+                console.log('❌ Menu close touch');
+                document.getElementById('mobileMenu')?.classList.remove('open');
+            }
+        });
         
         // Boutons de trade
         const newTradeBtn = document.getElementById('newTradeBtn');
@@ -933,51 +942,33 @@ class MobileTradingDashboard {
             });
         }
 
-        // Navigation directe
-        const navButtons = {
-            'dashboard': () => window.showSection('dashboard'),
-            'trades': () => window.showSection('trades'),
-            'calendar': () => window.showSection('calendar'),
-            'objectives': () => window.showSection('objectives'),
-            'ranking': () => window.showSection('ranking')
-        };
-
-        // Attacher les événements aux boutons de navigation
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            const onclick = btn.getAttribute('onclick');
-            if (onclick && onclick.includes('showSection')) {
-                const section = onclick.match(/showSection\('([^']+)'\)/)?.[1];
-                if (section && navButtons[section]) {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        console.log('🔄 Navigation vers:', section);
-                        navButtons[section]();
-                    });
-                    btn.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        console.log('👆 Touch navigation vers:', section);
-                        navButtons[section]();
-                    });
+        // Navigation directe - événements sur tout le document
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.nav-btn') || e.target.closest('.menu-list a');
+            if (target) {
+                const onclick = target.getAttribute('onclick');
+                if (onclick && onclick.includes('showSection')) {
+                    e.preventDefault();
+                    const section = onclick.match(/showSection\('([^']+)'\)/)?.[1];
+                    if (section) {
+                        console.log('🔄 Click navigation vers:', section);
+                        window.showSection(section);
+                    }
                 }
             }
         });
-
-        // Menu links
-        document.querySelectorAll('.menu-list a').forEach(link => {
-            const onclick = link.getAttribute('onclick');
-            if (onclick && onclick.includes('showSection')) {
-                const section = onclick.match(/showSection\('([^']+)'\)/)?.[1];
-                if (section && navButtons[section]) {
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        console.log('🔄 Menu navigation vers:', section);
-                        navButtons[section]();
-                    });
-                    link.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        console.log('👆 Touch menu navigation vers:', section);
-                        navButtons[section]();
-                    });
+        
+        document.addEventListener('touchend', (e) => {
+            const target = e.target.closest('.nav-btn') || e.target.closest('.menu-list a');
+            if (target) {
+                const onclick = target.getAttribute('onclick');
+                if (onclick && onclick.includes('showSection')) {
+                    e.preventDefault();
+                    const section = onclick.match(/showSection\('([^']+)'\)/)?.[1];
+                    if (section) {
+                        console.log('👆 Touch navigation vers:', section);
+                        window.showSection(section);
+                    }
                 }
             }
         });
