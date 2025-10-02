@@ -787,119 +787,122 @@ class MobileTradingDashboard {
     }
 
     setupEventListeners() {
-        // Vérifier l'existence des éléments avant d'attacher les événements
+        // Menu mobile
         const menuToggle = document.getElementById('menuToggle');
         const closeMenu = document.getElementById('closeMenu');
         const mobileMenu = document.getElementById('mobileMenu');
         
         if (menuToggle && mobileMenu) {
-            menuToggle.onclick = () => mobileMenu.classList.add('open');
+            menuToggle.addEventListener('click', () => mobileMenu.classList.add('open'));
+            menuToggle.addEventListener('touchend', () => mobileMenu.classList.add('open'));
         }
         if (closeMenu && mobileMenu) {
-            closeMenu.onclick = () => mobileMenu.classList.remove('open');
+            closeMenu.addEventListener('click', () => mobileMenu.classList.remove('open'));
+            closeMenu.addEventListener('touchend', () => mobileMenu.classList.remove('open'));
         }
         
-        // Navigation restaurée
-
+        // Boutons de trade
         const newTradeBtn = document.getElementById('newTradeBtn');
         const addTradeBtn = document.getElementById('addTradeBtn');
         const closeTradeModal = document.getElementById('closeTradeModal');
         const saveMobileTradeBtn = document.getElementById('saveMobileTradeBtn');
         
         if (newTradeBtn) {
-            newTradeBtn.onchange = () => this.showTradeModal();
-            newTradeBtn.onclick = () => this.showTradeModal();
+            newTradeBtn.addEventListener('click', () => this.showTradeModal());
+            newTradeBtn.addEventListener('touchend', () => this.showTradeModal());
         }
         if (addTradeBtn) {
-            addTradeBtn.onchange = () => this.showTradeModal();
-            addTradeBtn.onclick = () => this.showTradeModal();
+            addTradeBtn.addEventListener('click', () => this.showTradeModal());
+            addTradeBtn.addEventListener('touchend', () => this.showTradeModal());
         }
         if (closeTradeModal) {
-            closeTradeModal.onchange = () => this.hideTradeModal();
-            closeTradeModal.onclick = () => this.hideTradeModal();
+            closeTradeModal.addEventListener('click', () => this.hideTradeModal());
+            closeTradeModal.addEventListener('touchend', () => this.hideTradeModal());
         }
         if (saveMobileTradeBtn) {
-            saveMobileTradeBtn.onchange = () => this.saveTrade();
-            saveMobileTradeBtn.onclick = () => this.saveTrade();
+            saveMobileTradeBtn.addEventListener('click', () => this.saveTrade());
+            saveMobileTradeBtn.addEventListener('touchend', () => this.saveTrade());
         }
 
+        // Navigation calendrier
         const prevMonthBtn = document.getElementById('prevMonthMobile');
         if (prevMonthBtn) {
-            prevMonthBtn.onchange = () => {
+            prevMonthBtn.addEventListener('click', () => {
                 this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
                 this.renderCalendar();
-            };
-            prevMonthBtn.onclick = () => {
+            });
+            prevMonthBtn.addEventListener('touchend', () => {
                 this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
                 this.renderCalendar();
-            };
+            });
         }
 
         const nextMonthBtn = document.getElementById('nextMonthMobile');
         if (nextMonthBtn) {
-            nextMonthBtn.onchange = () => {
+            nextMonthBtn.addEventListener('click', () => {
                 this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
                 this.renderCalendar();
-            };
-            nextMonthBtn.onclick = () => {
+            });
+            nextMonthBtn.addEventListener('touchend', () => {
                 this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
                 this.renderCalendar();
-            };
+            });
         }
 
+        // Paramètres
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
         if (saveSettingsBtn) {
-            saveSettingsBtn.onchange = () => this.saveSettings();
-            saveSettingsBtn.onclick = () => this.saveSettings();
+            saveSettingsBtn.addEventListener('click', () => this.saveSettings());
+            saveSettingsBtn.addEventListener('touchend', () => this.saveSettings());
         }
         
-        // Gestion des comptes - sélecteur dans le header
+        // Gestion des comptes
         const headerAccountSelect = document.querySelector('.mobile-header #mobileAccountSelect');
         if (headerAccountSelect) {
-            headerAccountSelect.onchange = (e) => this.switchAccount(e.target.value);
+            headerAccountSelect.addEventListener('change', (e) => this.switchAccount(e.target.value));
         }
         
-        // Gestion des comptes - sélecteur dans les paramètres
         const settingsAccountSelect = document.querySelector('#settings #mobileAccountSelect');
         if (settingsAccountSelect) {
-            settingsAccountSelect.onchange = (e) => this.switchAccount(e.target.value);
+            settingsAccountSelect.addEventListener('change', (e) => this.switchAccount(e.target.value));
         }
         
         const addAccountBtn = document.getElementById('mobileAddAccountBtn');
         if (addAccountBtn) {
-            addAccountBtn.onchange = () => this.addNewAccount();
-            addAccountBtn.onclick = () => this.addNewAccount();
+            addAccountBtn.addEventListener('click', () => this.addNewAccount());
+            addAccountBtn.addEventListener('touchend', () => this.addNewAccount());
         }
         
         const deleteAccountBtn = document.getElementById('mobileDeleteAccountBtn');
         if (deleteAccountBtn) {
-            deleteAccountBtn.onchange = () => this.deleteAccount();
-            deleteAccountBtn.onclick = () => this.deleteAccount();
+            deleteAccountBtn.addEventListener('click', () => this.deleteAccount());
+            deleteAccountBtn.addEventListener('touchend', () => this.deleteAccount());
         }
 
+        // Chat mobile
         const mobileChatToggle = document.getElementById('mobileChatToggle');
         if (mobileChatToggle) {
-            mobileChatToggle.onchange = () => document.getElementById('mobileChatWindow').classList.toggle('show');
-            mobileChatToggle.onclick = () => document.getElementById('mobileChatWindow').classList.toggle('show');
+            mobileChatToggle.addEventListener('click', () => document.getElementById('mobileChatWindow').classList.toggle('show'));
+            mobileChatToggle.addEventListener('touchend', () => document.getElementById('mobileChatWindow').classList.toggle('show'));
         }
 
         const closeMobileChat = document.getElementById('closeMobileChat');
         if (closeMobileChat) {
-            closeMobileChat.onchange = () => document.getElementById('mobileChatWindow').classList.remove('show');
-            closeMobileChat.onclick = () => document.getElementById('mobileChatWindow').classList.remove('show');
+            closeMobileChat.addEventListener('click', () => document.getElementById('mobileChatWindow').classList.remove('show'));
+            closeMobileChat.addEventListener('touchend', () => document.getElementById('mobileChatWindow').classList.remove('show'));
         }
 
         const sendMobileMessage = document.getElementById('sendMobileMessage');
         if (sendMobileMessage) {
-            sendMobileMessage.onchange = () => this.sendChatMessage();
-            sendMobileMessage.onclick = () => this.sendChatMessage();
+            sendMobileMessage.addEventListener('click', () => this.sendChatMessage());
+            sendMobileMessage.addEventListener('touchend', () => this.sendChatMessage());
         }
         
         const mobileChatInput = document.getElementById('mobileChatInput');
         if (mobileChatInput) {
-            mobileChatInput.onkeypress = (e) => {
+            mobileChatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.sendChatMessage();
-            };
+            });
         }
         
         // Emoji mobile
@@ -907,39 +910,76 @@ class MobileTradingDashboard {
         const mobileEmojiPanel = document.getElementById('mobileEmojiPanel');
         
         if (mobileEmojiBtn && mobileEmojiPanel) {
-            mobileEmojiBtn.onchange = () => {
+            mobileEmojiBtn.addEventListener('click', () => {
                 mobileEmojiPanel.style.display = mobileEmojiPanel.style.display === 'block' ? 'none' : 'block';
-            };
-            mobileEmojiBtn.onclick = () => {
+            });
+            mobileEmojiBtn.addEventListener('touchend', () => {
                 mobileEmojiPanel.style.display = mobileEmojiPanel.style.display === 'block' ? 'none' : 'block';
-            };
+            });
             
             mobileEmojiPanel.querySelectorAll('.emoji-item').forEach(emoji => {
-                emoji.onchange = () => {
+                emoji.addEventListener('click', () => {
                     const input = document.getElementById('mobileChatInput');
                     input.value += emoji.textContent;
                     mobileEmojiPanel.style.display = 'none';
                     input.focus();
-                };
-                emoji.onclick = () => {
+                });
+                emoji.addEventListener('touchend', () => {
                     const input = document.getElementById('mobileChatInput');
                     input.value += emoji.textContent;
                     mobileEmojiPanel.style.display = 'none';
                     input.focus();
-                };
+                });
             });
         }
 
-        document.onclick = (e) => {
+        // Navigation bottom
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const onclick = btn.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const onclick = btn.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+        });
+
+        // Menu links
+        document.querySelectorAll('.menu-list a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const onclick = link.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+            link.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const onclick = link.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+        });
+
+        // Fermer menu en cliquant à l'extérieur
+        document.addEventListener('click', (e) => {
             const menu = document.getElementById('mobileMenu');
             const menuBtn = document.getElementById('menuToggle');
             if (menu && menuBtn && !menu.contains(e.target) && !menuBtn.contains(e.target)) {
                 menu.classList.remove('open');
             }
-        };
+        });
         
-        // Fix pour les boutons tactiles
-        document.querySelectorAll('.nav-btn, .menu-list a').forEach(element => {
+        // Optimisation tactile
+        document.querySelectorAll('button, .nav-btn, .menu-list a').forEach(element => {
             element.style.touchAction = 'manipulation';
             element.style.webkitTapHighlightColor = 'rgba(0, 212, 255, 0.3)';
         });
@@ -1623,19 +1663,25 @@ function handleSwipe() {
 
 }
 
-// Navigation entre sections
-function showSection(sectionId) {
-    console.log('Navigation vers:', sectionId);
+// Navigation entre sections - fonction globale
+window.showSection = function(sectionId) {
+    console.log('📱 Navigation vers:', sectionId);
     
+    // Cacher toutes les sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
     
+    // Afficher la section cible
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
+        console.log('✅ Section affichée:', sectionId);
+    } else {
+        console.error('❌ Section non trouvée:', sectionId);
     }
     
+    // Mettre à jour la navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -1645,11 +1691,33 @@ function showSection(sectionId) {
         activeBtn.classList.add('active');
     }
     
+    // Fermer le menu mobile
     const mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenu) {
         mobileMenu.classList.remove('open');
     }
-}
+    
+    // Mettre à jour les données selon la section
+    if (window.mobileDashboard) {
+        switch(sectionId) {
+            case 'dashboard':
+                window.mobileDashboard.initCharts();
+                break;
+            case 'trades':
+                window.mobileDashboard.renderTrades();
+                break;
+            case 'calendar':
+                window.mobileDashboard.renderCalendar();
+                break;
+            case 'objectives':
+                window.mobileDashboard.updateObjectives();
+                break;
+            case 'ranking':
+                window.mobileDashboard.loadRanking();
+                break;
+        }
+    }
+};
 
 // Initialisation
 let mobileDashboard;
