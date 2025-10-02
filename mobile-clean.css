@@ -240,20 +240,22 @@ body {
 /* Chat Mobile */
 .mobile-chat-toggle {
     position: fixed;
-    bottom: 90px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
+    bottom: 100px;
+    right: 15px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(45deg, #00d4ff, #5b86e5);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
     z-index: 1500;
-    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
-    animation: bounce 2s infinite;
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: bold;
 }
 
 .mobile-chat-window {
@@ -935,6 +937,15 @@ body {
 .mobile-chat-toggle {
     pointer-events: auto !important;
     z-index: 1500 !important;
+    transition: transform 0.2s ease;
+}
+
+.mobile-chat-toggle:hover {
+    transform: scale(1.1);
+}
+
+.mobile-chat-toggle:active {
+    transform: scale(0.95);
 }
 
 /* Fix chat mobile */
