@@ -799,7 +799,7 @@ class MobileTradingDashboard {
             closeMenu.onclick = () => mobileMenu.classList.remove('open');
         }
         
-        // Navigation gérée dans le HTML
+        // Navigation restaurée
 
         const newTradeBtn = document.getElementById('newTradeBtn');
         const addTradeBtn = document.getElementById('addTradeBtn');
@@ -885,6 +885,12 @@ class MobileTradingDashboard {
                 menu.classList.remove('open');
             }
         };
+        
+        // Fix pour les boutons tactiles
+        document.querySelectorAll('.nav-btn, .menu-list a').forEach(element => {
+            element.style.touchAction = 'manipulation';
+            element.style.webkitTapHighlightColor = 'rgba(0, 212, 255, 0.3)';
+        });
     }
 
 // Chargement des données du compte mobile
@@ -1565,7 +1571,33 @@ function handleSwipe() {
 
 }
 
-// Navigation déplacée dans le HTML
+// Navigation entre sections
+function showSection(sectionId) {
+    console.log('Navigation vers:', sectionId);
+    
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+    
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const activeBtn = document.querySelector(`[onclick*="showSection('${sectionId}')"`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenu) {
+        mobileMenu.classList.remove('open');
+    }
+}
 
 // Initialisation
 let mobileDashboard;
