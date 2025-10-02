@@ -422,7 +422,7 @@ class MobileDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, push } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const messagesRef = ref(window.firebaseDB, 'vip_chat_v2');
+                const messagesRef = ref(window.firebaseDB, 'vip_chat');
                 
                 await push(messagesRef, {
                     userId: this.currentUser,
@@ -446,7 +446,7 @@ class MobileDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const messagesRef = ref(window.firebaseDB, 'vip_chat_v2');
+                const messagesRef = ref(window.firebaseDB, 'vip_chat');
                 
                 onValue(messagesRef, (snapshot) => {
                     if (snapshot.exists()) {

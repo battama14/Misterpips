@@ -910,16 +910,31 @@ body {
 }
 
 /* Fix boutons tactiles */
-.primary-btn, .secondary-btn, .action-btn, .nav-btn, .menu-btn, .close-btn {
+.primary-btn, .secondary-btn, .action-btn, .nav-btn, .menu-btn, .close-btn, .send-btn {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 10;
 }
 
-.primary-btn:active, .secondary-btn:active, .action-btn:active {
+.primary-btn:active, .secondary-btn:active, .action-btn:active, .send-btn:active {
     transform: scale(0.95);
     transition: transform 0.1s;
+}
+
+/* Fix spécifique pour les boutons critiques */
+#newTradeBtn, #addTradeBtn, .send-btn, #chatToggle {
+    pointer-events: auto !important;
+    z-index: 1000 !important;
+    position: relative !important;
+}
+
+.mobile-chat-toggle {
+    pointer-events: auto !important;
+    z-index: 1500 !important;
 }
 
 /* Amélioration des boutons d'action des trades */
