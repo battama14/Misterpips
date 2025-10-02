@@ -933,40 +933,53 @@ class MobileTradingDashboard {
             });
         }
 
-        // Navigation bottom
+        // Navigation directe
+        const navButtons = {
+            'dashboard': () => window.showSection('dashboard'),
+            'trades': () => window.showSection('trades'),
+            'calendar': () => window.showSection('calendar'),
+            'objectives': () => window.showSection('objectives'),
+            'ranking': () => window.showSection('ranking')
+        };
+
+        // Attacher les événements aux boutons de navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const onclick = btn.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
+            const onclick = btn.getAttribute('onclick');
+            if (onclick && onclick.includes('showSection')) {
+                const section = onclick.match(/showSection\('([^']+)'\)/)?.[1];
+                if (section && navButtons[section]) {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        console.log('🔄 Navigation vers:', section);
+                        navButtons[section]();
+                    });
+                    btn.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        console.log('👆 Touch navigation vers:', section);
+                        navButtons[section]();
+                    });
                 }
-            });
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                const onclick = btn.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
-                }
-            });
+            }
         });
 
         // Menu links
         document.querySelectorAll('.menu-list a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const onclick = link.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
+            const onclick = link.getAttribute('onclick');
+            if (onclick && onclick.includes('showSection')) {
+                const section = onclick.match(/showSection\('([^']+)'\)/)?.[1];
+                if (section && navButtons[section]) {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        console.log('🔄 Menu navigation vers:', section);
+                        navButtons[section]();
+                    });
+                    link.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        console.log('👆 Touch menu navigation vers:', section);
+                        navButtons[section]();
+                    });
                 }
-            });
-            link.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                const onclick = link.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
-                }
-            });
+            }
         });
 
         // Fermer menu en cliquant à l'extérieur
@@ -1663,25 +1676,25 @@ function handleSwipe() {
 
 }
 
-// Navigation entre sections - fonction globale
+
+
+// Initialisation
+let mobileDashboard;
+
+// Fonction showSection disponible immédiatement
 window.showSection = function(sectionId) {
-    console.log('📱 Navigation vers:', sectionId);
+    console.log('📱 Navigation immédiate vers:', sectionId);
     
-    // Cacher toutes les sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
     
-    // Afficher la section cible
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
         console.log('✅ Section affichée:', sectionId);
-    } else {
-        console.error('❌ Section non trouvée:', sectionId);
     }
     
-    // Mettre à jour la navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -1691,36 +1704,11 @@ window.showSection = function(sectionId) {
         activeBtn.classList.add('active');
     }
     
-    // Fermer le menu mobile
     const mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenu) {
         mobileMenu.classList.remove('open');
     }
-    
-    // Mettre à jour les données selon la section
-    if (window.mobileDashboard) {
-        switch(sectionId) {
-            case 'dashboard':
-                window.mobileDashboard.initCharts();
-                break;
-            case 'trades':
-                window.mobileDashboard.renderTrades();
-                break;
-            case 'calendar':
-                window.mobileDashboard.renderCalendar();
-                break;
-            case 'objectives':
-                window.mobileDashboard.updateObjectives();
-                break;
-            case 'ranking':
-                window.mobileDashboard.loadRanking();
-                break;
-        }
-    }
 };
-
-// Initialisation
-let mobileDashboard;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📱 Initialisation du dashboard mobile...');
