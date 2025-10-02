@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
     <link rel="stylesheet" href="mobile-clean.css?v=2025">
+    <link rel="stylesheet" href="mobile-trade-styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,15 +36,23 @@
         window.firebaseAuth = auth;
         
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                await window.userManager.loginUser(user.email, user.uid);
-                console.log('✅ Utilisateur connecté:', user.email);
-            } else {
-                const tempUID = 'mobile_demo_' + Date.now();
-                const tempEmail = 'demo@mobile.com';
-                await window.userManager.loginUser(tempEmail, tempUID);
-                console.log('📱 Mode démo activé');
-            }
+            // Attendre que userManager soit chargé
+            const waitForUserManager = () => {
+                if (window.userManager) {
+                    if (user) {
+                        window.userManager.loginUser(user.email, user.uid);
+                        console.log('✅ Utilisateur connecté:', user.email);
+                    } else {
+                        const tempUID = 'mobile_user_fixed';
+                        const tempEmail = 'mobile@misterpips.com';
+                        window.userManager.loginUser(tempEmail, tempUID);
+                        console.log('📱 Mode démo activé avec UID fixe');
+                    }
+                } else {
+                    setTimeout(waitForUserManager, 100);
+                }
+            };
+            waitForUserManager();
         });
     </script>
 </head>
@@ -356,17 +365,7 @@
                     <label>Take Profit</label>
                     <input type="number" id="tradeTakeProfit" step="0.00001">
                 </div>
-                <div class="form-group">
-                    <label>Statut</label>
-                    <select id="tradeStatus">
-                        <option value="open">Ouvert</option>
-                        <option value="closed">Fermé</option>
-                    </select>
-                </div>
-                <div class="form-group" id="closePriceGroup" style="display: none;">
-                    <label>Prix de fermeture</label>
-                    <input type="number" id="tradeClosePrice" step="0.00001">
-                </div>
+
                 <div class="form-actions">
                     <button class="primary-btn" onclick="saveMobileTrade()">💾 Sauvegarder</button>
                     <button class="secondary-btn" onclick="closeMobileModal()">❌ Annuler</button>
@@ -376,6 +375,12 @@
     </div>
 
     <!-- Scripts -->
+    <script src="date-helper.js"></script>
+    <script src="user-manager.js"></script>
+    <script src="firebase-audit.js"></script>
+    <script src="ranking-fix.js"></script>
+    <script src="mobile-realtime-sync.js"></script>
+    <script src="mobile-debug.js"></script>
     <script src="mobile-complete.js"></script>
 </body>
 </html>

@@ -5,8 +5,15 @@ class NicknameManager {
     }
 
     async initialize() {
+        if (!window.firebaseAuth || !window.firebaseDB) {
+            console.warn('Firebase non disponible');
+            return null;
+        }
+        
+        const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+        
         return new Promise((resolve) => {
-            firebase.auth().onAuthStateChanged(async (user) => {
+            onAuthStateChanged(window.firebaseAuth, async (user) => {
                 if (user) {
                     this.currentUser = user;
                     await this.loadNickname();
@@ -19,14 +26,14 @@ class NicknameManager {
     }
 
     async loadNickname() {
-        if (!this.currentUser) return null;
+        if (!this.currentUser || !window.firebaseDB) return null;
         
         try {
-            const snapshot = await firebase.database()
-                .ref(`users/${this.currentUser.uid}/profile/nickname`)
-                .once('value');
+            const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+            const nicknameRef = ref(window.firebaseDB, `users/${this.currentUser.uid}/nickname`);
+            const snapshot = await get(nicknameRef);
             
-            this.nickname = snapshot.val();
+            this.nickname = snapshot.exists() ? snapshot.val() : null;
             return this.nickname;
         } catch (error) {
             console.error('Erreur chargement pseudo:', error);
@@ -35,12 +42,12 @@ class NicknameManager {
     }
 
     async saveNickname(nickname) {
-        if (!this.currentUser || !nickname) return false;
+        if (!this.currentUser || !nickname || !window.firebaseDB) return false;
         
         try {
-            await firebase.database()
-                .ref(`users/${this.currentUser.uid}/profile/nickname`)
-                .set(nickname);
+            const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+            const nicknameRef = ref(window.firebaseDB, `users/${this.currentUser.uid}/nickname`);
+            await set(nicknameRef, nickname);
             
             this.nickname = nickname;
             return true;

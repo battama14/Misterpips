@@ -23,7 +23,24 @@ class MobileDashboard {
         this.loadChatMessages();
         this.loadRanking();
         this.renderCalendar();
-        setInterval(() => this.loadRanking(), 30000);
+        // Auto-refresh désactivé pour éviter l'effacement
+        // setInterval(() => {
+        //     console.log('🔄 Actualisation automatique du classement...');
+        //     this.loadRanking();
+        // }, 15000);
+    }
+
+    updateRankingAfterTrade() {
+        console.log('🔄 Mise à jour du classement mobile...');
+        
+        // Forcer la sauvegarde d'abord
+        this.saveData().then(() => {
+            // Attendre que la sauvegarde soit terminée
+            setTimeout(() => {
+                this.loadRanking();
+                console.log('✅ Classement mobile mis à jour');
+            }, 3000);
+        });
         console.log('✅ Mobile Dashboard initialisé');
     }
 
@@ -39,15 +56,31 @@ class MobileDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const userRef = ref(window.firebaseDB, `users/${this.currentUser}`);
-                const snapshot = await get(userRef);
                 
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
+                // Essayer de charger depuis dashboards d'abord (comme PC)
+                const dashboardRef = ref(window.firebaseDB, `dashboards/${this.currentUser}`);
+                const dashboardSnapshot = await get(dashboardRef);
+                
+                if (dashboardSnapshot.exists()) {
+                    const data = dashboardSnapshot.val();
                     this.trades = data.trades || [];
                     this.accounts = data.accounts || this.accounts;
                     this.settings = { ...this.settings, ...data.settings };
                     this.currentAccount = data.currentAccount || this.currentAccount;
+                    console.log('📈 Données chargées depuis dashboards');
+                } else {
+                    // Fallback vers users
+                    const userRef = ref(window.firebaseDB, `users/${this.currentUser}`);
+                    const userSnapshot = await get(userRef);
+                    
+                    if (userSnapshot.exists()) {
+                        const data = userSnapshot.val();
+                        this.trades = data.trades || [];
+                        this.accounts = data.accounts || this.accounts;
+                        this.settings = { ...this.settings, ...data.settings };
+                        this.currentAccount = data.currentAccount || this.currentAccount;
+                        console.log('📈 Données chargées depuis users');
+                    }
                 }
             }
         } catch (error) {
@@ -57,6 +90,19 @@ class MobileDashboard {
 
     async saveData() {
         try {
+            // Dédupliquer les trades avant sauvegarde
+            const uniqueTrades = [];
+            const seenIds = new Set();
+            
+            for (const trade of this.trades) {
+                if (!seenIds.has(trade.id)) {
+                    seenIds.add(trade.id);
+                    uniqueTrades.push(trade);
+                }
+            }
+            
+            this.trades = uniqueTrades;
+            
             const data = {
                 trades: this.trades,
                 accounts: this.accounts,
@@ -68,8 +114,26 @@ class MobileDashboard {
 
             if (window.firebaseDB) {
                 const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                
+                // Sauvegarder dans users pour le classement VIP
                 const userRef = ref(window.firebaseDB, `users/${this.currentUser}`);
-                await set(userRef, data);
+                await set(userRef, {
+                    ...data,
+                    isVIP: true,
+                    plan: 'VIP',
+                    email: sessionStorage.getItem('userEmail') || 'demo@mobile.com',
+                    displayName: this.settings.nickname || 'Mobile User',
+                    nickname: this.settings.nickname || 'Mobile User'
+                });
+                
+                // Sauvegarder le pseudo séparément
+                const nicknameRef = ref(window.firebaseDB, `users/${this.currentUser}/nickname`);
+                await set(nicknameRef, this.settings.nickname || 'Mobile User');
+                
+                // Sauvegarder dans dashboards pour compatibilité PC
+                const dashboardRef = ref(window.firebaseDB, `dashboards/${this.currentUser}`);
+                await set(dashboardRef, data);
+                
                 console.log('✅ Données sauvegardées');
             }
         } catch (error) {
@@ -127,11 +191,12 @@ class MobileDashboard {
         document.querySelectorAll('.nav-btn').forEach(btn => {
             const section = btn.getAttribute('ontouchend')?.match(/'([^']+)'/)?.[1];
             if (section) {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('touchstart', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.showSection(section);
-                });
-                btn.addEventListener('touchend', (e) => {
+                }, { passive: false });
+                btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.showSection(section);
                 });
@@ -140,8 +205,15 @@ class MobileDashboard {
 
         // Menu links
         document.querySelectorAll('.menu-list a').forEach(link => {
-            const section = link.getAttribute('ontouchend')?.match(/'([^']+)'/)?.[1];
-            if (section) {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                const section = href.substring(1);
+                link.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showSection(section);
+                    document.getElementById('mobileMenu')?.classList.remove('open');
+                }, { passive: false });
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.showSection(section);
@@ -179,6 +251,11 @@ class MobileDashboard {
         // Send message - FIX CRITIQUE
         if (sendBtn) {
             sendBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.sendChatMessage();
+            });
+            sendBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 this.sendChatMessage();
@@ -250,15 +327,7 @@ class MobileDashboard {
             });
         }
 
-        // Status change
-        if (tradeStatus) {
-            tradeStatus.addEventListener('change', (e) => {
-                const closePriceGroup = document.getElementById('closePriceGroup');
-                if (closePriceGroup) {
-                    closePriceGroup.style.display = e.target.value === 'closed' ? 'block' : 'none';
-                }
-            });
-        }
+
     }
 
     setupCalendarEvents() {
@@ -424,15 +493,101 @@ class MobileDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const usersRef = ref(window.firebaseDB, 'users');
-                const snapshot = await get(usersRef);
                 
-                if (snapshot.exists()) {
-                    const users = snapshot.val();
-                    const rankings = this.calculateRankings(users);
-                    this.displayRanking(rankings);
+                console.log('📊 Chargement du classement VIP...');
+                
+                // Récupérer tous les utilisateurs VIP (comme dans vip-ranking.js)
+                const usersRef = ref(window.firebaseDB, 'users');
+                const usersSnapshot = await get(usersRef);
+                
+                if (!usersSnapshot.exists()) {
+                    console.log('Aucun utilisateur trouvé');
+                    this.displayRanking([]);
                     return;
                 }
+
+                const users = usersSnapshot.val();
+                const vipUsers = Object.entries(users).filter(([uid, userData]) => 
+                    userData.isVIP || userData.plan === 'VIP'
+                );
+
+                console.log(`👥 ${vipUsers.length} utilisateurs VIP trouvés`);
+
+                const rankings = [];
+                // Même méthode que la version PC
+                const today = new Date().toISOString().split('T')[0];
+
+                for (const [uid, userData] of vipUsers) {
+                    try {
+                        // Chercher les trades dans la structure correcte
+                        const accountRef = ref(window.firebaseDB, `users/${uid}/accounts/compte1`);
+                        const accountSnapshot = await get(accountRef);
+                        
+                        let userTrades = [];
+                        let dailyPnL = 0;
+                        
+                        if (accountSnapshot.exists()) {
+                            const accountData = accountSnapshot.val();
+                            if (accountData.trades && Array.isArray(accountData.trades)) {
+                                userTrades = accountData.trades;
+                                
+                                // Calculer seulement les trades fermés d'aujourd'hui
+                                const todayTrades = userTrades.filter(trade => 
+                                    trade && trade.date === today && 
+                                    (trade.status === 'closed' || trade.status === 'completed')
+                                );
+                                
+                                dailyPnL = todayTrades.reduce((total, trade) => 
+                                    total + (parseFloat(trade.pnl) || 0), 0
+                                );
+                            }
+                        }
+
+                        const todayTrades = userTrades.filter(trade => 
+                            trade && trade.date === today && 
+                            (trade.status === 'closed' || trade.status === 'completed')
+                        );
+
+                        const totalTrades = userTrades.length;
+                        const winningTrades = userTrades.filter(t => 
+                            (t.status === 'closed' || t.status === 'completed') && 
+                            parseFloat(t.pnl || 0) > 0
+                        ).length;
+                        
+                        const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100) : 0;
+
+                        // Récupérer le pseudo (comme dans vip-ranking.js)
+                        let nickname = 'Trader VIP';
+                        try {
+                            const nicknameRef = ref(window.firebaseDB, `users/${uid}/nickname`);
+                            const nicknameSnapshot = await get(nicknameRef);
+                            if (nicknameSnapshot.exists()) {
+                                nickname = nicknameSnapshot.val();
+                            } else {
+                                nickname = userData.displayName || userData.email?.split('@')[0] || 'Trader VIP';
+                            }
+                        } catch (error) {
+                            nickname = userData.displayName || userData.email?.split('@')[0] || 'Trader VIP';
+                        }
+
+                        rankings.push({
+                            name: nickname,
+                            dailyPnL: dailyPnL,
+                            todayTrades: todayTrades.length,
+                            totalTrades: totalTrades,
+                            winRate: winRate,
+                            isCurrentUser: uid === this.currentUser
+                        });
+
+                    } catch (error) {
+                        console.error(`Erreur pour l'utilisateur ${uid}:`, error);
+                    }
+                }
+
+                // Trier par P&L journalier
+                rankings.sort((a, b) => b.dailyPnL - a.dailyPnL);
+                this.displayRanking(rankings);
+                return;
             }
         } catch (error) {
             console.error('Erreur classement:', error);
@@ -441,59 +596,61 @@ class MobileDashboard {
         // Fallback
         const userTotalPnL = this.trades.filter(t => t.status === 'closed').reduce((sum, t) => sum + (t.pnl || 0), 0);
         const demoRankings = [
-            { name: 'Vous', totalPnL: userTotalPnL, dailyPnL: 0, trades: this.trades.length, winRate: 0, isCurrentUser: true }
+            { name: 'Vous', dailyPnL: userTotalPnL, todayTrades: 0, totalTrades: this.trades.length, winRate: 0, isCurrentUser: true }
         ];
         this.displayRanking(demoRankings);
     }
 
-    calculateRankings(users) {
-        const today = new Date().toISOString().split('T')[0];
-        const rankings = [];
-        
-        for (const [userId, userData] of Object.entries(users)) {
-            if (!userData.trades) continue;
-            
-            const closedTrades = userData.trades.filter(t => t.status === 'closed');
-            const todayTrades = closedTrades.filter(t => t.date === today);
-            
-            const totalPnL = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-            const dailyPnL = todayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-            const winRate = closedTrades.length > 0 ? 
-                (closedTrades.filter(t => t.pnl > 0).length / closedTrades.length * 100) : 0;
-            
-            rankings.push({
-                name: userData.profile?.nickname || userData.email?.split('@')[0] || 'Trader',
-                totalPnL,
-                dailyPnL,
-                trades: closedTrades.length,
-                winRate: winRate.toFixed(1),
-                isCurrentUser: userId === this.currentUser
-            });
-        }
-        
-        return rankings.sort((a, b) => b.totalPnL - a.totalPnL);
-    }
+
 
     displayRanking(rankings) {
         const container = document.getElementById('mobileRankingList');
         if (!container) return;
         
-        container.innerHTML = rankings.map((trader, index) => {
-            const totalPnlClass = trader.totalPnL >= 0 ? 'positive' : 'negative';
-            const dailyPnlClass = trader.dailyPnL >= 0 ? 'positive' : 'negative';
-            
-            return `
-                <div class="ranking-item ${trader.isCurrentUser ? 'current-user' : ''}">
-                    <div class="ranking-position">${index + 1}</div>
-                    <div class="ranking-info">
-                        <div class="ranking-name">${trader.name}${trader.isCurrentUser ? ' (Vous)' : ''}</div>
-                        <div class="ranking-trades">${trader.trades} trades - ${trader.winRate}% WR</div>
-                        <div class="ranking-daily">Aujourd'hui: <span class="${dailyPnlClass}">$${trader.dailyPnL.toFixed(0)}</span></div>
-                    </div>
-                    <div class="ranking-pnl ${totalPnlClass}">$${trader.totalPnL.toFixed(0)}</div>
+        console.log('📊 Affichage classement avec', rankings.length, 'utilisateurs');
+        
+        if (rankings.length === 0) {
+            container.innerHTML = `
+                <div class="no-ranking">
+                    <h4>🏆 Classement VIP</h4>
+                    <p>Aucun utilisateur VIP trouvé</p>
+                    <button onclick="window.mobileDashboard.loadRanking()" class="primary-btn">
+                        🔄 Actualiser
+                    </button>
                 </div>
             `;
-        }).join('');
+            return;
+        }
+
+        let html = `
+            <div class="ranking-header">
+                <h4>🏆 Classement VIP Journalier</h4>
+                <small>Mis à jour: ${new Date().toLocaleTimeString()}</small>
+            </div>
+        `;
+        
+        rankings.forEach((user, index) => {
+            const position = index + 1;
+            const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : `${position}.`;
+            
+            html += `
+                <div class="ranking-item ${user.isCurrentUser ? 'current-user' : ''}">
+                    <div class="ranking-position">${medal}</div>
+                    <div class="ranking-info">
+                        <div class="ranking-name">${user.name}</div>
+                        <div class="ranking-trades">
+                            ${user.todayTrades || 0} trades • ${Math.round(user.winRate || 0)}% WR
+                        </div>
+                    </div>
+                    <div class="ranking-pnl ${(user.dailyPnL || 0) >= 0 ? 'positive' : 'negative'}">
+                        $${(user.dailyPnL || 0).toFixed(2)}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        console.log('✅ Classement mobile affiché avec', rankings.length, 'utilisateurs VIP');
     }
 
     renderCalendar() {
@@ -508,24 +665,20 @@ class MobileDashboard {
         monthYearEl.textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
 
         const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-        const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
 
         let calendarHTML = '';
         
-        // En-têtes des jours
-        const dayHeaders = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-        dayHeaders.forEach(day => {
-            calendarHTML += `<div class="calendar-header">${day}</div>`;
-        });
-
-        // Jours du calendrier
+        // Jours du calendrier avec grille CSS
         for (let i = 0; i < 42; i++) {
             const currentDate = new Date(startDate);
             currentDate.setDate(startDate.getDate() + i);
             
-            const dateStr = currentDate.toISOString().split('T')[0];
+            // Utiliser le même format que les trades
+            const dateStr = currentDate.getFullYear() + '-' + 
+                String(currentDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(currentDate.getDate()).padStart(2, '0');
             const dayTrades = this.trades.filter(t => t.date === dateStr && t.status === 'closed');
             const dayPnL = dayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
             
@@ -541,8 +694,8 @@ class MobileDashboard {
 
             calendarHTML += `
                 <div class="${dayClass}">
-                    <span class="calendar-date">${currentDate.getDate()}</span>
-                    ${dayTrades.length > 0 ? `<span class="calendar-pnl">$${dayPnL.toFixed(0)}</span>` : ''}
+                    <div class="calendar-date">${currentDate.getDate()}</div>
+                    ${dayTrades.length > 0 ? `<div class="calendar-pnl">$${dayPnL.toFixed(0)}</div>` : ''}
                 </div>
             `;
         }
@@ -562,16 +715,16 @@ class MobileDashboard {
             document.getElementById('tradeEntry').value = editingTrade.entryPoint;
             document.getElementById('tradeStopLoss').value = editingTrade.stopLoss;
             document.getElementById('tradeTakeProfit').value = editingTrade.takeProfit;
-            document.getElementById('tradeStatus').value = editingTrade.status;
-            
-            if (editingTrade.status === 'closed') {
-                document.getElementById('closePriceGroup').style.display = 'block';
-                document.getElementById('tradeClosePrice').value = editingTrade.closePrice || '';
-            }
-            
             this.editingTradeId = editingTrade.id;
         } else {
             title.textContent = 'Nouveau Trade';
+            // Réinitialiser le formulaire
+            document.getElementById('tradePair').value = 'EUR/USD';
+            document.getElementById('tradeType').value = 'BUY';
+            document.getElementById('tradeLots').value = '0.01';
+            document.getElementById('tradeEntry').value = '';
+            document.getElementById('tradeStopLoss').value = '';
+            document.getElementById('tradeTakeProfit').value = '';
             this.editingTradeId = null;
         }
         
@@ -581,7 +734,6 @@ class MobileDashboard {
     hideTradeModal() {
         const modal = document.getElementById('tradeModal');
         modal?.classList.remove('show');
-        document.getElementById('closePriceGroup').style.display = 'none';
         this.editingTradeId = null;
     }
 
@@ -592,8 +744,6 @@ class MobileDashboard {
         const entryPoint = parseFloat(document.getElementById('tradeEntry')?.value);
         const stopLoss = parseFloat(document.getElementById('tradeStopLoss')?.value);
         const takeProfit = parseFloat(document.getElementById('tradeTakeProfit')?.value);
-        const status = document.getElementById('tradeStatus')?.value;
-        const closePrice = parseFloat(document.getElementById('tradeClosePrice')?.value) || null;
 
         if (!currency || !entryPoint || !stopLoss || !takeProfit || !lotSize) {
             alert('Veuillez remplir tous les champs obligatoires');
@@ -606,20 +756,22 @@ class MobileDashboard {
             if (tradeIndex !== -1) {
                 this.trades[tradeIndex] = {
                     ...this.trades[tradeIndex],
-                    currency, type, lotSize, entryPoint, stopLoss, takeProfit, status,
-                    closePrice: status === 'closed' ? closePrice : null,
-                    pnl: status === 'closed' ? this.calculatePnL({ currency, type, lotSize, entryPoint, stopLoss, takeProfit, closePrice }) : 0
+                    currency, type, lotSize, entryPoint, stopLoss, takeProfit
                 };
             }
         } else {
-            // Nouveau trade
+            // Nouveau trade (toujours ouvert)
+            // Même méthode que la version PC
+            const localDate = new Date().toISOString().split('T')[0];
+            
             const trade = {
                 id: Date.now().toString(),
                 account: this.currentAccount,
-                date: new Date().toISOString().split('T')[0],
-                currency, type, entryPoint, stopLoss, takeProfit, lotSize, status,
-                closePrice: status === 'closed' ? closePrice : null,
-                pnl: status === 'closed' ? this.calculatePnL({ currency, type, lotSize, entryPoint, stopLoss, takeProfit, closePrice }) : 0
+                date: localDate,
+                currency, type, entryPoint, stopLoss, takeProfit, lotSize,
+                status: 'open',
+                closePrice: null,
+                pnl: 0
             };
             this.trades.push(trade);
         }
@@ -627,13 +779,62 @@ class MobileDashboard {
         await this.saveData();
         this.hideTradeModal();
         this.updateAll();
-        this.updateCharts(); // IMPORTANT: Mettre à jour les graphiques
+        this.updateCharts();
     }
 
     editTrade(index) {
         const trade = this.trades[index];
         if (!trade) return;
         this.showTradeModal(trade);
+    }
+
+    async closeTrade(index) {
+        const trade = this.trades[index];
+        if (!trade || trade.status !== 'open') return;
+        
+        const result = prompt('Comment s\'est terminé le trade ?\n\nTP = Take Profit\nSL = Stop Loss\nBE = Break Even', 'TP');
+        if (!result) return;
+        
+        let closePrice;
+        const resultUpper = result.toUpperCase();
+        
+        if (resultUpper === 'TP') {
+            closePrice = trade.takeProfit;
+        } else if (resultUpper === 'SL') {
+            closePrice = trade.stopLoss;
+        } else if (resultUpper === 'BE') {
+            closePrice = trade.entryPoint;
+        } else {
+            alert('Résultat invalide. Utilisez TP, SL ou BE');
+            return;
+        }
+        
+        this.trades[index].status = 'closed';
+        this.trades[index].closePrice = closePrice;
+        this.trades[index].result = resultUpper;
+        this.trades[index].pnl = this.calculatePnL(this.trades[index]);
+        
+        console.log('🔒 Trade fermé:', {
+            pair: this.trades[index].currency,
+            date: this.trades[index].date,
+            result: resultUpper,
+            pnl: this.trades[index].pnl,
+            status: this.trades[index].status
+        });
+        
+        await this.saveData();
+        this.updateAll();
+        this.updateCharts();
+        
+        // Actualiser le classement immédiatement
+        this.updateRankingAfterTrade();
+        
+        // Forcer aussi le ranking-fix
+        setTimeout(() => {
+            if (window.showRankingNow) {
+                window.showRankingNow();
+            }
+        }, 2000);
     }
 
     async deleteTrade(index) {
@@ -812,22 +1013,37 @@ class MobileDashboard {
         const container = document.getElementById('mobileTradesList');
         if (!container) return;
         
-        const accountTrades = this.trades.filter(t => t.account === this.currentAccount);
+        // Dédupliquer les trades avant affichage
+        const uniqueTrades = [];
+        const seenIds = new Set();
         
-        if (accountTrades.length === 0) {
+        for (const trade of this.trades) {
+            if (trade.account === this.currentAccount && !seenIds.has(trade.id)) {
+                seenIds.add(trade.id);
+                uniqueTrades.push(trade);
+            }
+        }
+        
+        if (uniqueTrades.length === 0) {
             container.innerHTML = '<div class="text-center">Aucun trade pour ce compte</div>';
             return;
         }
 
-        container.innerHTML = accountTrades.map((trade, index) => {
-            const pnlClass = (trade.pnl || 0) >= 0 ? 'positive' : 'negative';
+        container.innerHTML = uniqueTrades.map((trade) => {
             const globalIndex = this.trades.findIndex(t => t.id === trade.id);
             
+            // Calculer les gains/pertes potentiels pour les trades ouverts
+            let potentialTP = 0, potentialSL = 0;
+            if (trade.status === 'open') {
+                potentialTP = this.calculatePnL({...trade, closePrice: trade.takeProfit});
+                potentialSL = this.calculatePnL({...trade, closePrice: trade.stopLoss});
+            }
+            
             return `
-                <div class="trade-card">
+                <div class="trade-card ${trade.status}">
                     <div class="trade-header">
                         <span class="trade-pair">${trade.currency}</span>
-                        <span class="trade-status ${trade.status}">${trade.status.toUpperCase()}</span>
+                        <span class="trade-status ${trade.status}">${trade.status === 'open' ? 'OUVERT' : 'FERMÉ'}</span>
                     </div>
                     <div class="trade-details">
                         <div class="trade-detail">
@@ -836,7 +1052,7 @@ class MobileDashboard {
                         </div>
                         <div class="trade-detail">
                             <span class="trade-detail-label">Type:</span>
-                            <span>${trade.type || 'BUY'}</span>
+                            <span class="trade-type ${trade.type?.toLowerCase()}">${trade.type || 'BUY'}</span>
                         </div>
                         <div class="trade-detail">
                             <span class="trade-detail-label">Entrée:</span>
@@ -847,13 +1063,43 @@ class MobileDashboard {
                             <span>${trade.lotSize}</span>
                         </div>
                         <div class="trade-detail">
-                            <span class="trade-detail-label">P&L:</span>
-                            <span class="trade-pnl ${pnlClass}">$${(trade.pnl || 0).toFixed(2)}</span>
+                            <span class="trade-detail-label">SL:</span>
+                            <span class="sl-price">${trade.stopLoss}</span>
                         </div>
+                        <div class="trade-detail">
+                            <span class="trade-detail-label">TP:</span>
+                            <span class="tp-price">${trade.takeProfit}</span>
+                        </div>
+                        ${trade.status === 'open' ? `
+                            <div class="potential-pnl">
+                                <div class="potential-item">
+                                    <span class="potential-label">Si TP:</span>
+                                    <span class="potential-value positive">+$${potentialTP.toFixed(2)}</span>
+                                </div>
+                                <div class="potential-item">
+                                    <span class="potential-label">Si SL:</span>
+                                    <span class="potential-value negative">$${potentialSL.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="trade-detail">
+                                <span class="trade-detail-label">Résultat:</span>
+                                <span class="trade-result ${trade.result?.toLowerCase()}">${trade.result || 'FERMÉ'}</span>
+                            </div>
+                            <div class="trade-detail">
+                                <span class="trade-detail-label">P&L:</span>
+                                <span class="trade-pnl ${(trade.pnl || 0) >= 0 ? 'positive' : 'negative'}">$${(trade.pnl || 0).toFixed(2)}</span>
+                            </div>
+                        `}
                     </div>
                     <div class="trade-actions">
-                        <button class="action-btn edit" onclick="window.mobileDashboard.editTrade(${globalIndex})">✏️ Modifier</button>
-                        <button class="action-btn close" onclick="window.mobileDashboard.deleteTrade(${globalIndex})">🗑️ Supprimer</button>
+                        ${trade.status === 'open' ? `
+                            <button class="action-btn close-trade" onclick="window.mobileDashboard.closeTrade(${globalIndex})">🔒 Fermer</button>
+                            <button class="action-btn edit" onclick="window.mobileDashboard.editTrade(${globalIndex})">✏️ Modifier</button>
+                        ` : `
+                            <button class="action-btn edit" onclick="window.mobileDashboard.editTrade(${globalIndex})">✏️ Modifier</button>
+                            <button class="action-btn delete" onclick="window.mobileDashboard.deleteTrade(${globalIndex})">🗑️ Supprimer</button>
+                        `}
                     </div>
                 </div>
             `;

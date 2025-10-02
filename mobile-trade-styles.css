@@ -1,0 +1,120 @@
+/* Styles supplémentaires pour les trades améliorés */
+
+/* Trade Cards améliorées */
+.trade-card.open {
+    border-left-color: #4ecdc4;
+    background: rgba(76, 205, 196, 0.05);
+}
+
+.trade-card.closed {
+    border-left-color: #888;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.trade-type.buy {
+    color: #4ecdc4;
+    font-weight: bold;
+}
+
+.trade-type.sell {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.sl-price {
+    color: #ff6b6b;
+    font-weight: 500;
+}
+
+.tp-price {
+    color: #4ecdc4;
+    font-weight: 500;
+}
+
+/* Gains/Pertes potentiels */
+.potential-pnl {
+    grid-column: 1 / -1;
+    background: rgba(0, 212, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 8px;
+}
+
+.potential-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.potential-item:last-child {
+    margin-bottom: 0;
+}
+
+.potential-label {
+    color: #aaa;
+    font-size: 0.85em;
+}
+
+.potential-value.positive {
+    color: #4ecdc4;
+    font-weight: bold;
+}
+
+.potential-value.negative {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+/* Résultats de trades */
+.trade-result.tp {
+    color: #4ecdc4;
+    font-weight: bold;
+}
+
+.trade-result.sl {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.trade-result.be {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+/* Nouveaux boutons d'action */
+.action-btn.close-trade {
+    background: rgba(76, 205, 196, 0.2);
+    color: #4ecdc4;
+    border: 1px solid rgba(76, 205, 196, 0.3);
+}
+
+.action-btn.close-trade:active {
+    background: rgba(76, 205, 196, 0.3);
+}
+
+.action-btn.delete {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.action-btn.delete:active {
+    background: rgba(255, 107, 107, 0.3);
+}
+
+/* Responsive pour les nouveaux éléments */
+@media (max-width: 480px) {
+    .potential-pnl {
+        margin-top: 12px;
+    }
+    
+    .trade-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .action-btn {
+        padding: 12px;
+        font-size: 0.9em;
+    }
+}

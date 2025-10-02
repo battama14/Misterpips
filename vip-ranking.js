@@ -46,43 +46,53 @@ class VIPRanking {
             );
 
             console.log(`👥 ${vipUsers.length} utilisateurs VIP trouvés`);
+            vipUsers.forEach(([uid]) => console.log(`Debug VIP: ${uid}`));
 
             const rankings = [];
             const today = new Date().toISOString().split('T')[0];
 
             for (const [uid, userData] of vipUsers) {
                 try {
-                    // Chercher les trades dans la structure correcte
-                    const accountRef = ref(window.firebaseDB, `users/${uid}/accounts/compte1`);
-                    const accountSnapshot = await get(accountRef);
-                    
+                    // Chercher les trades dans toutes les structures
                     let userTrades = [];
-                    let dailyPnL = 0;
                     
-                    if (accountSnapshot.exists()) {
-                        const accountData = accountSnapshot.val();
-                        if (accountData.trades && Array.isArray(accountData.trades) && accountData.trades.length > 0) {
-                            userTrades = accountData.trades;
-                            
-                            // Calculer seulement les trades fermés d'aujourd'hui
-                            const todayTrades = userTrades.filter(trade => 
-                                trade && trade.date === today && 
-                                (trade.status === 'closed' || trade.status === 'completed')
-                            );
-                            
-                            dailyPnL = todayTrades.reduce((total, trade) => 
-                                total + (parseFloat(trade.pnl) || 0), 0
-                            );
-                        } else {
-                            // Pas de trades = 0€
-                            userTrades = [];
-                            dailyPnL = 0;
+                    // Structure principale: dashboards/{uid}/trades
+                    try {
+                        const dashboardRef = ref(window.firebaseDB, `dashboards/${uid}/trades`);
+                        const dashboardSnapshot = await get(dashboardRef);
+                        if (dashboardSnapshot.exists()) {
+                            const trades = dashboardSnapshot.val();
+                            if (Array.isArray(trades)) {
+                                userTrades = trades;
+                            }
                         }
-                    } else {
-                        // Pas de compte = 0€
-                        userTrades = [];
-                        dailyPnL = 0;
+                    } catch (error) {}
+                    
+                    // Structure 2: users/{uid}/trades
+                    if (userTrades.length === 0) {
+                        try {
+                            const tradesRef = ref(window.firebaseDB, `users/${uid}/trades`);
+                            const tradesSnapshot = await get(tradesRef);
+                            if (tradesSnapshot.exists()) {
+                                const trades = tradesSnapshot.val();
+                                if (Array.isArray(trades)) {
+                                    userTrades = trades;
+                                }
+                            }
+                        } catch (error) {}
                     }
+                    
+                    // Calculer les stats
+                    const todayTrades = userTrades.filter(trade => 
+                        trade && trade.date === today && 
+                        (trade.status === 'closed' || trade.status === 'completed')
+                    );
+                    
+                    const dailyPnL = todayTrades.reduce((total, trade) => 
+                        total + (parseFloat(trade.pnl) || 0), 0
+                    );
+                    
+                    console.log(`User ${uid}: ${userTrades.length} trades, ${todayTrades.length} today, $${dailyPnL.toFixed(2)} P&L`);
 
                     // Les stats sont déjà calculées ci-dessus
                     const todayTrades = userTrades.filter(trade => 

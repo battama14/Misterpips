@@ -31,6 +31,7 @@ class SimpleTradingDashboard {
         this.currentTrade = {};
         this.localVersion = Date.now();
         this.unsubscribe = null;
+        this.charts = {};
         this.checklistSteps = [
             {
                 title: "✅ 1. Contexte Global",
@@ -153,47 +154,75 @@ class SimpleTradingDashboard {
         console.log('Setting up event listeners...');
         
         const setup = () => {
-            this.bindButton('newTradeBtn', () => this.startNewTrade());
-            this.bindButton('settingsBtn', () => this.showSettings());
-            this.bindButton('closeTradeBtn', () => this.showCloseTradeModal());
-            this.bindButton('resetBtn', () => this.resetAllData());
-            this.bindButton('manualCloseBtn', () => this.showManualCloseModal());
-            this.bindButton('exportBtn', () => this.exportToExcel());
-            this.bindButton('addAccountBtn', () => this.addNewAccount());
-            this.bindButton('deleteAccountBtn', () => this.deleteAccount());
-            this.bindButton('vipHomeBtn', () => this.goToVipHome());
-            this.bindButton('historyTradeBtn', () => this.showHistoryTradeModal());
+            console.log('Configuring buttons...');
             
-            const accountSelect = document.getElementById('accountSelect');
-            if (accountSelect) {
-                accountSelect.onchange = (e) => this.switchAccount(e.target.value);
-                console.log('Account selector configured');
-            }
-            
-            this.bindButton('prevMonth', () => {
-                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
-                this.renderCalendar();
-            });
-            this.bindButton('nextMonth', () => {
-                this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
-                this.renderCalendar();
-            });
-            
-            const closeModal = document.querySelector('.close');
-            if (closeModal) {
-                closeModal.onclick = () => this.closeModal();
-            }
-            
-            window.onclick = (e) => {
-                if (e.target === document.getElementById('tradeModal')) {
-                    this.closeModal();
+            // Attendre que tous les éléments soient prêts
+            setTimeout(() => {
+                this.bindButton('newTradeBtn', () => {
+                    console.log('New trade button clicked');
+                    this.startNewTrade();
+                });
+                this.bindButton('settingsBtn', () => {
+                    console.log('Settings button clicked');
+                    this.showSettings();
+                });
+                this.bindButton('closeTradeBtn', () => {
+                    console.log('Close trade button clicked');
+                    this.showCloseTradeModal();
+                });
+                this.bindButton('exportBtn', () => {
+                    console.log('Export button clicked');
+                    this.exportToExcel();
+                });
+                this.bindButton('historyTradeBtn', () => {
+                    console.log('History trade button clicked');
+                    this.showHistoryTradeModal();
+                });
+                this.bindButton('addAccountBtn', () => {
+                    console.log('Add account button clicked');
+                    this.addNewAccount();
+                });
+                this.bindButton('deleteAccountBtn', () => {
+                    console.log('Delete account button clicked');
+                    this.deleteAccount();
+                });
+                this.bindButton('vipHomeBtn', () => this.goToVipHome());
+                
+                const accountSelect = document.getElementById('accountSelect');
+                if (accountSelect) {
+                    accountSelect.onchange = (e) => this.switchAccount(e.target.value);
+                    console.log('Account selector configured');
                 }
-                if (e.target === document.getElementById('fullscreenModal')) {
-                    this.closeFullscreen();
-                }
-            };
-            
-            console.log('All event listeners configured');
+                
+                this.bindButton('prevMonth', () => {
+                    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
+                    this.renderCalendar();
+                });
+                this.bindButton('nextMonth', () => {
+                    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
+                    this.renderCalendar();
+                });
+                
+                // Corriger la croix de fermeture des modales
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('close') || e.target.textContent === '×' || e.target.textContent === '✕') {
+                        e.preventDefault();
+                        this.closeModal();
+                    }
+                });
+                
+                // Fermeture par clic sur l'arrière-plan
+                document.addEventListener('click', (e) => {
+                    if (e.target.id === 'tradeModal') {
+                        this.closeModal();
+                    }
+                    if (e.target.id === 'fullscreenModal') {
+                        this.closeFullscreen();
+                    }
+                });
+                
+                console.log('✅ All event listeners configured');
+            }, 500);
         };
         
         if (document.readyState === 'loading') {
@@ -206,7 +235,14 @@ class SimpleTradingDashboard {
     bindButton(id, handler) {
         const button = document.getElementById(id);
         if (button) {
-            button.onclick = handler;
+            // Supprimer les anciens événements
+            button.onclick = null;
+            button.removeEventListener('click', handler);
+            
+            // Ajouter le nouvel événement
+            button.addEventListener('click', handler);
+            button.onclick = handler; // Fallback
+            
             console.log(`✅ ${id} button configured`);
         } else {
             console.warn(`⚠️ ${id} button not found`);
@@ -311,7 +347,6 @@ class SimpleTradingDashboard {
         while (retryCount < maxRetries) {
             try {
                 const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const userRef = ref(window.firebaseDB, `dashboards/${this.currentUser}`);
                 
                 const dataToSave = {
                     trades: this.trades,
@@ -322,10 +357,31 @@ class SimpleTradingDashboard {
                     version: Date.now()
                 };
                 
-                await set(userRef, dataToSave);
+                // Sauvegarder dans dashboards pour compatibilité
+                const dashboardRef = ref(window.firebaseDB, `dashboards/${this.currentUser}`);
+                await set(dashboardRef, dataToSave);
                 
-                const tradesRef = ref(window.firebaseDB, `dashboards/${this.currentUser}/trades`);
-                await set(tradesRef, this.trades);
+                // Sauvegarder dans users pour le classement VIP avec la structure correcte
+                const userRef = ref(window.firebaseDB, `users/${this.currentUser}`);
+                await set(userRef, {
+                    isVIP: true,
+                    plan: 'VIP',
+                    email: sessionStorage.getItem('userEmail') || 'user@example.com',
+                    displayName: sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader',
+                    nickname: this.settings.nickname || sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader',
+                    accounts: {
+                        compte1: {
+                            trades: this.trades,
+                            capital: this.accounts[this.currentAccount]?.capital || this.settings.capital,
+                            settings: this.settings
+                        }
+                    },
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                // Sauvegarder le pseudo séparément
+                const nicknameRef = ref(window.firebaseDB, `users/${this.currentUser}/nickname`);
+                await set(nicknameRef, this.settings.nickname || sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader');
                 
                 const syncStatus = document.getElementById('syncStatus');
                 if (syncStatus) {
@@ -337,7 +393,7 @@ class SimpleTradingDashboard {
                     }, 2000);
                 }
                 
-                console.log('Sync temps réel désactivée temporairement');
+                console.log('✅ Données sauvegardées dans dashboards et users');
                 return;
                 
             } catch (error) {
@@ -481,12 +537,15 @@ class SimpleTradingDashboard {
     }
 
     initCharts() {
-        // Détruire les graphiques existants
-        if (typeof Chart !== 'undefined') {
-            Chart.helpers.each(Chart.instances, function(instance) {
-                instance.destroy();
+        // Détruire les graphiques existants de manière sécurisée
+        if (this.charts) {
+            Object.values(this.charts).forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
             });
         }
+        this.charts = {};
         
         setTimeout(() => {
             this.initPerformanceChart();
@@ -500,6 +559,11 @@ class SimpleTradingDashboard {
         const ctx = document.getElementById('performanceChart');
         if (!ctx) return;
 
+        // Détruire le graphique existant s'il existe
+        if (this.charts.performance) {
+            this.charts.performance.destroy();
+        }
+
         const closedTrades = this.trades.filter(t => t.status === 'closed');
         let cumulativePnL = 0;
         const data = closedTrades.map(trade => {
@@ -507,7 +571,7 @@ class SimpleTradingDashboard {
             return cumulativePnL;
         });
 
-        new Chart(ctx, {
+        this.charts.performance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: closedTrades.map((_, i) => `T${i + 1}`),
@@ -543,12 +607,17 @@ class SimpleTradingDashboard {
         const ctx = document.getElementById('winRateChart');
         if (!ctx) return;
 
+        // Détruire le graphique existant s'il existe
+        if (this.charts.winRate) {
+            this.charts.winRate.destroy();
+        }
+
         const closedTrades = this.trades.filter(t => t.status === 'closed');
         const wins = closedTrades.filter(t => parseFloat(t.pnl || 0) > 0).length;
         const losses = closedTrades.length - wins;
         const winRate = closedTrades.length > 0 ? (wins / closedTrades.length * 100).toFixed(0) : 0;
 
-        new Chart(ctx, {
+        this.charts.winRate = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 datasets: [{
@@ -586,6 +655,11 @@ class SimpleTradingDashboard {
         const ctx = document.getElementById('monthlyChart');
         if (!ctx) return;
 
+        // Détruire le graphique existant s'il existe
+        if (this.charts.monthly) {
+            this.charts.monthly.destroy();
+        }
+
         const monthlyData = {};
         this.trades.filter(t => t.status === 'closed').forEach(trade => {
             const month = new Date(trade.date).toLocaleDateString('fr-FR', { month: 'short' });
@@ -596,7 +670,7 @@ class SimpleTradingDashboard {
         const labels = Object.keys(monthlyData);
         const data = labels.map(month => monthlyData[month]);
 
-        new Chart(ctx, {
+        this.charts.monthly = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -632,10 +706,15 @@ class SimpleTradingDashboard {
         const ctx = document.getElementById('confluencesChart');
         if (!ctx) return;
 
+        // Détruire le graphique existant s'il existe
+        if (this.charts.confluences) {
+            this.charts.confluences.destroy();
+        }
+
         const defaultData = [85, 75, 90, 70, 80, 95, 88];
         const labels = ['Contexte', 'Zone Inst.', 'Structure', 'Killzones', 'Signal', 'Risk Mgmt', 'Discipline'];
 
-        new Chart(ctx, {
+        this.charts.confluences = new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: labels,
@@ -958,11 +1037,7 @@ class SimpleTradingDashboard {
         this.fullDashboardUpdate();
         
         // Forcer la mise à jour du classement VIP
-        if (window.vipRanking) {
-            setTimeout(() => {
-                window.vipRanking.loadRanking();
-            }, 1000);
-        }
+        // La synchronisation temps réel se charge de la mise à jour
         
         this.showNotification(`Trade ${trade.currency} clôturé en ${result}`);
     }
@@ -1030,7 +1105,10 @@ class SimpleTradingDashboard {
 
     closeModal() {
         const modal = document.getElementById('tradeModal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+            console.log('Modal fermée');
+        }
     }
 
     showNotification(message) {
@@ -1053,6 +1131,23 @@ class SimpleTradingDashboard {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
+    }
+
+    updateRankingAfterTrade() {
+        console.log('🔄 Mise à jour du classement VIP...');
+        
+        // Forcer la sauvegarde d'abord
+        this.saveData().then(() => {
+            // Attendre que la sauvegarde soit terminée
+            setTimeout(() => {
+                if (window.vipRanking && typeof window.vipRanking.loadRanking === 'function') {
+                    window.vipRanking.loadRanking();
+                    console.log('✅ Classement VIP mis à jour');
+                } else {
+                    console.warn('⚠️ Classement VIP non disponible');
+                }
+            }, 3000);
+        });
     }
 
     renderChecklistStep() {
@@ -1563,11 +1658,7 @@ class SimpleTradingDashboard {
         this.fullDashboardUpdate();
         
         // Forcer la mise à jour du classement VIP
-        if (window.vipRanking) {
-            setTimeout(() => {
-                window.vipRanking.loadRanking();
-            }, 1000);
-        }
+        this.updateRankingAfterTrade();
         
         this.showNotification('Trade modifié avec succès!');
     }
@@ -1731,11 +1822,7 @@ class SimpleTradingDashboard {
         this.fullDashboardUpdate();
         
         // Forcer la mise à jour du classement VIP
-        if (window.vipRanking) {
-            setTimeout(() => {
-                window.vipRanking.loadRanking();
-            }, 1000);
-        }
+        this.updateRankingAfterTrade();
         
         this.showNotification(`Trade passé ${currency} (${result}) enregistré avec succès!`);
     }

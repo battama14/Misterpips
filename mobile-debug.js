@@ -1,91 +1,83 @@
-// Script de débogage mobile
-console.log('🔧 Script de débogage mobile chargé');
-
-// Test de la fonction showSection
-window.testNavigation = function() {
-    console.log('🧪 Test de navigation...');
+// Debug mobile trades
+async function debugMobileTrades() {
+    const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
     
-    const sections = ['dashboard', 'trades', 'calendar', 'objectives', 'ranking'];
-    sections.forEach(section => {
-        const element = document.getElementById(section);
-        console.log(`Section ${section}:`, element ? '✅ Trouvée' : '❌ Manquante');
-    });
+    console.log('🔍 Debug trades mobile...');
     
-    const navButtons = document.querySelectorAll('.nav-btn');
-    console.log(`Boutons de navigation: ${navButtons.length}`);
+    // Récupérer l'UID depuis mobileDashboard ou sessionStorage
+    const uid = window.mobileDashboard?.currentUser || sessionStorage.getItem('firebaseUID') || 'mobile_demo';
     
-    const menuLinks = document.querySelectorAll('.menu-list a');
-    console.log(`Liens de menu: ${menuLinks.length}`);
-    
-    // Test de showSection
-    if (typeof window.showSection === 'function') {
-        console.log('✅ Fonction showSection disponible');
-        window.showSection('dashboard');
-    } else {
-        console.error('❌ Fonction showSection manquante');
+    if (!uid) {
+        console.log('❌ Pas d\'utilisateur connecté');
+        return;
     }
-};
-
-// Test des événements
-window.testEvents = function() {
-    console.log('🧪 Test des événements...');
+    console.log('👤 UID utilisateur:', uid);
     
-    const menuToggle = document.getElementById('menuToggle');
-    const chatToggle = document.getElementById('mobileChatToggle');
-    const newTradeBtn = document.getElementById('newTradeBtn');
-    
-    console.log('Menu toggle:', menuToggle ? '✅' : '❌');
-    console.log('Chat toggle:', chatToggle ? '✅' : '❌');
-    console.log('New trade button:', newTradeBtn ? '✅' : '❌');
-    
-    // Test des clics
-    if (menuToggle) {
-        menuToggle.click();
-        console.log('✅ Test clic menu toggle');
-    }
-};
-
-// Auto-test au chargement
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        console.log('🚀 Auto-test de débogage mobile');
-        window.testNavigation();
-        window.testEvents();
-    }, 2000);
-});
-
-// Fonction pour forcer la navigation
-window.forceShowSection = function(sectionId) {
-    console.log('🔧 Force navigation vers:', sectionId);
-    
-    // Cacher toutes les sections
-    document.querySelectorAll('.section').forEach(section => {
-        section.style.display = 'none';
-        section.classList.remove('active');
-    });
-    
-    // Afficher la section cible
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.style.display = 'block';
-        targetSection.classList.add('active');
-        console.log('✅ Section forcée:', sectionId);
+    // Vérifier dashboards
+    try {
+        const dashboardRef = ref(window.firebaseDB, `dashboards/${uid}`);
+        const dashboardSnapshot = await get(dashboardRef);
+        if (dashboardSnapshot.exists()) {
+            const data = dashboardSnapshot.val();
+            console.log('📊 Données dashboards:', data);
+            if (data.trades) {
+                console.log('📈 Trades dashboards:', data.trades);
+                data.trades.forEach((trade, index) => {
+                    console.log(`Trade ${index}:`, {
+                        date: trade.date,
+                        status: trade.status,
+                        pnl: trade.pnl,
+                        pair: trade.pair
+                    });
+                });
+            }
+        } else {
+            console.log('❌ Pas de données dashboards');
+        }
+    } catch (error) {
+        console.error('Erreur dashboards:', error);
     }
     
-    // Fermer le menu
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.remove('open');
+    // Vérifier users
+    try {
+        const userRef = ref(window.firebaseDB, `users/${uid}`);
+        const userSnapshot = await get(userRef);
+        if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            console.log('👤 Données users:', userData);
+            
+            // Vérifier accounts
+            if (userData.accounts) {
+                console.log('💼 Comptes:', userData.accounts);
+                Object.keys(userData.accounts).forEach(accountKey => {
+                    const account = userData.accounts[accountKey];
+                    console.log(`Compte ${accountKey}:`, account);
+                    if (account.trades) {
+                        console.log(`Trades ${accountKey}:`, account.trades);
+                        account.trades.forEach((trade, index) => {
+                            console.log(`Trade ${accountKey}-${index}:`, {
+                                date: trade.date,
+                                status: trade.status,
+                                pnl: trade.pnl,
+                                pair: trade.pair
+                            });
+                        });
+                    }
+                });
+            }
+        } else {
+            console.log('❌ Pas de données users');
+        }
+    } catch (error) {
+        console.error('Erreur users:', error);
     }
-};
+    
+    // Date d'aujourd'hui
+    const today = new Date().toISOString().split('T')[0];
+    console.log('📅 Date aujourd\'hui:', today);
+}
 
-// Ajout d'événements de débogage
-document.addEventListener('click', (e) => {
-    console.log('👆 Clic détecté sur:', e.target.tagName, e.target.id, e.target.className);
-});
+// Exposer la fonction
+window.debugMobileTrades = debugMobileTrades;
 
-document.addEventListener('touchend', (e) => {
-    console.log('👆 Touch détecté sur:', e.target.tagName, e.target.id, e.target.className);
-});
-
-console.log('🔧 Fonctions de débogage disponibles: testNavigation(), testEvents(), forceShowSection(id)');
+console.log('🔍 Debug mobile chargé - tapez debugMobileTrades() dans la console');
