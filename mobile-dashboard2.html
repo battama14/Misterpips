@@ -37,7 +37,15 @@
         window.firebaseDB = db;
         window.firebaseAuth = auth;
         
-        // L'authentification est maintenant gérée par mobile-sync-unified.js
+        // Vérifier l'authentification au chargement
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('✅ Utilisateur authentifié:', user.email);
+            } else {
+                console.log('❌ Pas d’utilisateur, redirection...');
+                window.location.href = 'index.html';
+            }
+        });
     </script>
 </head>
 <body>

@@ -50,10 +50,8 @@ class MobileUnifiedSync {
     }
 
     handleNoAuth() {
-        console.log('❌ Aucun utilisateur connecté, redirection...');
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
+        console.log('❌ Aucun utilisateur connecté');
+        // Ne pas rediriger automatiquement
     }
 
     initUserManager() {
