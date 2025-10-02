@@ -33,20 +33,16 @@ class MobileUnifiedSync {
             const snapshot = await userRef.once('value');
             const userData = snapshot.val();
             
-            if (userData && userData.isVIP === true) {
-                this.currentUser = {
-                    uid: user.uid,
-                    email: user.email,
-                    nickname: userData.nickname || user.email.split('@')[0],
-                    isVIP: true
-                };
-                this.isRealVIP = true;
-                console.log('✅ Utilisateur VIP réel connecté:', this.currentUser.email);
-                this.initUserManager();
-            } else {
-                console.log('❌ Utilisateur non-VIP, redirection...');
-                window.location.href = 'index.html';
-            }
+            // Accepter tous les utilisateurs connectés
+            this.currentUser = {
+                uid: user.uid,
+                email: user.email,
+                nickname: (userData && userData.nickname) || user.email.split('@')[0],
+                isVIP: true
+            };
+            this.isRealVIP = true;
+            console.log('✅ Utilisateur connecté:', this.currentUser.email);
+            this.initUserManager();
         } catch (error) {
             console.error('❌ Erreur vérification VIP:', error);
             this.handleNoAuth();
@@ -55,7 +51,9 @@ class MobileUnifiedSync {
 
     handleNoAuth() {
         console.log('❌ Aucun utilisateur connecté, redirection...');
-        window.location.href = 'index.html';
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
     }
 
     initUserManager() {
@@ -70,8 +68,8 @@ class MobileUnifiedSync {
 
     // Méthode pour ajouter un trade unifié
     async addUnifiedTrade(tradeData) {
-        if (!this.isRealVIP || !this.currentUser) {
-            console.log('❌ Utilisateur non autorisé');
+        if (!this.currentUser) {
+            console.log('❌ Utilisateur non connecté');
             return false;
         }
 
@@ -100,7 +98,7 @@ class MobileUnifiedSync {
 
     // Méthode pour récupérer tous les trades unifiés
     async getUnifiedTrades() {
-        if (!this.isRealVIP || !this.currentUser) return [];
+        if (!this.currentUser) return [];
 
         try {
             const tradesRef = window.firebaseDB.ref(`users/${this.currentUser.uid}/trades`);
