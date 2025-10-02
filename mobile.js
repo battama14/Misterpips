@@ -933,41 +933,54 @@ class MobileTradingDashboard {
             });
         }
 
-        // Navigation bottom
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const onclick = btn.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
+        // Navigation bottom - fix tactile
+        setTimeout(() => {
+            const navBtns = [
+                { id: 'dashboard', selector: '.nav-btn[onclick*="dashboard"]' },
+                { id: 'trades', selector: '.nav-btn[onclick*="trades"]' },
+                { id: 'calendar', selector: '.nav-btn[onclick*="calendar"]' },
+                { id: 'objectives', selector: '.nav-btn[onclick*="objectives"]' },
+                { id: 'ranking', selector: '.nav-btn[onclick*="ranking"]' }
+            ];
+            
+            navBtns.forEach(nav => {
+                const btn = document.querySelector(nav.selector);
+                if (btn) {
+                    btn.ontouchend = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.showSection(nav.id);
+                    };
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.showSection(nav.id);
+                    };
                 }
             });
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                const onclick = btn.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
+            
+            const menuLinks = [
+                { id: 'dashboard', selector: '.menu-list a[onclick*="dashboard"]' },
+                { id: 'trades', selector: '.menu-list a[onclick*="trades"]' },
+                { id: 'calendar', selector: '.menu-list a[onclick*="calendar"]' },
+                { id: 'objectives', selector: '.menu-list a[onclick*="objectives"]' },
+                { id: 'ranking', selector: '.menu-list a[onclick*="ranking"]' }
+            ];
+            
+            menuLinks.forEach(link => {
+                const element = document.querySelector(link.selector);
+                if (element) {
+                    element.ontouchend = (e) => {
+                        e.preventDefault();
+                        window.showSection(link.id);
+                    };
+                    element.onclick = (e) => {
+                        e.preventDefault();
+                        window.showSection(link.id);
+                    };
                 }
             });
-        });
-
-        // Menu links
-        document.querySelectorAll('.menu-list a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const onclick = link.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
-                }
-            });
-            link.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                const onclick = link.getAttribute('onclick');
-                if (onclick) {
-                    eval(onclick);
-                }
-            });
-        });
+        }, 1000);
 
         // Fermer menu en cliquant à l'extérieur
         document.addEventListener('click', (e) => {
