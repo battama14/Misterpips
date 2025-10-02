@@ -56,11 +56,6 @@
             <h1>📱 Misterpips</h1>
             <button id="menuToggle" class="menu-btn">☰</button>
         </div>
-        <div class="account-selector-container">
-            <select id="mobileAccountSelect" class="account-selector">
-                <option value="compte1">Compte Principal</option>
-            </select>
-        </div>
         <div class="stats-row">
             <div class="stat-item">
                 <span class="stat-value" id="mobileCapital">$1000</span>
@@ -206,16 +201,6 @@
             
             <div class="settings-list">
                 <div class="setting-item">
-                    <label>💼 Compte actuel</label>
-                    <div class="account-controls">
-                        <select id="mobileAccountSelect">
-                            <option value="compte1">Compte Principal</option>
-                        </select>
-                        <button id="mobileAddAccountBtn" class="secondary-btn">+ Nouveau</button>
-                        <button id="mobileDeleteAccountBtn" class="danger-btn">🗑️</button>
-                    </div>
-                </div>
-                <div class="setting-item">
                     <label>Capital initial ($)</label>
                     <input type="number" id="mobileCapitalInput" value="1000">
                 </div>
@@ -307,36 +292,10 @@
         </div>
         <div class="chat-messages" id="mobileChatMessages"></div>
         <div class="chat-input-container">
-            <button id="mobileEmojiBtn" class="emoji-btn">😀</button>
             <input type="text" id="mobileChatInput" placeholder="Votre message...">
             <button id="sendMobileMessage" class="send-btn">🚀</button>
         </div>
-        <div id="mobileEmojiPanel" class="mobile-emoji-panel">
-            <div class="emoji-grid">
-                <span class="emoji-item">😀</span>
-                <span class="emoji-item">😂</span>
-                <span class="emoji-item">😍</span>
-                <span class="emoji-item">😎</span>
-                <span class="emoji-item">😉</span>
-                <span class="emoji-item">😊</span>
-                <span class="emoji-item">😘</span>
-                <span class="emoji-item">😜</span>
-                <span class="emoji-item">🙄</span>
-                <span class="emoji-item">😏</span>
-                <span class="emoji-item">😱</span>
-                <span class="emoji-item">😡</span>
-                <span class="emoji-item">🙏</span>
-                <span class="emoji-item">👍</span>
-                <span class="emoji-item">👎</span>
-                <span class="emoji-item">💪</span>
-                <span class="emoji-item">🚀</span>
-                <span class="emoji-item">💰</span>
-                <span class="emoji-item">📈</span>
-                <span class="emoji-item">🎆</span>
-            </div>
-        </div>
     </div>
-
 
     <script src="user-manager.js"></script>
     <script src="mobile-script.js"></script>
@@ -354,14 +313,6 @@
                         if ('Notification' in window && Notification.permission === 'default') {
                             Notification.requestPermission().then((permission) => {
                                 console.log('🔔 Permission notifications:', permission);
-                                if (permission === 'granted') {
-                                    // Test de notification
-                                    new Notification('📱 Misterpips Mobile', {
-                                        body: 'Notifications activées avec succès !',
-                                        icon: '/Misterpips.jpg',
-                                        vibrate: [200, 100, 200]
-                                    });
-                                }
                             });
                         }
                     })
