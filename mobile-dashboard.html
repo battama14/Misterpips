@@ -13,6 +13,7 @@
     <link rel="apple-touch-icon" href="Misterpips.jpg">
     <link rel="stylesheet" href="mobile-accounts.css">
     <link rel="stylesheet" href="mobile-emoji.css">
+    <link rel="stylesheet" href="mobile-nav-fix.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
@@ -86,12 +87,12 @@
             <button id="closeMenu" class="close-btn">✕</button>
         </div>
         <ul class="menu-list">
-            <li><a href="javascript:void(0)" onclick="showSection('dashboard')">📊 Dashboard</a></li>
-            <li><a href="javascript:void(0)" onclick="showSection('trades')">📈 Mes Trades</a></li>
-            <li><a href="javascript:void(0)" onclick="showSection('calendar')">📅 Calendrier</a></li>
-            <li><a href="javascript:void(0)" onclick="showSection('objectives')">🎯 Objectifs</a></li>
-            <li><a href="javascript:void(0)" onclick="showSection('ranking')">🏆 Classement</a></li>
-            <li><a href="javascript:void(0)" onclick="showSection('settings')">⚙️ Paramètres</a></li>
+            <li><a href="javascript:void(0)" id="menuDashboard">📊 Dashboard</a></li>
+            <li><a href="javascript:void(0)" id="menuTrades">📈 Mes Trades</a></li>
+            <li><a href="javascript:void(0)" id="menuCalendar">📅 Calendrier</a></li>
+            <li><a href="javascript:void(0)" id="menuObjectives">🎯 Objectifs</a></li>
+            <li><a href="javascript:void(0)" id="menuRanking">🏆 Classement</a></li>
+            <li><a href="javascript:void(0)" id="menuSettings">⚙️ Paramètres</a></li>
             <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
@@ -278,23 +279,23 @@
 
     <!-- Navigation Bottom -->
     <nav class="bottom-nav">
-        <button onclick="showSection('dashboard')" class="nav-btn active" type="button">
+        <button id="navDashboard" class="nav-btn active" type="button">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Dashboard</span>
         </button>
-        <button onclick="showSection('trades')" class="nav-btn" type="button">
+        <button id="navTrades" class="nav-btn" type="button">
             <span class="nav-icon">📈</span>
             <span class="nav-label">Trades</span>
         </button>
-        <button onclick="showSection('calendar')" class="nav-btn" type="button">
+        <button id="navCalendar" class="nav-btn" type="button">
             <span class="nav-icon">📅</span>
             <span class="nav-label">Calendrier</span>
         </button>
-        <button onclick="showSection('objectives')" class="nav-btn" type="button">
+        <button id="navObjectives" class="nav-btn" type="button">
             <span class="nav-icon">🎯</span>
             <span class="nav-label">Objectifs</span>
         </button>
-        <button onclick="showSection('ranking')" class="nav-btn" type="button">
+        <button id="navRanking" class="nav-btn" type="button">
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Classement</span>
         </button>

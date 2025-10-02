@@ -1,0 +1,65 @@
+/* Fix pour la navigation mobile */
+.nav-btn, .menu-list a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 212, 255, 0.3);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.nav-btn {
+    min-height: 60px;
+    min-width: 60px;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+}
+
+.nav-btn.active {
+    color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.nav-btn:active {
+    transform: scale(0.95);
+    background: rgba(0, 212, 255, 0.2);
+}
+
+.menu-list a {
+    display: block;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.menu-list a:active {
+    background: rgba(0, 212, 255, 0.2);
+    transform: translateX(5px);
+}
+
+/* Améliorer la zone de clic */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 212, 255, 0.3);
+    display: flex;
+    justify-content: space-around;
+    padding: 5px 0;
+    z-index: 1000;
+}
+
+.section {
+    display: none;
+    padding-bottom: 80px; /* Espace pour la navigation bottom */
+}
+
+.section.active {
+    display: block;
+}

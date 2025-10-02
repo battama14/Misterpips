@@ -799,19 +799,51 @@ class MobileTradingDashboard {
             closeMenu.onclick = () => mobileMenu.classList.remove('open');
         }
         
-        // Ajouter des événements tactiles pour la navigation
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                btn.click();
-            });
+        // Navigation bottom
+        const navButtons = {
+            'navDashboard': 'dashboard',
+            'navTrades': 'trades', 
+            'navCalendar': 'calendar',
+            'navObjectives': 'objectives',
+            'navRanking': 'ranking'
+        };
+        
+        Object.keys(navButtons).forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(navButtons[btnId]);
+                });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    showSection(navButtons[btnId]);
+                });
+            }
         });
         
-        document.querySelectorAll('.menu-list a').forEach(link => {
-            link.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                link.click();
-            });
+        // Menu hamburger
+        const menuButtons = {
+            'menuDashboard': 'dashboard',
+            'menuTrades': 'trades',
+            'menuCalendar': 'calendar', 
+            'menuObjectives': 'objectives',
+            'menuRanking': 'ranking',
+            'menuSettings': 'settings'
+        };
+        
+        Object.keys(menuButtons).forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(menuButtons[btnId]);
+                });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    showSection(menuButtons[btnId]);
+                });
+            }
         });
 
         const newTradeBtn = document.getElementById('newTradeBtn');
@@ -1582,36 +1614,65 @@ function handleSwipe() {
 function showSection(sectionId) {
     console.log('Switching to section:', sectionId);
     
+    // Cacher toutes les sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
     
+    // Afficher la section cible
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
         console.log('Section activated:', sectionId);
     } else {
         console.error('Section not found:', sectionId);
+        return;
     }
     
+    // Mettre à jour la navigation bottom
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    const activeBtn = document.querySelector(`[onclick*="showSection('${sectionId}')"`);
-    if (activeBtn) {
-        activeBtn.classList.add('active');
+    const navMapping = {
+        'dashboard': 'navDashboard',
+        'trades': 'navTrades',
+        'calendar': 'navCalendar', 
+        'objectives': 'navObjectives',
+        'ranking': 'navRanking'
+    };
+    
+    const activeNavBtn = document.getElementById(navMapping[sectionId]);
+    if (activeNavBtn) {
+        activeNavBtn.classList.add('active');
     }
     
+    // Fermer le menu mobile
     const mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenu) {
         mobileMenu.classList.remove('open');
     }
     
-    // Mettre à jour le dashboard mobile si nécessaire
-    if (window.mobileDashboard && sectionId !== 'dashboard') {
+    // Mettre à jour les données si nécessaire
+    if (window.mobileDashboard) {
         setTimeout(() => {
-            window.mobileDashboard.updateAll();
+            switch(sectionId) {
+                case 'trades':
+                    window.mobileDashboard.renderTrades();
+                    break;
+                case 'calendar':
+                    window.mobileDashboard.renderCalendar();
+                    break;
+                case 'objectives':
+                    window.mobileDashboard.updateObjectives();
+                    break;
+                case 'ranking':
+                    window.mobileDashboard.loadRanking();
+                    break;
+                case 'dashboard':
+                    window.mobileDashboard.initCharts();
+                    break;
+            }
         }, 100);
     }
 }
