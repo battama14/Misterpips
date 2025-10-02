@@ -501,6 +501,46 @@ body {
     font-size: 16px;
 }
 
+.account-selector-container {
+    margin-bottom: 10px;
+}
+
+.account-selector {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 14px;
+}
+
+.account-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.danger-btn {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
 /* Modal Mobile */
 .mobile-modal {
     position: fixed;
@@ -634,44 +674,41 @@ body {
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
 }
 
-.account-selector-container {
-    margin-bottom: 10px;
+.mobile-chat-window {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60vh;
+    background: rgba(26, 26, 46, 0.98);
+    backdrop-filter: blur(15px);
+    z-index: 2500;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    border-top: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 15px 15px 0 0;
 }
 
-.account-selector {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 14px;
+.mobile-chat-window.show {
+    transform: translateY(0);
 }
 
-.account-controls {
+.chat-header {
     display: flex;
-    gap: 10px;
-    margin-top: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
 }
 
-.secondary-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
+.chat-header h4 {
+    color: #00d4ff;
 }
 
-.danger-btn {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
-    border: 1px solid rgba(255, 107, 107, 0.3);
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
+.chat-messages {
+    height: calc(60vh - 120px);
+    overflow-y: auto;
+    padding: 15px;
 }
 
 .emoji-btn {
@@ -716,43 +753,6 @@ body {
 
 .emoji-item:hover {
     background: rgba(0, 212, 255, 0.2);
-}
-
-.mobile-chat-window {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60vh;
-    background: rgba(26, 26, 46, 0.98);
-    backdrop-filter: blur(15px);
-    z-index: 2500;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    border-top: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 15px 15px 0 0;
-}
-
-.mobile-chat-window.show {
-    transform: translateY(0);
-}
-
-.chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.chat-header h4 {
-    color: #00d4ff;
-}
-
-.chat-messages {
-    height: calc(60vh - 120px);
-    overflow-y: auto;
-    padding: 15px;
 }
 
 .chat-input-container {

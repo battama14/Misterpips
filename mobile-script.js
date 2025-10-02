@@ -1,14 +1,13 @@
-// Dashboard Mobile Complet avec Firebase
+// Dashboard Mobile Complet avec Firebase - Version Synchronisée PC
 class MobileDashboard {
     constructor() {
         this.currentUser = null;
-        this.currentAccount = 'compte1';
+        this.currentAccount = 'default';
         this.trades = [];
-        this.accounts = {
-            'compte1': { name: 'Compte Principal', capital: 1000 }
-        };
-        this.settings = { capital: 1000, riskPerTrade: 2, dailyTarget: 1 };
+        this.accounts = { 'default': { name: 'Compte Principal', capital: 1000 } };
+        this.settings = { capital: 1000, riskPerTrade: 2, dailyTarget: 10 };
         this.charts = {};
+        this.editingTradeId = null;
         this.init();
     }
 
@@ -20,6 +19,7 @@ class MobileDashboard {
         this.updateAll();
         this.loadChatMessages();
         this.loadRanking();
+        setInterval(() => this.loadRanking(), 30000); // Actualiser classement toutes les 30s
     }
 
     async waitForFirebase() {
@@ -34,7 +34,7 @@ class MobileDashboard {
         try {
             if (window.firebaseDB) {
                 const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const userRef = ref(window.firebaseDB, `dashboards/${this.currentUser}`);
+                const userRef = ref(window.firebaseDB, `users/${this.currentUser}`);
                 const snapshot = await get(userRef);
                 
                 if (snapshot.exists()) {
@@ -57,12 +57,13 @@ class MobileDashboard {
                 accounts: this.accounts,
                 settings: this.settings,
                 currentAccount: this.currentAccount,
-                lastUpdated: Date.now()
+                lastUpdated: Date.now(),
+                profile: { nickname: this.settings.nickname || 'Mobile User' }
             };
 
             if (window.firebaseDB) {
                 const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const userRef = ref(window.firebaseDB, `dashboards/${this.currentUser}`);
+                const userRef = ref(window.firebaseDB, `users/${this.currentUser}`);
                 await set(userRef, data);
                 console.log('✅ Données sauvegardées');
             }
@@ -98,6 +99,8 @@ class MobileDashboard {
 
         container.innerHTML = accountTrades.map((trade, index) => {
             const pnlClass = (trade.pnl || 0) >= 0 ? 'positive' : 'negative';
+            const globalIndex = this.trades.findIndex(t => t.id === trade.id);
+            
             return `
                 <div class="trade-card">
                     <div class="trade-header">
@@ -108,6 +111,10 @@ class MobileDashboard {
                         <div class="trade-detail">
                             <span class="trade-detail-label">Date:</span>
                             <span>${trade.date}</span>
+                        </div>
+                        <div class="trade-detail">
+                            <span class="trade-detail-label">Type:</span>
+                            <span>${trade.type || 'BUY'}</span>
                         </div>
                         <div class="trade-detail">
                             <span class="trade-detail-label">Entrée:</span>
@@ -123,10 +130,10 @@ class MobileDashboard {
                         </div>
                     </div>
                     <div class="trade-actions">
-                        <button class="action-btn edit" onclick="mobileDashboard.editTrade(${index})">✏️ Modifier</button>
+                        <button class="action-btn edit" onclick="mobileDashboard.editTrade(${globalIndex})">✏️ Modifier</button>
                         ${trade.status === 'open' ? 
-                            `<button class="action-btn close" onclick="mobileDashboard.closeTrade(${index})">🔒 Clôturer</button>` : 
-                            `<button class="action-btn close" onclick="mobileDashboard.deleteTrade(${index})">🗑️ Supprimer</button>`
+                            `<button class="action-btn close" onclick="mobileDashboard.closeTrade(${globalIndex})">🔒 Clôturer</button>` : 
+                            `<button class="action-btn close" onclick="mobileDashboard.deleteTrade(${globalIndex})">🗑️ Supprimer</button>`
                         }
                     </div>
                 </div>
@@ -212,23 +219,15 @@ class MobileDashboard {
     }
 
     async loadRanking() {
-        const container = document.getElementById('mobileRankingList');
-        
         try {
             if (window.firebaseDB) {
                 const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                const dashboardsRef = ref(window.firebaseDB, 'dashboards');
                 const usersRef = ref(window.firebaseDB, 'users');
+                const snapshot = await get(usersRef);
                 
-                const [dashboardsSnapshot, usersSnapshot] = await Promise.all([
-                    get(dashboardsRef),
-                    get(usersRef)
-                ]);
-                
-                if (dashboardsSnapshot.exists() && usersSnapshot.exists()) {
-                    const dashboards = dashboardsSnapshot.val();
-                    const users = usersSnapshot.val();
-                    const rankings = this.calculateRankings(dashboards, users);
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    const rankings = this.calculateRankings(users);
                     this.displayRanking(rankings);
                     return;
                 }
@@ -241,22 +240,20 @@ class MobileDashboard {
         const userTotalPnL = this.trades.filter(t => t.status === 'closed').reduce((sum, t) => sum + (t.pnl || 0), 0);
         const demoRankings = [
             { name: 'Trader Pro', totalPnL: 2500, dailyPnL: 150, trades: 45, winRate: 75 },
-            { name: 'Vous', totalPnL: userTotalPnL, dailyPnL: 0, trades: this.trades.length, winRate: 0, isCurrentUser: true },
-            { name: 'Expert FX', totalPnL: 1800, dailyPnL: 80, trades: 32, winRate: 80 }
+            { name: 'Vous', totalPnL: userTotalPnL, dailyPnL: 0, trades: this.trades.length, winRate: 0, isCurrentUser: true }
         ].sort((a, b) => b.totalPnL - a.totalPnL);
         
         this.displayRanking(demoRankings);
     }
 
-    calculateRankings(dashboards, users) {
+    calculateRankings(users) {
         const today = new Date().toISOString().split('T')[0];
         const rankings = [];
         
-        for (const [userId, dashboard] of Object.entries(dashboards)) {
-            const user = users[userId];
-            if (!user || !dashboard.trades) continue;
+        for (const [userId, userData] of Object.entries(users)) {
+            if (!userData.trades) continue;
             
-            const closedTrades = dashboard.trades.filter(t => t.status === 'closed');
+            const closedTrades = userData.trades.filter(t => t.status === 'closed');
             const todayTrades = closedTrades.filter(t => t.date === today);
             
             const totalPnL = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
@@ -265,7 +262,7 @@ class MobileDashboard {
                 (closedTrades.filter(t => t.pnl > 0).length / closedTrades.length * 100) : 0;
             
             rankings.push({
-                name: user.profile?.nickname || user.email?.split('@')[0] || 'Trader',
+                name: userData.profile?.nickname || userData.email?.split('@')[0] || 'Trader',
                 totalPnL,
                 dailyPnL,
                 trades: closedTrades.length,
@@ -317,7 +314,7 @@ class MobileDashboard {
     }
 
     displayChatMessages(messages) {
-        const container = document.getElementById('mobileChatMessages');
+        const container = document.getElementById('mobileMessages');
         if (!container) return;
         
         const messageArray = Object.keys(messages).map(key => ({
@@ -346,7 +343,7 @@ class MobileDashboard {
     }
 
     async sendChatMessage() {
-        const input = document.getElementById('mobileChatInput');
+        const input = document.getElementById('mobileMessageInput');
         const message = input.value.trim();
         if (!message) return;
 
@@ -357,13 +354,15 @@ class MobileDashboard {
                 
                 await push(messagesRef, {
                     userId: this.currentUser,
-                    nickname: 'Mobile User',
+                    nickname: this.settings.nickname || 'Mobile User',
                     message: message,
                     timestamp: Date.now(),
                     date: new Date().toISOString().split('T')[0]
                 });
                 
                 input.value = '';
+                // Garder le focus sur l'input pour éviter que le chat se ferme
+                setTimeout(() => input.focus(), 100);
             }
         } catch (error) {
             console.error('Erreur envoi message:', error);
@@ -371,115 +370,136 @@ class MobileDashboard {
     }
 
     // Gestion des trades
-    showTradeModal() {
-        document.getElementById('mobileTradeModal').classList.add('show');
+    showTradeModal(editingTrade = null) {
+        const modal = document.getElementById('tradeModal');
+        const title = document.getElementById('modalTitle');
+        
+        if (editingTrade) {
+            title.textContent = 'Modifier Trade';
+            document.getElementById('tradePair').value = editingTrade.currency;
+            document.getElementById('tradeType').value = editingTrade.type || 'BUY';
+            document.getElementById('tradeLots').value = editingTrade.lotSize;
+            document.getElementById('tradeEntry').value = editingTrade.entryPoint;
+            document.getElementById('tradeStopLoss').value = editingTrade.stopLoss;
+            document.getElementById('tradeTakeProfit').value = editingTrade.takeProfit;
+            document.getElementById('tradeStatus').value = editingTrade.status;
+            
+            if (editingTrade.status === 'closed') {
+                document.getElementById('closePriceGroup').style.display = 'block';
+                document.getElementById('tradeClosePrice').value = editingTrade.closePrice || '';
+            }
+            
+            this.editingTradeId = editingTrade.id;
+        } else {
+            title.textContent = 'Nouveau Trade';
+            this.editingTradeId = null;
+        }
+        
+        modal.classList.add('show');
     }
 
     hideTradeModal() {
-        document.getElementById('mobileTradeModal').classList.remove('show');
-        document.getElementById('mobileTradeForm').reset();
+        document.getElementById('tradeModal').classList.remove('show');
+        document.querySelector('#tradeModal form').reset();
+        document.getElementById('closePriceGroup').style.display = 'none';
+        this.editingTradeId = null;
     }
 
     async saveTrade() {
-        const currency = document.getElementById('mobileCurrency').value;
-        const entryPoint = parseFloat(document.getElementById('mobileEntryPoint').value);
-        const stopLoss = parseFloat(document.getElementById('mobileStopLoss').value);
-        const takeProfit = parseFloat(document.getElementById('mobileTakeProfit').value);
-        const lotSize = parseFloat(document.getElementById('mobileLotSize').value);
+        const currency = document.getElementById('tradePair').value;
+        const type = document.getElementById('tradeType').value;
+        const lotSize = parseFloat(document.getElementById('tradeLots').value);
+        const entryPoint = parseFloat(document.getElementById('tradeEntry').value);
+        const stopLoss = parseFloat(document.getElementById('tradeStopLoss').value);
+        const takeProfit = parseFloat(document.getElementById('tradeTakeProfit').value);
+        const status = document.getElementById('tradeStatus').value;
+        const closePrice = parseFloat(document.getElementById('tradeClosePrice').value) || null;
 
         if (!currency || !entryPoint || !stopLoss || !takeProfit || !lotSize) {
-            alert('Veuillez remplir tous les champs');
+            alert('Veuillez remplir tous les champs obligatoires');
             return;
         }
 
-        const trade = {
-            id: Date.now().toString(),
-            account: this.currentAccount,
-            date: new Date().toISOString().split('T')[0],
-            currency,
-            entryPoint,
-            stopLoss,
-            takeProfit,
-            lotSize,
-            status: 'open',
-            pnl: 0
-        };
+        if (this.editingTradeId) {
+            // Modification
+            const tradeIndex = this.trades.findIndex(t => t.id === this.editingTradeId);
+            if (tradeIndex !== -1) {
+                this.trades[tradeIndex] = {
+                    ...this.trades[tradeIndex],
+                    currency, type, lotSize, entryPoint, stopLoss, takeProfit, status,
+                    closePrice: status === 'closed' ? closePrice : null,
+                    pnl: status === 'closed' ? this.calculatePnL({ currency, type, lotSize, entryPoint, stopLoss, takeProfit, closePrice }) : 0
+                };
+            }
+        } else {
+            // Nouveau trade
+            const trade = {
+                id: Date.now().toString(),
+                account: this.currentAccount,
+                date: new Date().toISOString().split('T')[0],
+                currency, type, entryPoint, stopLoss, takeProfit, lotSize, status,
+                closePrice: status === 'closed' ? closePrice : null,
+                pnl: status === 'closed' ? this.calculatePnL({ currency, type, lotSize, entryPoint, stopLoss, takeProfit, closePrice }) : 0
+            };
+            this.trades.push(trade);
+        }
 
-        this.trades.push(trade);
         await this.saveData();
         this.hideTradeModal();
         this.updateAll();
     }
 
     editTrade(index) {
-        const accountTrades = this.trades.filter(t => t.account === this.currentAccount);
-        const trade = accountTrades[index];
+        const trade = this.trades[index];
         if (!trade) return;
-        
-        document.getElementById('mobileCurrency').value = trade.currency;
-        document.getElementById('mobileEntryPoint').value = trade.entryPoint;
-        document.getElementById('mobileStopLoss').value = trade.stopLoss;
-        document.getElementById('mobileTakeProfit').value = trade.takeProfit;
-        document.getElementById('mobileLotSize').value = trade.lotSize;
-        
-        this.editingTradeId = trade.id;
-        this.showTradeModal();
+        this.showTradeModal(trade);
     }
 
     async closeTrade(index) {
-        const accountTrades = this.trades.filter(t => t.account === this.currentAccount);
-        const trade = accountTrades[index];
+        const trade = this.trades[index];
         if (!trade) return;
         
-        const result = prompt('Résultat (TP/SL/BE):', 'TP');
-        if (!result) return;
+        const closePrice = prompt('Prix de fermeture:', trade.takeProfit);
+        if (!closePrice) return;
         
-        const tradeIndex = this.trades.findIndex(t => t.id === trade.id);
-        this.trades[tradeIndex].status = 'closed';
-        this.trades[tradeIndex].result = result.toUpperCase();
-        this.trades[tradeIndex].pnl = this.calculatePnL(this.trades[tradeIndex], result);
+        this.trades[index].status = 'closed';
+        this.trades[index].closePrice = parseFloat(closePrice);
+        this.trades[index].pnl = this.calculatePnL(this.trades[index]);
         
         await this.saveData();
         this.updateAll();
     }
 
     async deleteTrade(index) {
-        const accountTrades = this.trades.filter(t => t.account === this.currentAccount);
-        const trade = accountTrades[index];
+        const trade = this.trades[index];
         if (!trade || !confirm(`Supprimer le trade ${trade.currency} ?`)) return;
         
-        const tradeIndex = this.trades.findIndex(t => t.id === trade.id);
-        this.trades.splice(tradeIndex, 1);
-        
+        this.trades.splice(index, 1);
         await this.saveData();
         this.updateAll();
     }
 
-    calculatePnL(trade, result) {
+    calculatePnL(trade) {
         const entryPoint = parseFloat(trade.entryPoint);
+        const closePrice = parseFloat(trade.closePrice) || parseFloat(trade.takeProfit);
         const lotSize = parseFloat(trade.lotSize);
-        let closePrice;
+        const type = trade.type || 'BUY';
         
-        if (result === 'TP') closePrice = parseFloat(trade.takeProfit);
-        else if (result === 'SL') closePrice = parseFloat(trade.stopLoss);
-        else closePrice = entryPoint; // BE
-        
-        const priceDiff = closePrice - entryPoint;
-        const isLong = parseFloat(trade.takeProfit) > entryPoint;
-        const finalDiff = isLong ? priceDiff : -priceDiff;
+        let priceDiff = closePrice - entryPoint;
+        if (type === 'SELL') priceDiff = -priceDiff;
         
         if (trade.currency === 'XAU/USD') {
-            return finalDiff * lotSize * 100;
+            return priceDiff * lotSize * 100;
         } else if (trade.currency.includes('JPY')) {
-            return (finalDiff * 100) * lotSize * 10;
+            return (priceDiff * 100) * lotSize * 10;
         } else {
-            return (finalDiff * 10000) * lotSize * 10;
+            return (priceDiff * 10000) * lotSize * 10;
         }
     }
 
     // Gestion des comptes
     updateAccountSelector() {
-        const selector = document.getElementById('mobileAccountSelect');
+        const selector = document.getElementById('mobileAccountSelector');
         if (!selector) return;
         
         selector.innerHTML = '';
@@ -500,19 +520,19 @@ class MobileDashboard {
         this.updateAll();
     }
 
-    async addAccount() {
+    async createNewAccount() {
         const name = prompt('Nom du nouveau compte:');
         if (!name) return;
         
         const capital = parseFloat(prompt('Capital initial ($):')) || 1000;
-        const accountId = 'compte' + (Object.keys(this.accounts).length + 1);
+        const accountId = 'compte_' + Date.now();
         
         this.accounts[accountId] = { name, capital };
         await this.saveData();
         this.updateAccountSelector();
     }
 
-    async deleteAccount() {
+    async deleteCurrentAccount() {
         if (Object.keys(this.accounts).length <= 1) {
             alert('Impossible de supprimer le dernier compte');
             return;
@@ -527,6 +547,16 @@ class MobileDashboard {
         await this.saveData();
         this.updateAccountSelector();
         this.updateAll();
+    }
+
+    async saveSettings() {
+        this.settings.capital = parseFloat(document.getElementById('mobileCapitalInput').value) || 1000;
+        this.settings.riskPerTrade = parseFloat(document.getElementById('mobileRiskInput').value) || 2;
+        this.settings.dailyTarget = parseFloat(document.getElementById('mobileDailyObjective').value) || 10;
+        this.settings.nickname = document.getElementById('mobileNickname').value || 'Mobile User';
+        
+        await this.saveData();
+        alert('Paramètres sauvegardés !');
     }
 
     updateAll() {
@@ -549,52 +579,72 @@ class MobileDashboard {
         // Trades
         document.getElementById('newTradeBtn')?.addEventListener('click', () => this.showTradeModal());
         document.getElementById('addTradeBtn')?.addEventListener('click', () => this.showTradeModal());
-        document.getElementById('closeTradeModal')?.addEventListener('click', () => this.hideTradeModal());
-        document.getElementById('saveMobileTradeBtn')?.addEventListener('click', () => this.saveTrade());
 
         // Chat
-        document.getElementById('mobileChatToggle')?.addEventListener('click', () => {
-            document.getElementById('mobileChatWindow').classList.toggle('show');
+        document.getElementById('chatToggle')?.addEventListener('click', () => {
+            document.getElementById('chatWindow').classList.toggle('show');
         });
         
-        document.getElementById('closeMobileChat')?.addEventListener('click', () => {
-            document.getElementById('mobileChatWindow').classList.remove('show');
-        });
-        
-        document.getElementById('sendMobileMessage')?.addEventListener('click', () => this.sendChatMessage());
-        
-        document.getElementById('mobileChatInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendChatMessage();
+        document.getElementById('mobileMessageInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.sendChatMessage();
+            }
         });
 
-        // Comptes
-        document.getElementById('mobileAccountSelect')?.addEventListener('change', (e) => {
-            this.switchAccount(e.target.value);
-        });
-        
-        document.getElementById('mobileAddAccountBtn')?.addEventListener('click', () => this.addAccount());
-        document.getElementById('mobileDeleteAccountBtn')?.addEventListener('click', () => this.deleteAccount());
-        
-        // Emoji
-        document.getElementById('mobileEmojiBtn')?.addEventListener('click', () => {
-            const panel = document.getElementById('mobileEmojiPanel');
-            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-        });
-        
-        document.querySelectorAll('.emoji-item').forEach(emoji => {
-            emoji.addEventListener('click', () => {
-                const input = document.getElementById('mobileChatInput');
-                input.value += emoji.textContent;
-                document.getElementById('mobileEmojiPanel').style.display = 'none';
-                input.focus();
-            });
+        // Status change pour afficher/masquer le prix de fermeture
+        document.getElementById('tradeStatus')?.addEventListener('change', (e) => {
+            const closePriceGroup = document.getElementById('closePriceGroup');
+            if (e.target.value === 'closed') {
+                closePriceGroup.style.display = 'block';
+            } else {
+                closePriceGroup.style.display = 'none';
+            }
         });
     }
 }
 
+// Fonctions globales pour les événements HTML
+function showSection(sectionName) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById(sectionName)?.classList.add('active');
+    document.querySelector(`[ontouchend*="${sectionName}"]`)?.classList.add('active');
+    
+    document.getElementById('mobileMenu')?.classList.remove('open');
+}
+
+function toggleMobileChat() {
+    document.getElementById('chatWindow').classList.toggle('show');
+}
+
+function toggleEmojiPanel() {
+    const panel = document.getElementById('mobileEmojiPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('mobileMessageInput');
+    input.value += emoji;
+    document.getElementById('mobileEmojiPanel').style.display = 'none';
+    input.focus();
+}
+
+function sendMobileMessage() {
+    window.mobileDashboard?.sendChatMessage();
+}
+
+function closeMobileModal() {
+    window.mobileDashboard?.hideTradeModal();
+}
+
+function saveMobileTrade() {
+    window.mobileDashboard?.saveTrade();
+}
+
 // Initialisation
 let mobileDashboard;
-window.mobileDashboard = mobileDashboard;
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
