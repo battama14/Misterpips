@@ -36,11 +36,9 @@
         
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Utiliser le gestionnaire d'utilisateurs
                 await window.userManager.loginUser(user.email, user.uid);
                 console.log('✅ Utilisateur connecté:', user.email);
             } else {
-                // Créer un utilisateur temporaire pour le mode démo
                 const tempUID = 'mobile_demo_' + Date.now();
                 const tempEmail = 'demo@mobile.com';
                 await window.userManager.loginUser(tempEmail, tempUID);
@@ -79,12 +77,12 @@
             <button id="closeMenu" class="close-btn">✕</button>
         </div>
         <ul class="menu-list">
-            <li><a href="#dashboard" onclick="showSection('dashboard')">📊 Dashboard</a></li>
-            <li><a href="#trades" onclick="showSection('trades')">📈 Mes Trades</a></li>
-            <li><a href="#calendar" onclick="showSection('calendar')">📅 Calendrier</a></li>
-            <li><a href="#objectives" onclick="showSection('objectives')">🎯 Objectifs</a></li>
-            <li><a href="#ranking" onclick="showSection('ranking')">🏆 Classement</a></li>
-            <li><a href="#settings" onclick="showSection('settings')">⚙️ Paramètres</a></li>
+            <li><a href="#dashboard" ontouchend="showSection('dashboard')">📊 Dashboard</a></li>
+            <li><a href="#trades" ontouchend="showSection('trades')">📈 Mes Trades</a></li>
+            <li><a href="#calendar" ontouchend="showSection('calendar')">📅 Calendrier</a></li>
+            <li><a href="#objectives" ontouchend="showSection('objectives')">🎯 Objectifs</a></li>
+            <li><a href="#ranking" ontouchend="showSection('ranking')">🏆 Classement</a></li>
+            <li><a href="#settings" ontouchend="showSection('settings')">⚙️ Paramètres</a></li>
             <li><a href="index-fixed.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
@@ -209,132 +207,155 @@
                     <input type="number" id="mobileRiskInput" value="2" step="0.1">
                 </div>
                 <div class="setting-item">
-                    <label>Objectif journalier (%)</label>
-                    <input type="number" id="mobileDailyTargetInput" value="1" step="0.1">
+                    <label>Objectif journalier ($)</label>
+                    <input type="number" id="mobileDailyObjective" value="10">
                 </div>
-                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+                <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                </div>
+                <div class="setting-item">
+                    <div class="account-selector-container">
+                        <label>Compte actuel</label>
+                        <select id="mobileAccountSelector" class="account-selector" onchange="window.mobileDashboard?.switchAccount(this.value)" onclick="window.mobileDashboard?.switchAccount(this.value)">
+                            <option value="default">Compte Principal</option>
+                        </select>
+                    </div>
+                    <div class="account-controls">
+                        <button class="secondary-btn" onclick="window.mobileDashboard?.createNewAccount()">Nouveau Compte</button>
+                        <button class="danger-btn" onclick="window.mobileDashboard?.deleteCurrentAccount()">Supprimer</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <button class="primary-btn" onclick="window.mobileDashboard?.saveSettings()">💾 Sauvegarder</button>
+                </div>
             </div>
         </section>
     </main>
 
-    <!-- Modal Trade -->
-    <div id="mobileTradeModal" class="mobile-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Nouveau Trade</h3>
-                <button id="closeTradeModal" class="close-btn">✕</button>
-            </div>
-            <div class="modal-body">
-                <form id="mobileTradeForm">
-                    <div class="form-group">
-                        <label>Paire</label>
-                        <select id="mobileCurrency">
-                            <option value="EUR/USD">EUR/USD</option>
-                            <option value="GBP/USD">GBP/USD</option>
-                            <option value="USD/JPY">USD/JPY</option>
-                            <option value="XAU/USD">XAU/USD</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Entrée</label>
-                        <input type="number" id="mobileEntryPoint" step="0.00001">
-                    </div>
-                    <div class="form-group">
-                        <label>Stop Loss</label>
-                        <input type="number" id="mobileStopLoss" step="0.00001">
-                    </div>
-                    <div class="form-group">
-                        <label>Take Profit</label>
-                        <input type="number" id="mobileTakeProfit" step="0.00001">
-                    </div>
-                    <div class="form-group">
-                        <label>Lot</label>
-                        <input type="number" id="mobileLotSize" step="0.01">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" id="saveMobileTradeBtn" class="primary-btn">💾 Sauvegarder</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Navigation Bottom -->
     <nav class="bottom-nav">
-        <button onclick="showSection('dashboard')" class="nav-btn active">
+        <button class="nav-btn active" ontouchend="showSection('dashboard')">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Dashboard</span>
         </button>
-        <button onclick="showSection('trades')" class="nav-btn">
+        <button class="nav-btn" ontouchend="showSection('trades')">
             <span class="nav-icon">📈</span>
             <span class="nav-label">Trades</span>
         </button>
-        <button onclick="showSection('calendar')" class="nav-btn">
+        <button class="nav-btn" ontouchend="showSection('calendar')">
             <span class="nav-icon">📅</span>
             <span class="nav-label">Calendrier</span>
         </button>
-        <button onclick="showSection('objectives')" class="nav-btn">
-            <span class="nav-icon">🎯</span>
-            <span class="nav-label">Objectifs</span>
-        </button>
-        <button onclick="showSection('ranking')" class="nav-btn">
+        <button class="nav-btn" ontouchend="showSection('ranking')">
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Classement</span>
         </button>
+        <button class="nav-btn" ontouchend="showSection('settings')">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Paramètres</span>
+        </button>
     </nav>
 
-    <!-- Chat Mobile -->
-    <div id="mobileChatToggle" class="mobile-chat-toggle">💬</div>
-    <div id="mobileChatWindow" class="mobile-chat-window">
+    <!-- Chat Toggle -->
+    <div class="mobile-chat-toggle" id="chatToggle">💬</div>
+
+    <!-- Chat Window -->
+    <div class="mobile-chat-window" id="chatWindow">
         <div class="chat-header">
             <h4>💬 Chat VIP</h4>
-            <button id="closeMobileChat" class="close-btn">✕</button>
+            <button class="close-btn" onclick="toggleMobileChat()">✕</button>
         </div>
-        <div class="chat-messages" id="mobileChatMessages"></div>
+        <div class="chat-messages" id="mobileMessages">
+            <!-- Messages générés dynamiquement -->
+        </div>
+        <div class="mobile-emoji-panel" id="mobileEmojiPanel">
+            <div class="emoji-grid">
+                <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
+                <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+                <span class="emoji-item" onclick="insertEmoji('😍')">😍</span>
+                <span class="emoji-item" onclick="insertEmoji('🤔')">🤔</span>
+                <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
+                <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
+                <span class="emoji-item" onclick="insertEmoji('💪')">💪</span>
+                <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
+                <span class="emoji-item" onclick="insertEmoji('👎')">👎</span>
+                <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
+                <span class="emoji-item" onclick="insertEmoji('💰')">💰</span>
+                <span class="emoji-item" onclick="insertEmoji('📈')">📈</span>
+                <span class="emoji-item" onclick="insertEmoji('📉')">📉</span>
+                <span class="emoji-item" onclick="insertEmoji('🚀')">🚀</span>
+                <span class="emoji-item" onclick="insertEmoji('⭐')">⭐</span>
+                <span class="emoji-item" onclick="insertEmoji('🎯')">🎯</span>
+                <span class="emoji-item" onclick="insertEmoji('💎')">💎</span>
+                <span class="emoji-item" onclick="insertEmoji('🏆')">🏆</span>
+                <span class="emoji-item" onclick="insertEmoji('🎉')">🎉</span>
+                <span class="emoji-item" onclick="insertEmoji('⚡')">⚡</span>
+            </div>
+        </div>
         <div class="chat-input-container">
-            <input type="text" id="mobileChatInput" placeholder="Votre message...">
-            <button id="sendMobileMessage" class="send-btn">🚀</button>
+            <button class="emoji-btn" onclick="toggleEmojiPanel()">😀</button>
+            <input type="text" id="mobileMessageInput" placeholder="Tapez votre message..." maxlength="500">
+            <button class="send-btn" onclick="sendMobileMessage()">➤</button>
         </div>
     </div>
 
-    <script src="user-manager.js"></script>
+    <!-- Modal Trade -->
+    <div class="mobile-modal" id="tradeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nouveau Trade</h3>
+                <button class="close-btn" onclick="closeMobileModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Paire</label>
+                    <input type="text" id="tradePair" placeholder="EUR/USD">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="tradeType">
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Lots</label>
+                    <input type="number" id="tradeLots" step="0.01" value="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Prix d'entrée</label>
+                    <input type="number" id="tradeEntry" step="0.00001">
+                </div>
+                <div class="form-group">
+                    <label>Stop Loss</label>
+                    <input type="number" id="tradeStopLoss" step="0.00001">
+                </div>
+                <div class="form-group">
+                    <label>Take Profit</label>
+                    <input type="number" id="tradeTakeProfit" step="0.00001">
+                </div>
+                <div class="form-group">
+                    <label>Statut</label>
+                    <select id="tradeStatus">
+                        <option value="open">Ouvert</option>
+                        <option value="closed">Fermé</option>
+                    </select>
+                </div>
+                <div class="form-group" id="closePriceGroup" style="display: none;">
+                    <label>Prix de fermeture</label>
+                    <input type="number" id="tradeClosePrice" step="0.00001">
+                </div>
+                <div class="form-actions">
+                    <button class="primary-btn" onclick="saveMobileTrade()">💾 Sauvegarder</button>
+                    <button class="secondary-btn" onclick="closeMobileModal()">❌ Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="mobile-script.js"></script>
     <script src="mobile-fix-urgent.js"></script>
-    
-    <script>
-        // Enregistrement du service worker pour notifications push
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/mobile-sw.js')
-                    .then((registration) => {
-                        console.log('✅ Service Worker enregistré:', registration.scope);
-                        
-                        // Demander permission pour notifications
-                        if ('Notification' in window && Notification.permission === 'default') {
-                            Notification.requestPermission().then((permission) => {
-                                console.log('🔔 Permission notifications:', permission);
-                            });
-                        }
-                    })
-                    .catch((error) => {
-                        console.log('❌ Erreur Service Worker:', error);
-                    });
-            });
-        }
-        
-        // Vibration pour feedback tactile
-        function vibrateDevice(pattern = [200]) {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(pattern);
-            }
-        }
-        
-        // Ajouter vibration aux boutons
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('button, .nav-btn').forEach(btn => {
-                btn.addEventListener('click', () => vibrateDevice([50]));
-            });
-        });
-    </script>
 </body>
 </html>
