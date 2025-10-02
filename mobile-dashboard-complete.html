@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Misterpips Mobile</title>
+    <link rel="stylesheet" href="mobile-clean.css?v=2025">
+    <link rel="stylesheet" href="mobile-chat-styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        
+        window.firebaseDB = db;
+        window.firebaseAuth = auth;
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('✅ Utilisateur authentifié:', user.email);
+            } else {
+                console.log('❌ Pas d'utilisateur, redirection...');
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- Header Mobile -->
+    <header class="mobile-header">
+        <div class="header-top">
+            <h1>📱 Misterpips</h1>
+            <button id="menuToggle" class="menu-btn">☰</button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-value" id="mobileCapital">$1000</span>
+                <span class="stat-label">Capital</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="mobileWinRate">0%</span>
+                <span class="stat-label">WinRate</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="mobilePnL">$0</span>
+                <span class="stat-label">P&L</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Menu Mobile -->
+    <nav id="mobileMenu" class="mobile-menu">
+        <div class="menu-header">
+            <h3>Menu</h3>
+            <button id="closeMenu" class="close-btn">✕</button>
+        </div>
+        <ul class="menu-list">
+            <li><a href="#dashboard" onclick="showSection('dashboard')">📊 Dashboard</a></li>
+            <li><a href="#trades" onclick="showSection('trades')">📈 Mes Trades</a></li>
+            <li><a href="#calendar" onclick="showSection('calendar')">📅 Calendrier</a></li>
+            <li><a href="#objectives" onclick="showSection('objectives')">🎯 Objectifs</a></li>
+            <li><a href="#ranking" onclick="showSection('ranking')">🏆 Classement</a></li>
+            <li><a href="#settings" onclick="showSection('settings')">⚙️ Paramètres</a></li>
+            <li><a href="index.html">🚪 Déconnexion</a></li>
+        </ul>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <main class="mobile-main">
+        <!-- Section Dashboard -->
+        <section id="dashboard" class="section active">
+            <div class="section-header">
+                <h2>📊 Dashboard</h2>
+                <button id="newTradeBtn" class="primary-btn">+ Trade</button>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Performance</h3>
+                <canvas id="mobilePerformanceChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>WinRate</h3>
+                <canvas id="mobileWinRateChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Section Trades -->
+        <section id="trades" class="section">
+            <div class="section-header">
+                <h2>📈 Mes Trades</h2>
+                <button id="addTradeBtn" class="primary-btn">+ Ajouter</button>
+            </div>
+            
+            <div class="trades-list" id="mobileTradesList">
+                <!-- Trades générés dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Calendrier -->
+        <section id="calendar" class="section">
+            <div class="section-header">
+                <h2>📅 Calendrier</h2>
+                <div class="calendar-nav">
+                    <button id="prevMonthMobile">◀</button>
+                    <span id="monthYearMobile">Mois</span>
+                    <button id="nextMonthMobile">▶</button>
+                </div>
+            </div>
+            
+            <div class="mobile-calendar" id="mobileCalendar">
+                <!-- Calendrier généré dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Objectifs -->
+        <section id="objectives" class="section">
+            <div class="section-header">
+                <h2>🎯 Objectifs</h2>
+            </div>
+            
+            <div class="objectives-list">
+                <div class="objective-card">
+                    <div class="objective-header">
+                        <span class="objective-icon">☀️</span>
+                        <span class="objective-title">Journalier</span>
+                        <span class="objective-target" id="mobileDailyTarget">$10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileDailyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileDailyPercent">0%</span>
+                </div>
+                
+                <div class="objective-card">
+                    <div class="objective-header">
+                        <span class="objective-icon">📅</span>
+                        <span class="objective-title">Hebdomadaire</span>
+                        <span class="objective-target" id="mobileWeeklyTarget">$30</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileWeeklyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileWeeklyPercent">0%</span>
+                </div>
+                
+                <div class="objective-card">
+                    <div class="objective-header">
+                        <span class="objective-icon">📊</span>
+                        <span class="objective-title">Mensuel</span>
+                        <span class="objective-target" id="mobileMonthlyTarget">$150</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileMonthlyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileMonthlyPercent">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Classement -->
+        <section id="ranking" class="section">
+            <div class="section-header">
+                <h2>🏆 Classement VIP</h2>
+            </div>
+            
+            <div class="ranking-list" id="mobileRankingList">
+                <!-- Classement généré dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
+            
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>Capital initial ($)</label>
+                    <input type="number" id="mobileCapitalInput" value="1000" min="100" step="10">
+                </div>
+                
+                <div class="setting-item">
+                    <label>Objectif journalier ($)</label>
+                    <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
+                </div>
+                
+                <button class="primary-btn" id="saveSettingsBtn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Trade -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📈 Nouveau Trade</h3>
+                <button class="close-modal" id="closeTradeModal">✕</button>
+            </div>
+            
+            <form id="tradeForm" class="trade-form">
+                <div class="form-group">
+                    <label>Paire</label>
+                    <select id="tradePair" required>
+                        <option value="">Sélectionner...</option>
+                        <option value="EUR/USD">EUR/USD</option>
+                        <option value="GBP/USD">GBP/USD</option>
+                        <option value="USD/JPY">USD/JPY</option>
+                        <option value="AUD/USD">AUD/USD</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="tradeType" required>
+                        <option value="BUY">🟢 BUY</option>
+                        <option value="SELL">🔴 SELL</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Lot Size</label>
+                    <input type="number" id="tradeLot" step="0.01" min="0.01" value="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Résultat ($)</label>
+                    <input type="number" id="tradeResult" step="0.01" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" id="cancelTradeBtn">Annuler</button>
+                    <button type="submit" class="primary-btn">💾 Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Navigation Bottom -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-section="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-section="trades">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Trades</span>
+        </button>
+        <button class="nav-btn" data-section="calendar">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Calendrier</span>
+        </button>
+        <button class="nav-btn" data-section="ranking">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-label">Classement</span>
+        </button>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="mobile-sync-unified.js"></script>
+    <script src="mobile-complete.js"></script>
+    <script src="mobile-ranking-vip-only.js"></script>
+    <script src="mobile-chat-optimized.js"></script>
+    <script src="mobile-final-fix.js"></script>
+</body>
+</html>
