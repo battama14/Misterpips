@@ -205,12 +205,53 @@
     </main>
 
     <!-- Widget Chat Flottant -->
-    <div id="chatWidget" class="chat-widget">
-        <button id="chatToggle" class="chat-toggle" onclick="toggleChat()">💬</button>
+    <div class="chat-widget">
+        <button class="chat-toggle" onclick="toggleChat()">💬</button>
         <div id="chatBox" class="chat-box">
             <div class="chat-header">
                 <span>💬 Chat VIP</span>
                 <button onclick="toggleChat()" class="chat-close">✕</button>
+            </div>
+            <div class="chat-messages" id="widgetMessages"></div>
+            <div class="chat-input">
+                <input type="text" id="widgetInput" placeholder="Message...">
+                <button onclick="sendWidget()">📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="mobile-trades.js"></script>
+    <script>
+        function toggleChat() {
+            document.getElementById('chatBox').classList.toggle('active');
+        }
+        
+        function sendWidget() {
+            const input = document.getElementById('widgetInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const container = document.getElementById('widgetMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            div.innerHTML = `<b>Vous:</b> ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            input.value = '';
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('widgetInput');
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendWidget();
+                });
+            }
+        });
+    </script>
+</body>
+</html>✕</button>
             </div>
             <div class="chat-messages" id="widgetChatMessages"></div>
             <div class="chat-input">
