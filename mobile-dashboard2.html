@@ -55,7 +55,7 @@
     <header class="mobile-header">
         <div class="header-top">
             <h1>📱 Misterpips</h1>
-            <button onclick="openMobileMenu()" class="menu-btn">☰</button>
+            <button onclick="openMobileMenu()" ontouchstart="openMobileMenu()" class="menu-btn">☰</button>
         </div>
         <div class="stats-row">
             <div class="stat-item">
@@ -74,21 +74,21 @@
     </header>
 
     <!-- Overlay Menu -->
-    <div onclick="closeMobileMenu()" id="menuOverlay" class="menu-overlay"></div>
+    <div onclick="closeMobileMenu()" ontouchstart="closeMobileMenu()" id="menuOverlay" class="menu-overlay"></div>
     
     <!-- Menu Mobile -->
     <nav id="mobileMenu" class="mobile-menu">
         <div class="menu-header">
             <h3>Menu</h3>
-            <button onclick="closeMobileMenu()" class="close-btn">✕</button>
+            <button onclick="closeMobileMenu()" ontouchstart="closeMobileMenu()" class="close-btn">✕</button>
         </div>
         <ul class="menu-list">
-            <li><a onclick="showMobileSection('dashboard')">📊 Dashboard</a></li>
-            <li><a onclick="showMobileSection('trades')">📈 Mes Trades</a></li>
-            <li><a onclick="showMobileSection('calendar')">📅 Calendrier</a></li>
-            <li><a onclick="showMobileSection('objectives')">🎯 Objectifs</a></li>
-            <li><a onclick="showMobileSection('ranking')">🏆 Classement</a></li>
-            <li><a onclick="showMobileSection('settings')">⚙️ Paramètres</a></li>
+            <li><a onclick="showMobileSection('dashboard')" ontouchstart="showMobileSection('dashboard')">📊 Dashboard</a></li>
+            <li><a onclick="showMobileSection('trades')" ontouchstart="showMobileSection('trades')">📈 Mes Trades</a></li>
+            <li><a onclick="showMobileSection('calendar')" ontouchstart="showMobileSection('calendar')">📅 Calendrier</a></li>
+            <li><a onclick="showMobileSection('objectives')" ontouchstart="showMobileSection('objectives')">🎯 Objectifs</a></li>
+            <li><a onclick="showMobileSection('ranking')" ontouchstart="showMobileSection('ranking')">🏆 Classement</a></li>
+            <li><a onclick="showMobileSection('settings')" ontouchstart="showMobileSection('settings')">⚙️ Paramètres</a></li>
             <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
@@ -224,9 +224,7 @@
         }
     </script>
 </body>
-</html>               // Événements
-                menuToggle.addEventListener('click', openMenu);
-                menuToggle.addEventListener('touchstart', openMenu);
+</html>addEventListener('touchstart', openMenu);
                 
                 if (closeMenu) {
                     closeMenu.addEventListener('click', closeMenuFunc);
