@@ -193,8 +193,8 @@
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-container">
-                    <input type="text" id="chatInput" placeholder="Tapez votre message..." onkeypress="if(event.key==='Enter'){event.preventDefault();sendMobileMessage();}">
-                    <button id="sendBtn" onclick="sendMobileMessage()" ontouchend="sendMobileMessage()">📤</button>
+                    <input type="text" id="chatInput" placeholder="Tapez votre message...">
+                    <button id="sendBtn">📤</button>
                 </div>
             </div>
         </section>
@@ -495,7 +495,7 @@
             }, 3000);
         });
         
-        // Chat mobile fixé
+        // Chat mobile simple et efficace
         async function sendMobileMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
@@ -548,11 +548,11 @@
             container.scrollTop = container.scrollHeight;
         }
         
-        // Écouter les messages - Même config que PC
+        // Écouter les messages
         function loadMobileChat() {
-            if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
+            if (!window.firebaseDB) return;
             
-            const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat'); // Même que PC
+            const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
             window.onValue(messagesRef, (snapshot) => {
                 const container = document.getElementById('chatMessages');
                 if (!container) return;
@@ -562,15 +562,13 @@
                 if (snapshot.exists()) {
                     const messages = Object.values(snapshot.val())
                         .sort((a, b) => a.timestamp - b.timestamp)
-                        .slice(-50); // Derniers 50 messages
+                        .slice(-50);
                     
                     messages.forEach(msg => {
                         addMobileMessageToUI(msg, msg.userId === sessionStorage.getItem('firebaseUID'));
                     });
-                    
-                    console.log('📱 Messages chargés:', messages.length);
                 } else {
-                    container.innerHTML = '<div class="no-messages">💬 Aucun message<br><small>Soyez le premier à écrire !</small></div>';
+                    container.innerHTML = '<div class="no-messages">💬 Aucun message</div>';
                 }
             });
         }
@@ -668,53 +666,35 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateMobileCalendar();
             
-            // Événements chat multiples pour garantir le fonctionnement
-            const chatInput = document.getElementById('chatInput');
-            const sendBtn = document.getElementById('sendBtn');
-            
-            if (chatInput) {
-                // Événement Enter
-                chatInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        sendMobileMessage();
-                    }
-                });
-                
-                // Événement keydown (backup)
-                chatInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMobileMessage();
-                    }
-                });
-            }
-            
-            if (sendBtn) {
-                // Événement click
-                sendBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    sendMobileMessage();
-                });
-                
-                // Événement touch (mobile)
-                sendBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    sendMobileMessage();
-                });
-            }
-            
-            // Bouton sauvegarder
-            const saveBtn = document.getElementById('saveSettingsBtn');
-            if (saveBtn) {
-                saveBtn.addEventListener('click', saveMobileNickname);
-            }
-            
-            // Initialiser le chat mobile après Firebase
             setTimeout(() => {
+                const chatInput = document.getElementById('chatInput');
+                const sendBtn = document.getElementById('sendBtn');
+                const saveBtn = document.getElementById('saveSettingsBtn');
+                
+                if (chatInput) {
+                    chatInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            sendMobileMessage();
+                        }
+                    });
+                }
+                
+                if (sendBtn) {
+                    sendBtn.addEventListener('click', sendMobileMessage);
+                    sendBtn.addEventListener('touchstart', sendMobileMessage);
+                }
+                
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', saveMobileNickname);
+                }
+                
                 loadMobileChat();
-            }, 3000);
+            }, 1000);
         });
+        
+        // Fonction globale pour le bouton
+        window.sendMobileMessage = sendMobileMessage;
     </script>
 </body>
 </html>
