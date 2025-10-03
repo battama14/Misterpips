@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
     <link rel="stylesheet" href="mobile-clean.css?v=2025">
-    <link rel="stylesheet" href="mobile-chat-styles.css">
+    <link rel="stylesheet" href="mobile-chat-styles-fix.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -71,12 +71,12 @@
             <button id="closeMenu" class="close-btn">✕</button>
         </div>
         <ul class="menu-list">
-            <li><a href="#dashboard" onclick="showSection('dashboard')">📊 Dashboard</a></li>
-            <li><a href="#trades" onclick="showSection('trades')">📈 Mes Trades</a></li>
-            <li><a href="#calendar" onclick="showSection('calendar')">📅 Calendrier</a></li>
-            <li><a href="#objectives" onclick="showSection('objectives')">🎯 Objectifs</a></li>
-            <li><a href="#ranking" onclick="showSection('ranking')">🏆 Classement</a></li>
-            <li><a href="#settings" onclick="showSection('settings')">⚙️ Paramètres</a></li>
+            <li><a href="#dashboard" onclick="showSection('dashboard')" ontouchend="showSection('dashboard')">📊 Dashboard</a></li>
+            <li><a href="#trades" onclick="showSection('trades')" ontouchend="showSection('trades')">📈 Mes Trades</a></li>
+            <li><a href="#calendar" onclick="showSection('calendar')" ontouchend="showSection('calendar')">📅 Calendrier</a></li>
+            <li><a href="#objectives" onclick="showSection('objectives')" ontouchend="showSection('objectives')">🎯 Objectifs</a></li>
+            <li><a href="#ranking" onclick="showSection('ranking')" ontouchend="showSection('ranking')">🏆 Classement</a></li>
+            <li><a href="#settings" onclick="showSection('settings')" ontouchend="showSection('settings')">⚙️ Paramètres</a></li>
             <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
@@ -241,13 +241,28 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Prix d'entrée</label>
+                    <input type="number" id="tradeEntry" step="0.00001" value="1.0000" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Stop Loss</label>
+                    <input type="number" id="tradeStopLoss" step="0.00001" value="0.9950" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Take Profit</label>
+                    <input type="number" id="tradeTakeProfit" step="0.00001" value="1.0050" required>
+                </div>
+                
+                <div class="form-group" id="resultGroup" style="display: none;">
                     <label>Résultat ($)</label>
-                    <input type="number" id="tradeResult" step="0.01" required>
+                    <input type="number" id="tradeResult" step="0.01">
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" class="secondary-btn" id="cancelTradeBtn">Annuler</button>
-                    <button type="submit" class="primary-btn">💾 Sauvegarder</button>
+                    <button type="button" class="secondary-btn" id="cancelTradeBtn" onclick="closeMobileModal()" ontouchend="closeMobileModal()">Annuler</button>
+                    <button type="submit" class="primary-btn" onclick="saveMobileTrade()" ontouchend="saveMobileTrade()">💾 Sauvegarder</button>
                 </div>
             </form>
         </div>
@@ -273,11 +288,446 @@
         </button>
     </nav>
 
+    <!-- Chat Toggle -->
+    <div class="mobile-chat-toggle" id="chatToggle">💬</div>
+
+    <!-- Chat Window -->
+    <div class="mobile-chat-window" id="chatWindow" style="display: none;">
+        <div class="chat-header">
+            <h4>💬 Chat VIP</h4>
+            <button class="close-btn" onclick="toggleMobileChat()" ontouchend="toggleMobileChat()">✕</button>
+        </div>
+        <div class="chat-messages" id="mobileMessages">
+            <div class="welcome-message">
+                <div class="message-author">Misterpips Bot</div>
+                <div class="message-text">Bienvenue dans le chat VIP! 🚀</div>
+                <div class="message-time">Maintenant</div>
+            </div>
+        </div>
+        <div class="mobile-emoji-panel" id="mobileEmojiPanel" style="display: none;">
+            <div class="emoji-grid">
+                <span class="emoji-item" onclick="insertEmoji('😀')" ontouchend="insertEmoji('😀')">😀</span>
+                <span class="emoji-item" onclick="insertEmoji('😂')" ontouchend="insertEmoji('😂')">😂</span>
+                <span class="emoji-item" onclick="insertEmoji('🔥')" ontouchend="insertEmoji('🔥')">🔥</span>
+                <span class="emoji-item" onclick="insertEmoji('💪')" ontouchend="insertEmoji('💪')">💪</span>
+                <span class="emoji-item" onclick="insertEmoji('👍')" ontouchend="insertEmoji('👍')">👍</span>
+                <span class="emoji-item" onclick="insertEmoji('💰')" ontouchend="insertEmoji('💰')">💰</span>
+                <span class="emoji-item" onclick="insertEmoji('📈')" ontouchend="insertEmoji('📈')">📈</span>
+                <span class="emoji-item" onclick="insertEmoji('🚀')" ontouchend="insertEmoji('🚀')">🚀</span>
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <button class="emoji-btn" onclick="toggleEmojiPanel()" ontouchend="toggleEmojiPanel()">😀</button>
+            <input type="text" id="mobileMessageInput" placeholder="Tapez votre message..." maxlength="500" onkeypress="if(event.key==='Enter') sendMobileMessage()">
+            <button class="send-btn" onclick="sendMobileMessage()" ontouchend="sendMobileMessage()">➤</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script src="mobile-sync-unified.js"></script>
-    <script src="mobile-complete.js"></script>
-    <script src="mobile-ranking-vip-only.js"></script>
-    <script src="mobile-chat-optimized.js"></script>
-    <script src="mobile-final-fix.js"></script>
+    <script src="mobile-simple-trades.js"></script>
+    <script>
+        // Fonctions chat mobile
+        function sendMobileMessage() {
+            const input = document.getElementById('mobileMessageInput');
+            const message = input.value.trim();
+            if (message) {
+                const messagesContainer = document.getElementById('mobileMessages');
+                messagesContainer.innerHTML += `
+                    <div class="message-item">
+                        <div class="message-author">Vous</div>
+                        <div class="message-text">${message}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                `;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                input.value = '';
+                console.log('📱 Message envoyé:', message);
+            }
+        }
+        
+        function toggleEmojiPanel() {
+            const panel = document.getElementById('mobileEmojiPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function insertEmoji(emoji) {
+            const input = document.getElementById('mobileMessageInput');
+            input.value += emoji;
+            toggleEmojiPanel();
+        }
+        
+        function toggleMobileChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.style.display = chatWindow.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function closeMobileModal() {
+            document.getElementById('tradeModal').style.display = 'none';
+            editingTradeIndex = -1;
+            document.querySelector('#tradeModal h3').textContent = 'Nouveau Trade';
+            // Reset form
+            document.getElementById('tradeForm').reset();
+            document.getElementById('tradeEntry').value = '1.0000';
+            document.getElementById('tradeStopLoss').value = '0.9950';
+            document.getElementById('tradeTakeProfit').value = '1.0050';
+        }
+        
+        // Variables globales
+        let mobileTradesData = [];
+        let editingTradeIndex = -1;
+        let mobileCharts = {};
+        
+        async function saveMobileTrade() {
+            const pair = document.getElementById('tradePair').value;
+            const type = document.getElementById('tradeType').value;
+            const lot = document.getElementById('tradeLot').value;
+            const entry = document.getElementById('tradeEntry').value;
+            const sl = document.getElementById('tradeStopLoss').value;
+            const tp = document.getElementById('tradeTakeProfit').value;
+            const result = document.getElementById('tradeResult').value;
+            
+            if (!pair || !type || !lot || !entry) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+            
+            const trade = {
+                id: editingTradeIndex >= 0 ? mobileTradesData[editingTradeIndex].id : Date.now(),
+                pair, type, lots: parseFloat(lot),
+                entry: parseFloat(entry), 
+                stopLoss: parseFloat(sl) || 0, 
+                takeProfit: parseFloat(tp) || 0,
+                pnl: result ? parseFloat(result) : 0,
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString(),
+                status: result ? 'closed' : 'open'
+            };
+            
+            try {
+                // Sauvegarder dans Firebase
+                if (window.firebaseDB) {
+                    const { ref, set, push } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                    
+                    if (editingTradeIndex >= 0) {
+                        // Modification
+                        await set(ref(window.firebaseDB, `users/mobile_user_fixed/accounts/compte1/trades/${trade.id}`), trade);
+                        mobileTradesData[editingTradeIndex] = trade;
+                    } else {
+                        // Nouveau trade
+                        const newRef = await push(ref(window.firebaseDB, 'users/mobile_user_fixed/accounts/compte1/trades'), trade);
+                        trade.id = newRef.key;
+                        mobileTradesData.push(trade);
+                    }
+                }
+                
+                // Mettre à jour l'affichage
+                updateMobileTradesList();
+                updateMobileStats();
+                updateMobileCharts();
+                
+                closeMobileModal();
+                editingTradeIndex = -1;
+                alert(editingTradeIndex >= 0 ? 'Trade modifié!' : 'Trade sauvegardé!');
+                
+            } catch (error) {
+                console.error('❌ Erreur sauvegarde:', error);
+                // Sauvegarde locale en cas d'erreur
+                if (editingTradeIndex >= 0) {
+                    mobileTradesData[editingTradeIndex] = trade;
+                } else {
+                    mobileTradesData.push(trade);
+                }
+                updateMobileTradesList();
+                updateMobileStats();
+                updateMobileCharts();
+                closeMobileModal();
+                editingTradeIndex = -1;
+            }
+        }
+        
+        function updateMobileTradesList() {
+            const tradesList = document.getElementById('mobileTradesList');
+            if (!tradesList) return;
+            
+            if (mobileTradesData.length === 0) {
+                tradesList.innerHTML = '<div class="no-trades">Aucun trade pour le moment</div>';
+                return;
+            }
+            
+            let html = '';
+            mobileTradesData.forEach((trade, index) => {
+                const profitClass = trade.pnl >= 0 ? 'profit' : 'loss';
+                const profitIcon = trade.pnl >= 0 ? '🟢' : '🔴';
+                
+                html += `
+                    <div class="trade-item" data-index="${index}">
+                        <div class="trade-header">
+                            <span class="trade-pair">${trade.pair}</span>
+                            <span class="trade-type ${trade.type.toLowerCase()}">${trade.type}</span>
+                            <span class="trade-result ${profitClass}">${profitIcon} $${trade.pnl}</span>
+                        </div>
+                        <div class="trade-details">
+                            <div class="trade-info">
+                                <span>Lots: ${trade.lots}</span>
+                                <span>Entrée: ${trade.entry}</span>
+                                <span>Date: ${trade.date}</span>
+                            </div>
+                            <div class="trade-actions">
+                                <button class="edit-btn" onclick="editMobileTrade(${index})">✏️</button>
+                                <button class="delete-btn" onclick="deleteMobileTrade(${index})">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            tradesList.innerHTML = html;
+        }
+        
+        function editMobileTrade(index) {
+            const trade = mobileTradesData[index];
+            if (!trade) return;
+            
+            editingTradeIndex = index;
+            
+            // Remplir le formulaire
+            document.getElementById('tradePair').value = trade.pair;
+            document.getElementById('tradeType').value = trade.type;
+            document.getElementById('tradeLot').value = trade.lots;
+            document.getElementById('tradeEntry').value = trade.entry;
+            document.getElementById('tradeStopLoss').value = trade.stopLoss;
+            document.getElementById('tradeTakeProfit').value = trade.takeProfit;
+            document.getElementById('tradeResult').value = trade.pnl;
+            
+            // Changer le titre
+            document.querySelector('#tradeModal h3').textContent = 'Modifier Trade';
+            
+            // Ouvrir la modal
+            document.getElementById('tradeModal').style.display = 'block';
+        }
+        
+        async function deleteMobileTrade(index) {
+            if (!confirm('Supprimer ce trade?')) return;
+            
+            const trade = mobileTradesData[index];
+            
+            try {
+                // Supprimer de Firebase
+                if (window.firebaseDB && trade.id) {
+                    const { ref, remove } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                    await remove(ref(window.firebaseDB, `users/mobile_user_fixed/accounts/compte1/trades/${trade.id}`));
+                }
+                
+                // Supprimer localement
+                mobileTradesData.splice(index, 1);
+                
+                // Mettre à jour l'affichage
+                updateMobileTradesList();
+                updateMobileStats();
+                updateMobileCharts();
+                
+                alert('Trade supprimé!');
+                
+            } catch (error) {
+                console.error('❌ Erreur suppression:', error);
+                // Suppression locale en cas d'erreur
+                mobileTradesData.splice(index, 1);
+                updateMobileTradesList();
+                updateMobileStats();
+                updateMobileCharts();
+            }
+        }
+        
+        function updateMobileStats() {
+            const totalPnL = mobileTradesData.reduce((sum, trade) => sum + trade.pnl, 0);
+            const winTrades = mobileTradesData.filter(trade => trade.pnl > 0).length;
+            const winRate = mobileTradesData.length > 0 ? (winTrades / mobileTradesData.length * 100) : 0;
+            
+            document.getElementById('mobilePnL').textContent = `$${totalPnL.toFixed(2)}`;
+            document.getElementById('mobileWinRate').textContent = `${winRate.toFixed(1)}%`;
+        }
+        
+        function updateMobileCharts() {
+            // Graphique Performance
+            const perfCtx = document.getElementById('mobilePerformanceChart');
+            if (perfCtx) {
+                if (mobileCharts.performance) {
+                    mobileCharts.performance.destroy();
+                }
+                
+                let cumulative = 1000; // Capital initial
+                const data = [cumulative];
+                const labels = ['Début'];
+                
+                mobileTradesData.forEach((trade, index) => {
+                    cumulative += trade.pnl;
+                    data.push(cumulative);
+                    labels.push(`T${index + 1}`);
+                });
+                
+                mobileCharts.performance = new Chart(perfCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Capital',
+                            data: data,
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: false }
+                        }
+                    }
+                });
+            }
+            
+            // Graphique WinRate
+            const winCtx = document.getElementById('mobileWinRateChart');
+            if (winCtx) {
+                if (mobileCharts.winRate) {
+                    mobileCharts.winRate.destroy();
+                }
+                
+                const winTrades = mobileTradesData.filter(trade => trade.pnl > 0).length;
+                const lossTrades = mobileTradesData.length - winTrades;
+                
+                mobileCharts.winRate = new Chart(winCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Gains', 'Pertes'],
+                        datasets: [{
+                            data: [winTrades, lossTrades],
+                            backgroundColor: ['#4CAF50', '#f44336']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Charger les trades au démarrage
+        async function loadMobileTrades() {
+            try {
+                if (window.firebaseDB) {
+                    const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                    const tradesRef = ref(window.firebaseDB, 'users/mobile_user_fixed/accounts/compte1/trades');
+                    const snapshot = await get(tradesRef);
+                    
+                    if (snapshot.exists()) {
+                        const trades = snapshot.val();
+                        mobileTradesData = Object.entries(trades).map(([id, trade]) => ({ ...trade, id }));
+                    }
+                }
+                
+                updateMobileTradesList();
+                updateMobileStats();
+                updateMobileCharts();
+                
+            } catch (error) {
+                console.error('❌ Erreur chargement trades:', error);
+            }
+        }
+        
+        // Exposer les fonctions
+        window.editMobileTrade = editMobileTrade;
+        window.deleteMobileTrade = deleteMobileTrade;
+        
+        // Classement mobile simple (sans Firebase)
+        setTimeout(() => {
+            const rankingContainer = document.getElementById('mobileRankingList');
+            if (rankingContainer) {
+                rankingContainer.innerHTML = `
+                    <div class="ranking-header"><h4>🏆 Classement VIP</h4></div>
+                    <div class="ranking-item">
+                        <div class="ranking-position">🥇</div>
+                        <div class="ranking-info">
+                            <div class="trader-name">Mobile User</div>
+                            <div class="trader-stats">Trader VIP</div>
+                        </div>
+                        <div class="ranking-pnl positive">VIP</div>
+                    </div>
+                `;
+                console.log('✅ Classement mobile affiché');
+            }
+        }, 1000);
+        
+        // Événements navigation et chat
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navigation sections
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const section = btn.getAttribute('data-section');
+                if (section) {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                        document.getElementById(section)?.classList.add('active');
+                        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                    btn.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                        document.getElementById(section)?.classList.add('active');
+                        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                }
+            });
+            
+            // Boutons trade
+            document.getElementById('newTradeBtn')?.addEventListener('click', () => {
+                editingTradeIndex = -1;
+                document.querySelector('#tradeModal h3').textContent = 'Nouveau Trade';
+                document.getElementById('tradeModal').style.display = 'block';
+            });
+            document.getElementById('addTradeBtn')?.addEventListener('click', () => {
+                editingTradeIndex = -1;
+                document.querySelector('#tradeModal h3').textContent = 'Nouveau Trade';
+                document.getElementById('tradeModal').style.display = 'block';
+            });
+            
+            // Initialiser la liste des trades
+            showMobileTradesList();
+            
+            // Chat position
+            const chatToggle = document.getElementById('chatToggle');
+            const chatWindow = document.getElementById('chatWindow');
+            
+            if (chatToggle) {
+                chatToggle.style.position = 'fixed';
+                chatToggle.style.right = '20px';
+                chatToggle.style.bottom = '90px';
+                chatToggle.style.left = 'auto';
+                chatToggle.addEventListener('click', toggleMobileChat);
+            }
+            
+            if (chatWindow) {
+                chatWindow.style.position = 'fixed';
+                chatWindow.style.right = '20px';
+                chatWindow.style.bottom = '160px';
+                chatWindow.style.left = 'auto';
+            }
+        });
+        
+        // Fonction navigation globale
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId)?.classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[data-section="${sectionId}"]`)?.classList.add('active');
+        }
+        
+        window.showSection = showSection;
+    </script>
 </body>
 </html>
