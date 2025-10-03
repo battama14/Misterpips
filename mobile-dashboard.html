@@ -253,7 +253,7 @@
             <div class="chat-messages" id="widgetMessages"></div>
             <div class="chat-input">
                 <input type="text" id="widgetInput" placeholder="Message...">
-                <button id="widgetSend">📤</button>
+                <button id="widgetSend" onclick="sendWidgetMessage()">📤</button>
             </div>
         </div>
     </div>
@@ -414,27 +414,35 @@
             const sendBtn = document.getElementById('sendBtn');
             const chatInput = document.getElementById('chatInput');
             
-            function sendMessage() {
-                const message = chatInput.value.trim();
+            async function sendWidgetMessage() {
+                const input = document.getElementById('widgetInput');
+                const message = input.value.trim();
                 if (!message) return;
                 
                 const uid = sessionStorage.getItem('firebaseUID');
-                const email = sessionStorage.getItem('userEmail');
+                let nickname = 'Mobile User';
                 
-                if (window.firebaseDB && window.push && window.dbRef) {
-                    const chatRef = window.dbRef(window.firebaseDB, 'vip_chat');
-                    window.push(chatRef, {
-                        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        userId: uid,
-                        nickname: email?.split('@')[0] || 'Mobile User',
-                        message: message,
-                        timestamp: Date.now(),
-                        type: 'text'
-                    });
-                    console.log('✅ Message envoyé via widget');
-                }
+                try {
+                    const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
+                    const snapshot = await window.dbGet(nicknameRef);
+                    if (snapshot.exists()) nickname = snapshot.val();
+                } catch (error) {}
                 
-                chatInput.value = '';
+                const messageData = {
+                    id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    userId: uid,
+                    nickname: nickname,
+                    message: message,
+                    timestamp: Date.now(),
+                    type: 'text'
+                };
+                
+                try {
+                    const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
+                    await window.push(messagesRef, messageData);
+                } catch (error) {}
+                
+                input.value = '';
             }
             
             if (sendBtn) sendBtn.addEventListener('click', sendMessage);
@@ -609,11 +617,9 @@
             if (!uid || !window.firebaseDB) return;
             
             try {
-                // Sauvegarder le pseudo EXACTEMENT comme PC
                 const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
                 await window.dbSet(nicknameRef, nickname);
                 
-                // Mettre à jour aussi dans users/{uid} directement
                 const userRef = window.dbRef(window.firebaseDB, `users/${uid}`);
                 const userSnapshot = await window.dbGet(userRef);
                 
@@ -622,16 +628,23 @@
                     userData.nickname = nickname;
                     userData.displayName = nickname;
                     await window.dbSet(userRef, userData);
+                } else {
+                    await window.dbSet(userRef, {
+                        email: sessionStorage.getItem('userEmail'),
+                        nickname: nickname,
+                        displayName: nickname,
+                        isVIP: true,
+                        plan: 'VIP'
+                    });
                 }
                 
+                sessionStorage.setItem('userNickname', nickname);
                 alert('✅ Pseudo sauvegardé !');
                 
-                // Recharger le classement pour voir le changement
                 if (window.loadMobileRanking) {
                     setTimeout(() => window.loadMobileRanking(), 1000);
                 }
             } catch (error) {
-                console.error('Erreur sauvegarde pseudo:', error);
                 alert('❌ Erreur sauvegarde');
             }
         }
@@ -689,12 +702,35 @@
                     saveBtn.addEventListener('click', saveMobileNickname);
                 }
                 
+                const widgetSend = document.getElementById('widgetSend');
+                const widgetInput = document.getElementById('widgetInput');
+                
+                if (widgetSend) {
+                    widgetSend.addEventListener('click', sendWidgetMessage);
+                }
+                
+                if (widgetInput) {
+                    widgetInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            sendWidgetMessage();
+                        }
+                    });
+                }
+                
+                const savedNickname = sessionStorage.getItem('userNickname');
+                if (savedNickname) {
+                    const nicknameInput = document.getElementById('mobileNickname');
+                    if (nicknameInput) nicknameInput.value = savedNickname;
+                }
+                
                 loadMobileChat();
             }, 1000);
         });
         
-        // Fonction globale pour le bouton
+        // Fonctions globales
         window.sendMobileMessage = sendMobileMessage;
+        window.sendWidgetMessage = sendWidgetMessage;
     </script>
 </body>
 </html>
