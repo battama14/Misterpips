@@ -485,27 +485,215 @@
             }, 3000);
         });
         
-        // Fonction chat pour onclick
-        function sendMobileMessage() {
+        // Fonctions mobiles essentielles - CONFIG IDENTIQUE PC
+        async function sendMobileMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
             
             const uid = sessionStorage.getItem('firebaseUID');
-            const email = sessionStorage.getItem('userEmail');
             
-            if (window.firebaseDB && window.push && window.dbRef) {
-                const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
-                window.push(chatRef, {
-                    text: message,
-                    sender: email || 'Mobile User',
-                    timestamp: Date.now(),
-                    uid: uid
-                });
+            // Récupérer le pseudo comme sur PC
+            let nickname = 'Mobile User';
+            try {
+                if (window.firebaseDB && window.dbRef && window.dbGet) {
+                    const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
+                    const snapshot = await window.dbGet(nicknameRef);
+                    if (snapshot.exists()) {
+                        nickname = snapshot.val();
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur récupération pseudo:', error);
+            }
+            
+            // EXACTEMENT la même structure que PC
+            const messageData = {
+                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                userId: uid,
+                nickname: nickname,
+                message: message,
+                timestamp: Date.now(),
+                type: 'text'
+            };
+            
+            // Afficher immédiatement
+            addMobileMessageToUI(messageData, true);
+            
+            // Envoyer à Firebase avec la même référence que PC
+            try {
+                if (window.firebaseDB && window.push && window.dbRef) {
+                    const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat'); // Même que PC
+                    await window.push(messagesRef, messageData);
+                }
+            } catch (error) {
+                console.error('Erreur envoi message:', error);
             }
             
             input.value = '';
         }
+        
+        // Afficher message mobile
+        function addMobileMessageToUI(messageData, isOwn) {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'sent' : 'received'}`;
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">${messageData.message}</div>
+                    <div class="message-info">
+                        <span class="message-sender">${messageData.nickname}</span>
+                        <span class="message-time">${new Date(messageData.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // Écouter les messages - Même config que PC
+        function loadMobileChat() {
+            if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
+            
+            const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat'); // Même que PC
+            window.onValue(messagesRef, (snapshot) => {
+                const container = document.getElementById('chatMessages');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                if (snapshot.exists()) {
+                    const messages = Object.values(snapshot.val())
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                        .slice(-50); // Derniers 50 messages
+                    
+                    messages.forEach(msg => {
+                        addMobileMessageToUI(msg, msg.userId === sessionStorage.getItem('firebaseUID'));
+                    });
+                }
+            });
+        }
+        
+        function updateMobileCalendar() {
+            const calendar = document.getElementById('mobileCalendar');
+            if (!calendar) return;
+            
+            const today = new Date();
+            const month = today.getMonth();
+            const year = today.getFullYear();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            let html = '<div class="calendar-grid">';
+            
+            // Jours de la semaine
+            ['D', 'L', 'M', 'M', 'J', 'V', 'S'].forEach(day => {
+                html += `<div class="calendar-day-header">${day}</div>`;
+            });
+            
+            // Jours du mois
+            for (let day = 1; day <= daysInMonth; day++) {
+                html += `<div class="calendar-day"><div class="calendar-date">${day}</div></div>`;
+            }
+            
+            html += '</div>';
+            calendar.innerHTML = html;
+        }
+        
+        async function saveMobileNickname() {
+            const nickname = document.getElementById('mobileNickname')?.value;
+            if (!nickname) {
+                alert('Veuillez entrer un pseudo');
+                return;
+            }
+            
+            const uid = sessionStorage.getItem('firebaseUID');
+            if (!uid || !window.firebaseDB) return;
+            
+            try {
+                const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
+                await window.dbSet(nicknameRef, nickname);
+                alert('✅ Pseudo sauvegardé !');
+            } catch (error) {
+                console.error('Erreur sauvegarde pseudo:', error);
+                alert('❌ Erreur sauvegarde');
+            }
+        }
+        
+        // Menu mobile
+        function openMobileMenu() {
+            document.getElementById('mobileMenu').classList.add('active');
+            document.getElementById('menuOverlay').classList.add('active');
+        }
+        
+        function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active');
+        }
+        
+        function showMobileSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            closeMobileMenu();
+        }
+        
+        function toggleChat() {
+            document.getElementById('chatBox').classList.toggle('active');
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            updateMobileCalendar();
+            
+            // Événements chat multiples pour garantir le fonctionnement
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (chatInput) {
+                // Événement Enter
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendMobileMessage();
+                    }
+                });
+                
+                // Événement keydown (backup)
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMobileMessage();
+                    }
+                });
+            }
+            
+            if (sendBtn) {
+                // Événement click
+                sendBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    sendMobileMessage();
+                });
+                
+                // Événement touch (mobile)
+                sendBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    sendMobileMessage();
+                });
+            }
+            
+            // Bouton sauvegarder
+            const saveBtn = document.getElementById('saveSettingsBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', saveMobileNickname);
+            }
+            
+            // Initialiser le chat mobile après Firebase
+            setTimeout(() => {
+                loadMobileChat();
+            }, 3000);
+        });
     </script>
 </body>
 </html>
