@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Misterpips Mobile</title>
+    <link rel="stylesheet" href="mobile-optimized.css?v=2025">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header Mobile -->
+    <header class="mobile-header">
+        <div class="header-top">
+            <h1>📱 Misterpips</h1>
+            <button id="menuToggle" class="menu-btn">☰</button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-value" id="mobileCapital">$1000</span>
+                <span class="stat-label">Capital</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="mobileWinRate">0%</span>
+                <span class="stat-label">WinRate</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="mobilePnL">$0</span>
+                <span class="stat-label">P&L</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overlay Menu -->
+    <div id="menuOverlay" class="menu-overlay"></div>
+    
+    <!-- Menu Mobile -->
+    <nav id="mobileMenu" class="mobile-menu">
+        <div class="menu-header">
+            <h3>Menu</h3>
+            <button id="closeMenu" class="close-btn">✕</button>
+        </div>
+        <ul class="menu-list">
+            <li><a href="#" data-section="dashboard">📊 Dashboard</a></li>
+            <li><a href="#" data-section="trades">📈 Mes Trades</a></li>
+            <li><a href="#" data-section="calendar">📅 Calendrier</a></li>
+            <li><a href="#" data-section="objectives">🎯 Objectifs</a></li>
+            <li><a href="#" data-section="ranking">🏆 Classement</a></li>
+            <li><a href="#" data-section="settings">⚙️ Paramètres</a></li>
+        </ul>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <main class="mobile-main">
+        <!-- Section Dashboard -->
+        <section id="dashboard" class="section active">
+            <div class="section-header">
+                <h2>📊 Dashboard</h2>
+                <button id="newTradeBtn" class="primary-btn">+ Trade</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Trades Totaux</h4>
+                    <span id="totalTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Gagnants</h4>
+                    <span id="winningTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Perdants</h4>
+                    <span id="losingTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Profit Total</h4>
+                    <span id="totalProfit">$0</span>
+                </div>
+            </div>
+            
+            <!-- Graphiques Mobile -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h4>Performance</h4>
+                    <canvas id="mobilePerformanceChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>Taux de Réussite</h4>
+                    <canvas id="mobileWinRateChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Trades -->
+        <section id="trades" class="section">
+            <div class="section-header">
+                <h2>📈 Mes Trades</h2>
+                <button id="addTradeBtn" class="primary-btn">+ Ajouter</button>
+            </div>
+            <div class="trades-list" id="mobileTradesList">
+                <div class="no-trades">Aucun trade</div>
+            </div>
+        </section>
+
+        <!-- Section Calendrier -->
+        <section id="calendar" class="section">
+            <div class="section-header">
+                <h2>📅 Calendrier</h2>
+            </div>
+            <div class="mobile-calendar" id="mobileCalendar">Calendrier</div>
+        </section>
+
+        <!-- Section Objectifs -->
+        <section id="objectives" class="section">
+            <div class="section-header">
+                <h2>🎯 Objectifs</h2>
+            </div>
+            <div class="objectives-list">Objectifs</div>
+        </section>
+
+        <!-- Section Classement -->
+        <section id="ranking" class="section">
+            <div class="section-header">
+                <h2>🏆 Classement VIP</h2>
+            </div>
+            <div class="ranking-list" id="mobileRankingList">Classement</div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
+            <div class="settings-list">Paramètres</div>
+        </section>
+    </main>
+
+    <script>
+        // Variables globales
+        let performanceChart = null;
+        let winRateChart = null;
+
+        // Navigation Mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const closeMenu = document.getElementById('closeMenu');
+            const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
+            
+            console.log('🔧 Initialisation navigation mobile...');
+            
+            // Ouvrir menu
+            menuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('📱 Ouverture menu');
+                mobileMenu.classList.add('active');
+                menuOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Fermer menu
+            function closeMenuFunc() {
+                console.log('📱 Fermeture menu');
+                mobileMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            
+            closeMenu.addEventListener('click', closeMenuFunc);
+            menuOverlay.addEventListener('click', closeMenuFunc);
+            
+            // Navigation sections
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetSection = this.getAttribute('data-section');
+                    console.log('📱 Navigation vers:', targetSection);
+                    
+                    // Masquer toutes les sections
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Afficher la section cible
+                    const target = document.getElementById(targetSection);
+                    if (target) {
+                        target.classList.add('active');
+                    }
+                    
+                    // Fermer le menu
+                    closeMenuFunc();
+                });
+            });
+
+            // Initialiser les graphiques
+            setTimeout(initCharts, 500);
+        });
+
+        // Initialisation des graphiques
+        function initCharts() {
+            console.log('📊 Initialisation graphiques...');
+            
+            // Graphique de performance
+            const perfCtx = document.getElementById('mobilePerformanceChart');
+            if (perfCtx) {
+                performanceChart = new Chart(perfCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
+                        datasets: [{
+                            label: 'P&L Cumulé',
+                            data: [0, 10, 5, 15, 20],
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.1)' },
+                                ticks: { color: '#ccc', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+                console.log('✅ Graphique performance créé');
+            }
+
+            // Graphique taux de réussite
+            const winCtx = document.getElementById('mobileWinRateChart');
+            if (winCtx) {
+                winRateChart = new Chart(winCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Gagnants', 'Perdants'],
+                        datasets: [{
+                            data: [70, 30],
+                            backgroundColor: ['#28a745', '#dc3545'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#ccc', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+                console.log('✅ Graphique winrate créé');
+            }
+        }
+
+        // Mise à jour des stats
+        function updateStats() {
+            document.getElementById('totalTrades').textContent = '5';
+            document.getElementById('winningTrades').textContent = '3';
+            document.getElementById('losingTrades').textContent = '2';
+            document.getElementById('totalProfit').textContent = '$150';
+            document.getElementById('mobileWinRate').textContent = '60%';
+            document.getElementById('mobilePnL').textContent = '$150';
+            document.getElementById('mobileCapital').textContent = '$1150';
+        }
+
+        // Initialiser les stats
+        setTimeout(updateStats, 1000);
+    </script>
+</body>
+</html>
