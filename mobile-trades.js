@@ -288,19 +288,19 @@ function updateMobileStats() {
     document.getElementById('winningTrades').textContent = winTrades.length;
     
     const losingTradesEl = document.getElementById('losingTrades');
-    const riskRewardEl = document.getElementById('riskReward');
+    const totalProfitEl = document.getElementById('totalProfit');
     
     if (losingTradesEl) losingTradesEl.textContent = lossTrades.length;
-    if (riskRewardEl) {
-        const avgWin = winTrades.length > 0 ? winTrades.reduce((sum, t) => sum + t.pnl, 0) / winTrades.length : 0;
-        const avgLoss = lossTrades.length > 0 ? Math.abs(lossTrades.reduce((sum, t) => sum + t.pnl, 0) / lossTrades.length) : 0;
-        const rr = avgLoss > 0 ? (avgWin / avgLoss).toFixed(1) : '1';
-        riskRewardEl.textContent = `1:${rr}`;
-    }
+    if (totalProfitEl) totalProfitEl.textContent = `$${totalPnL.toFixed(2)}`;
     
     // Mettre à jour les objectifs
     if (window.updateObjectives) {
         window.updateObjectives();
+    }
+    
+    // Mettre à jour les graphiques dashboard mobile
+    if (window.updateMobileStats && window.updateMobileStats !== updateMobileStats) {
+        window.updateMobileStats(mobileData.trades);
     }
     
     // Mettre à jour les graphiques dashboard
@@ -874,6 +874,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Events
     document.getElementById('newTradeBtn')?.addEventListener('click', showTradeModal);
     document.getElementById('addTradeBtn')?.addEventListener('click', showTradeModal);
+    document.getElementById('saveSettingsBtn')?.addEventListener('click', () => {
+        saveMobileNickname();
+    });
     
     // Sauvegarde automatique toutes les 30 secondes
     setInterval(() => {

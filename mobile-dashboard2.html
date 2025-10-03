@@ -111,6 +111,26 @@
                     <h4>Trades Gagnants</h4>
                     <span id="winningTrades">0</span>
                 </div>
+                <div class="stat-card">
+                    <h4>Trades Perdants</h4>
+                    <span id="losingTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Profit Total</h4>
+                    <span id="totalProfit">$0</span>
+                </div>
+            </div>
+            
+            <!-- Graphiques Mobile -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h4>Performance</h4>
+                    <canvas id="mobilePerformanceChart" width="300" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>Taux de Réussite</h4>
+                    <canvas id="mobileWinRateChart" width="200" height="200"></canvas>
+                </div>
             </div>
         </section>
 
@@ -210,13 +230,80 @@
                     <input type="number" id="mobileCapitalInput" value="1000" min="100" step="10">
                 </div>
                 
-                    <div class="setting-item">
-                        <label>Objectif journalier ($)</label>
-                        <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
-                    </div>
+                <div class="setting-item">
+                    <label>Objectif journalier ($)</label>
+                    <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
                 </div>
                 
-                <!-- Profil -->
+                <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                </div>
+                
+                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Trade -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content" id="modalContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="mobile-trades.js"></script>
+    <script src="mobile-dashboard.js"></script>
+    <script>
+        // Navigation Mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const closeMenu = document.getElementById('closeMenu');
+            const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
+            
+            // Ouvrir menu
+            menuToggle.addEventListener('click', function() {
+                mobileMenu.classList.add('active');
+                menuOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Fermer menu
+            function closeMenuFunc() {
+                mobileMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            
+            closeMenu.addEventListener('click', closeMenuFunc);
+            menuOverlay.addEventListener('click', closeMenuFunc);
+            
+            // Navigation sections
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetSection = this.getAttribute('data-section');
+                    
+                    // Masquer toutes les sections
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Afficher la section cible
+                    document.getElementById(targetSection).classList.add('active');
+                    
+                    // Fermer le menu
+                    closeMenuFunc();
+                });
+            });
+        });
+    </script>
+</body>
+</html> Profil -->
                 <div class="settings-group">
                     <h3>👤 Profil</h3>
                     <div class="setting-item">

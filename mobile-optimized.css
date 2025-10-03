@@ -104,16 +104,20 @@ body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 15px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    z-index: 1;
 }
 
-/* Sections */
+/* Sections - Affichage exclusif */
 .section {
-    display: none;
+    display: none !important;
+    position: relative;
+    width: 100%;
     animation: fadeIn 0.3s ease;
 }
 
 .section.active {
-    display: block;
+    display: block !important;
 }
 
 @keyframes fadeIn {
@@ -146,6 +150,16 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+}
+
+.settings-list .primary-btn {
+    width: 100%;
+    margin-top: 20px;
 }
 
 .primary-btn:active {
@@ -302,6 +316,35 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     margin-bottom: 20px;
+}
+
+/* Graphiques Mobile */
+.charts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chart-card h4 {
+    color: #00d4ff;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.chart-card canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 200px;
 }
 
 .stat-card {
