@@ -226,13 +226,13 @@ body {
 .mobile-menu {
     position: fixed;
     top: 0;
-    left: -100%;
+    left: -300px;
     width: 280px;
     height: 100vh;
     background: rgba(26, 26, 46, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: left 0.3s ease;
     z-index: 2000;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
