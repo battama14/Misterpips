@@ -517,17 +517,15 @@
                 type: 'text'
             };
             
-            // Afficher immédiatement
-            addMobileMessageToUI(messageData, true);
-            
             // Envoyer à Firebase avec la même référence que PC
             try {
                 if (window.firebaseDB && window.push && window.dbRef) {
                     const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat'); // Même que PC
                     await window.push(messagesRef, messageData);
+                    console.log('✅ Message envoyé:', messageData);
                 }
             } catch (error) {
-                console.error('Erreur envoi message:', error);
+                console.error('❌ Erreur envoi message:', error);
             }
             
             input.value = '';
@@ -573,6 +571,10 @@
                     messages.forEach(msg => {
                         addMobileMessageToUI(msg, msg.userId === sessionStorage.getItem('firebaseUID'));
                     });
+                    
+                    console.log('📱 Messages chargés:', messages.length);
+                } else {
+                    container.innerHTML = '<div class="no-messages">💬 Aucun message<br><small>Soyez le premier à écrire !</small></div>';
                 }
             });
         }
@@ -613,9 +615,27 @@
             if (!uid || !window.firebaseDB) return;
             
             try {
+                // Sauvegarder le pseudo EXACTEMENT comme PC
                 const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
                 await window.dbSet(nicknameRef, nickname);
+                
+                // Mettre à jour aussi dans users/{uid} directement
+                const userRef = window.dbRef(window.firebaseDB, `users/${uid}`);
+                const userSnapshot = await window.dbGet(userRef);
+                
+                if (userSnapshot.exists()) {
+                    const userData = userSnapshot.val();
+                    userData.nickname = nickname;
+                    userData.displayName = nickname;
+                    await window.dbSet(userRef, userData);
+                }
+                
                 alert('✅ Pseudo sauvegardé !');
+                
+                // Recharger le classement pour voir le changement
+                if (window.loadMobileRanking) {
+                    setTimeout(() => window.loadMobileRanking(), 1000);
+                }
             } catch (error) {
                 console.error('Erreur sauvegarde pseudo:', error);
                 alert('❌ Erreur sauvegarde');
