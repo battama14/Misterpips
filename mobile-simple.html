@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misterpips Mobile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a2e; 
+            color: white; 
+            overflow-x: hidden;
+        }
+        
+        .mobile-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            padding: 15px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #00d4ff;
+        }
+        
+        .menu-btn {
+            background: #00d4ff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100vh;
+            background: #1a1a2e;
+            z-index: 2000;
+            transition: left 0.3s ease;
+            padding: 20px;
+            border-right: 2px solid #00d4ff;
+        }
+        
+        .mobile-menu.show {
+            left: 0;
+        }
+        
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+        }
+        
+        .menu-overlay.show {
+            display: block;
+        }
+        
+        .close-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            float: right;
+            margin-bottom: 20px;
+        }
+        
+        .menu-list {
+            list-style: none;
+            clear: both;
+        }
+        
+        .menu-list li {
+            margin: 15px 0;
+        }
+        
+        .menu-list a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 5px;
+            border: 1px solid #00d4ff;
+        }
+        
+        .mobile-main {
+            margin-top: 80px;
+            padding: 20px;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #00d4ff;
+        }
+    </style>
+</head>
+<body>
+    <header class="mobile-header">
+        <h1>📱 Misterpips</h1>
+        <button onclick="openMenu()" class="menu-btn">☰</button>
+    </header>
+
+    <div onclick="closeMenu()" class="menu-overlay" id="overlay"></div>
+    
+    <nav class="mobile-menu" id="menu">
+        <button onclick="closeMenu()" class="close-btn">✕</button>
+        <ul class="menu-list">
+            <li><a onclick="showSection('dashboard')">📊 Dashboard</a></li>
+            <li><a onclick="showSection('trades')">📈 Trades</a></li>
+            <li><a onclick="showSection('calendar')">📅 Calendrier</a></li>
+            <li><a onclick="showSection('settings')">⚙️ Paramètres</a></li>
+        </ul>
+    </nav>
+
+    <main class="mobile-main">
+        <section id="dashboard" class="section active">
+            <h2>📊 Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Trades Totaux</h4>
+                    <span>5</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Gagnants</h4>
+                    <span>3</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Perdants</h4>
+                    <span>2</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Profit Total</h4>
+                    <span>$150</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="trades" class="section">
+            <h2>📈 Mes Trades</h2>
+            <p>Liste des trades...</p>
+        </section>
+
+        <section id="calendar" class="section">
+            <h2>📅 Calendrier</h2>
+            <p>Calendrier des trades...</p>
+        </section>
+
+        <section id="settings" class="section">
+            <h2>⚙️ Paramètres</h2>
+            <p>Paramètres de l'application...</p>
+        </section>
+    </main>
+
+    <script>
+        function openMenu() {
+            console.log('Ouverture menu');
+            document.getElementById('menu').classList.add('show');
+            document.getElementById('overlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeMenu() {
+            console.log('Fermeture menu');
+            document.getElementById('menu').classList.remove('show');
+            document.getElementById('overlay').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function showSection(sectionId) {
+            console.log('Navigation vers:', sectionId);
+            
+            // Masquer toutes les sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Afficher la section cible
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Fermer le menu
+            closeMenu();
+        }
+    </script>
+</body>
+</html>
