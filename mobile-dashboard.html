@@ -193,8 +193,8 @@
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-container">
-                    <input type="text" id="chatInput" placeholder="Tapez votre message...">
-                    <button id="sendBtn">📤</button>
+                    <input type="text" id="chatInput" placeholder="Tapez votre message..." onkeypress="if(event.key==='Enter'){event.preventDefault();sendMobileMessage();}">
+                    <button id="sendBtn" onclick="sendMobileMessage()" ontouchend="sendMobileMessage()">📤</button>
                 </div>
             </div>
         </section>
@@ -422,13 +422,16 @@
                 const email = sessionStorage.getItem('userEmail');
                 
                 if (window.firebaseDB && window.push && window.dbRef) {
-                    const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+                    const chatRef = window.dbRef(window.firebaseDB, 'vip_chat');
                     window.push(chatRef, {
-                        text: message,
-                        sender: email || 'Mobile User',
+                        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        userId: uid,
+                        nickname: email?.split('@')[0] || 'Mobile User',
+                        message: message,
                         timestamp: Date.now(),
-                        uid: uid
+                        type: 'text'
                     });
+                    console.log('✅ Message envoyé via widget');
                 }
                 
                 chatInput.value = '';
@@ -447,11 +450,11 @@
             // Exposer la fonction de mise à jour
             window.updateMobileCharts = updateMobileCharts;
             
-            // Charger chat
+            // Charger chat avec la bonne référence
             function loadChat() {
                 if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
                 
-                const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+                const chatRef = window.dbRef(window.firebaseDB, 'vip_chat');
                 window.onValue(chatRef, (snapshot) => {
                     const messages = snapshot.val();
                     const container = document.getElementById('chatMessages');
@@ -467,9 +470,9 @@
                                 div.className = 'message received';
                                 div.innerHTML = `
                                     <div class="message-content">
-                                        <div class="message-text">${msg.text}</div>
+                                        <div class="message-text">${msg.message || msg.text}</div>
                                         <div class="message-info">
-                                            <span class="message-sender">${msg.sender}</span>
+                                            <span class="message-sender">${msg.nickname || msg.sender}</span>
                                             <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
                                         </div>
                                     </div>
@@ -477,6 +480,9 @@
                                 container.appendChild(div);
                             });
                         container.scrollTop = container.scrollHeight;
+                        console.log('✅ Chat chargé:', Object.keys(messages).length, 'messages');
+                    } else {
+                        container.innerHTML = '<div class="no-messages">💬 Aucun message</div>';
                     }
                 });
             }
