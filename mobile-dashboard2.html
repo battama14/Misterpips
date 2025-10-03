@@ -208,12 +208,49 @@
                     <input type="number" id="mobileCapitalInput" value="1000" min="100" step="10">
                 </div>
                 
-                <div class="setting-item">
-                    <label>Objectif journalier ($)</label>
-                    <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
+                    <div class="setting-item">
+                        <label>Objectif journalier ($)</label>
+                        <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
+                    </div>
                 </div>
                 
-                <div class="setting-item">
+                <!-- Profil -->
+                <div class="settings-group">
+                    <h3>👤 Profil</h3>
+                    <div class="setting-item">
+                        <label>Pseudo</label>
+                        <div class="input-group">
+                            <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                            <button class="btn-save" onclick="saveMobileNickname()">💾</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comptes -->
+                <div class="settings-group">
+                    <h3>💼 Comptes</h3>
+                    <div class="accounts-list" id="mobileAccountsList">
+                        <!-- Comptes générés dynamiquement -->
+                    </div>
+                    <button class="btn-add" onclick="addMobileAccount()">+ Nouveau Compte</button>
+                </div>
+                
+                <!-- Actions -->
+                <div class="settings-group">
+                    <h3>🔧 Actions</h3>
+                    <div class="setting-item">
+                        <label>Notifications</label>
+                        <label class="switch">
+                            <input type="checkbox" id="mobileNotifications" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <button class="danger-btn" onclick="resetMobileData()">🗑️ Réinitialiser</button>
+                    </div>
+                </div>
+            </div>iv class="setting-item">
                     <label>Notifications</label>
                     <label class="switch">
                         <input type="checkbox" id="mobileNotifications" checked>

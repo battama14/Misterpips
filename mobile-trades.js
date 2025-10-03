@@ -56,22 +56,15 @@ async function loadMobileTrades() {
     }
 }
 
-// Sauvegarder les trades
+// Sauvegarder les trades EXACTEMENT comme PC
 async function saveMobileTrades() {
     try {
         if (!mobileData.currentUser || !window.firebaseDB) return;
         
-        const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+        // Utiliser la fonction complète qui sauvegarde comme PC
+        await saveMobileDataComplete();
         
-        const data = {
-            trades: mobileData.trades,
-            lastUpdated: Date.now()
-        };
-        
-        const userRef = ref(window.firebaseDB, `dashboards/${mobileData.currentUser}`);
-        await set(userRef, data);
-        
-        console.log('✅ Trades sauvegardés:', mobileData.trades.length);
+        console.log('✅ Trades sauvegardés comme PC:', mobileData.trades.length);
     } catch (error) {
         console.error('❌ Erreur sauvegarde:', error);
     }
@@ -692,41 +685,46 @@ async function setupRealtimeSync() {
     }
 }
 
-// Sauvegarde avec structure PC complète
+// Sauvegarde avec structure PC EXACTE
 async function saveMobileDataComplete() {
-    if (!window.firebaseDB || !window.currentUser) return;
+    if (!window.firebaseDB || !mobileData.currentUser) return;
     
     try {
         const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
         
+        const settings = {
+            capital: 1000,
+            riskPerTrade: 2,
+            dailyTarget: 1,
+            weeklyTarget: 3,
+            monthlyTarget: 15,
+            yearlyTarget: 200
+        };
+        
+        const accounts = {
+            compte1: {
+                name: 'Compte Principal',
+                capital: 1000,
+                trades: mobileData.trades,
+                settings: settings
+            }
+        };
+        
         const dataToSave = {
             trades: mobileData.trades,
-            settings: {
-                capital: 1000,
-                riskPerTrade: 2,
-                dailyTarget: 1,
-                weeklyTarget: 3,
-                monthlyTarget: 15,
-                yearlyTarget: 200
-            },
-            accounts: {
-                compte1: {
-                    name: 'Compte Principal',
-                    capital: 1000,
-                    trades: mobileData.trades
-                }
-            },
+            settings: settings,
+            accounts: accounts,
             currentAccount: 'compte1',
             lastUpdated: new Date().toISOString(),
             version: Date.now()
         };
         
-        // Sauvegarder dans dashboards
-        const dashboardRef = ref(window.firebaseDB, `dashboards/${window.currentUser}`);
+        // Sauvegarder dans dashboards (comme PC)
+        const dashboardRef = ref(window.firebaseDB, `dashboards/${mobileData.currentUser}`);
         await set(dashboardRef, dataToSave);
         
-        // Sauvegarder dans users pour classement VIP
-        const userRef = ref(window.firebaseDB, `users/${window.currentUser}`);
+        // Sauvegarder dans users EXACTEMENT comme PC
+        const userRef = ref(window.firebaseDB, `users/${mobileData.currentUser}`);
         await set(userRef, {
             isVIP: true,
             plan: 'VIP',
@@ -737,15 +735,19 @@ async function saveMobileDataComplete() {
                 compte1: {
                     trades: mobileData.trades,
                     capital: 1000,
-                    settings: dataToSave.settings
+                    settings: settings
                 }
             },
             lastUpdated: new Date().toISOString()
         });
         
-        console.log('✅ Sauvegarde complète Firebase OK');
+        // Sauvegarder le pseudo séparément comme PC
+        const nicknameRef = ref(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
+        await set(nicknameRef, sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader');
+        
+        console.log('✅ Sauvegarde mobile EXACTE comme PC');
     } catch (error) {
-        console.error('❌ Erreur sauvegarde complète:', error);
+        console.error('❌ Erreur sauvegarde mobile:', error);
     }
 }
 
@@ -780,6 +782,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (sessionStorage.getItem('firebaseUID')) {
             loadMobileTrades();
+            loadMobileNickname();
+            loadMobileAccounts();
             
             // Activer la synchronisation temps réel
             setTimeout(() => {
@@ -820,3 +824,161 @@ window.addEventListener('beforeunload', () => {
         window.mobileUnsubscribe();
     }
 });
+
+// Fonctions Paramètres Mobile
+async function saveMobileNickname() {
+    const nickname = document.getElementById('mobileNickname')?.value;
+    if (!nickname || !mobileData.currentUser) {
+        alert('Veuillez entrer un pseudo');
+        return;
+    }
+    
+    try {
+        const userRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
+        await window.dbSet(userRef, nickname);
+        alert('✅ Pseudo sauvegardé !');
+        loadMobileRanking(); // Recharger le classement
+    } catch (error) {
+        console.error('Erreur sauvegarde pseudo:', error);
+        alert('❌ Erreur sauvegarde');
+    }
+}
+
+async function loadMobileNickname() {
+    if (!mobileData.currentUser) return;
+    
+    try {
+        const nicknameRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
+        const snapshot = await window.dbGet(nicknameRef);
+        
+        const nicknameInput = document.getElementById('mobileNickname');
+        if (nicknameInput && snapshot.exists()) {
+            nicknameInput.value = snapshot.val();
+        }
+    } catch (error) {
+        console.error('Erreur chargement pseudo:', error);
+    }
+}
+
+async function loadMobileAccounts() {
+    const container = document.getElementById('mobileAccountsList');
+    if (!container || !mobileData.currentUser) return;
+    
+    try {
+        const accountsRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/accounts`);
+        const snapshot = await window.dbGet(accountsRef);
+        
+        let html = '';
+        if (snapshot.exists()) {
+            const accounts = snapshot.val();
+            Object.entries(accounts).forEach(([accountId, account]) => {
+                html += `
+                    <div class="account-item">
+                        <div class="account-info">
+                            <div class="account-name">${account.name || accountId}</div>
+                            <div class="account-capital">Capital: $${account.capital || 1000}</div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn-edit" onclick="editMobileAccount('${accountId}')">✏️</button>
+                            <button class="btn-delete-account" onclick="deleteMobileAccount('${accountId}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html = '<div class="no-accounts">Aucun compte configuré</div>';
+        }
+        
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Erreur chargement comptes:', error);
+    }
+}
+
+async function addMobileAccount() {
+    const name = prompt('Nom du nouveau compte:');
+    if (!name || !mobileData.currentUser) return;
+    
+    const capital = parseFloat(prompt('Capital initial ($):') || '1000');
+    
+    try {
+        const accountId = `compte${Date.now()}`;
+        const accountRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/accounts/${accountId}`);
+        
+        await window.dbSet(accountRef, {
+            name: name,
+            capital: capital,
+            trades: [],
+            settings: {
+                riskPerTrade: 2,
+                dailyTarget: 10
+            }
+        });
+        
+        alert('✅ Compte ajouté !');
+        loadMobileAccounts();
+    } catch (error) {
+        console.error('Erreur ajout compte:', error);
+        alert('❌ Erreur ajout compte');
+    }
+}
+
+async function editMobileAccount(accountId) {
+    const newName = prompt('Nouveau nom du compte:');
+    if (!newName || !mobileData.currentUser) return;
+    
+    const newCapital = parseFloat(prompt('Nouveau capital ($):') || '1000');
+    
+    try {
+        const accountRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/accounts/${accountId}`);
+        const snapshot = await window.dbGet(accountRef);
+        
+        if (snapshot.exists()) {
+            const account = snapshot.val();
+            account.name = newName;
+            account.capital = newCapital;
+            
+            await window.dbSet(accountRef, account);
+            alert('✅ Compte modifié !');
+            loadMobileAccounts();
+        }
+    } catch (error) {
+        console.error('Erreur modification compte:', error);
+        alert('❌ Erreur modification');
+    }
+}
+
+async function deleteMobileAccount(accountId) {
+    if (!confirm('Supprimer ce compte ?') || !mobileData.currentUser) return;
+    
+    try {
+        const accountRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/accounts/${accountId}`);
+        await window.dbSet(accountRef, null);
+        
+        alert('✅ Compte supprimé !');
+        loadMobileAccounts();
+    } catch (error) {
+        console.error('Erreur suppression compte:', error);
+        alert('❌ Erreur suppression');
+    }
+}
+
+function resetMobileData() {
+    if (!confirm('Réinitialiser toutes les données ? Cette action est irréversible !')) return;
+    
+    mobileData.trades = [];
+    localStorage.clear();
+    
+    updateMobileTradesList();
+    updateMobileStats();
+    updateMobileCalendar();
+    
+    alert('✅ Données réinitialisées !');
+}
+
+// Exposer les fonctions
+window.saveMobileNickname = saveMobileNickname;
+window.addMobileAccount = addMobileAccount;
+window.editMobileAccount = editMobileAccount;
+window.deleteMobileAccount = deleteMobileAccount;
+window.resetMobileData = resetMobileData;
