@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
-    <link rel="stylesheet" href="mobile-clean.css?v=2025">
-    <link rel="stylesheet" href="mobile-stats.css">
+    <link rel="stylesheet" href="mobile-optimized.css?v=2025">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,6 +73,9 @@
         </div>
     </header>
 
+    <!-- Overlay Menu -->
+    <div id="menuOverlay" class="menu-overlay"></div>
+    
     <!-- Menu Mobile -->
     <nav id="mobileMenu" class="mobile-menu">
         <div class="menu-header">
@@ -293,6 +295,7 @@
     </nav>
 
     <!-- Scripts -->
+    <script src="mobile-navigation.js"></script>
     <script src="mobile-trades.js"></script>
     <script src="mobile-features.js"></script>
 </body>

@@ -834,8 +834,24 @@ async function saveMobileNickname() {
     }
     
     try {
-        const userRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
-        await window.dbSet(userRef, nickname);
+        // Sauvegarder le pseudo EXACTEMENT comme PC
+        const nicknameRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
+        await window.dbSet(nicknameRef, nickname);
+        
+        // Mettre à jour aussi dans users/{uid} directement
+        const userRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}`);
+        const userSnapshot = await window.dbGet(userRef);
+        
+        if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            userData.nickname = nickname;
+            userData.displayName = nickname;
+            await window.dbSet(userRef, userData);
+        }
+        
+        // Sauvegarder aussi dans settings pour persistance locale
+        await saveMobileDataComplete();
+        
         alert('✅ Pseudo sauvegardé !');
         loadMobileRanking(); // Recharger le classement
     } catch (error) {
