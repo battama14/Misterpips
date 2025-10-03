@@ -46,76 +46,8 @@
                 sessionStorage.setItem('firebaseUID', user.uid);
                 sessionStorage.setItem('userEmail', user.email);
                 console.log('🔥 Mobile Firebase prêt:', user.email);
-                
-                // Initialiser le menu APRÈS Firebase
-                setTimeout(initMobileMenu, 100);
             }
         });
-        
-        // Fonction menu mobile
-        function initMobileMenu() {
-            const menuToggle = document.getElementById('menuToggle');
-            const mobileMenu = document.getElementById('mobileMenu');
-            const menuOverlay = document.getElementById('menuOverlay');
-            const closeMenu = document.getElementById('closeMenu');
-            const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
-            
-            console.log('🔧 Menu mobile initialisé après Firebase');
-            
-            // Ouvrir menu - Support tactile
-            if (menuToggle) {
-                function openMenu(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('📱 Ouverture menu');
-                    mobileMenu.classList.add('active');
-                    menuOverlay.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-                menuToggle.addEventListener('click', openMenu);
-                menuToggle.addEventListener('touchstart', openMenu);
-            }
-            
-            // Fermer menu
-            function closeMenuFunc() {
-                console.log('📱 Fermeture menu');
-                mobileMenu.classList.remove('active');
-                menuOverlay.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            }
-            
-            if (closeMenu) {
-                closeMenu.addEventListener('click', closeMenuFunc);
-                closeMenu.addEventListener('touchstart', closeMenuFunc);
-            }
-            if (menuOverlay) {
-                menuOverlay.addEventListener('click', closeMenuFunc);
-                menuOverlay.addEventListener('touchstart', closeMenuFunc);
-            }
-            
-            // Navigation - Support tactile
-            menuLinks.forEach(link => {
-                function navigate(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const targetSection = this.getAttribute('data-section');
-                    console.log('📱 Navigation vers:', targetSection);
-                    
-                    document.querySelectorAll('.section').forEach(section => {
-                        section.classList.remove('active');
-                    });
-                    
-                    const target = document.getElementById(targetSection);
-                    if (target) {
-                        target.classList.add('active');
-                    }
-                    
-                    closeMenuFunc();
-                }
-                link.addEventListener('click', navigate);
-                link.addEventListener('touchstart', navigate);
-            });
-        }
     </script>
 </head>
 <body>
@@ -217,6 +149,122 @@
         <!-- Section Calendrier -->
         <section id="calendar" class="section">
             <div class="section-header">
+                <h2>📅 Calendrier</h2>
+            </div>
+            <div class="mobile-calendar" id="mobileCalendar">Calendrier</div>
+        </section>
+
+        <!-- Section Objectifs -->
+        <section id="objectives" class="section">
+            <div class="section-header">
+                <h2>🎯 Objectifs</h2>
+            </div>
+            <div class="objectives-list">Objectifs</div>
+        </section>
+
+        <!-- Section Classement -->
+        <section id="ranking" class="section">
+            <div class="section-header">
+                <h2>🏆 Classement VIP</h2>
+            </div>
+            <div class="ranking-list" id="mobileRankingList">Classement</div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>Capital initial ($)</label>
+                    <input type="number" id="mobileCapitalInput" value="1000">
+                </div>
+                <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                </div>
+                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="mobile-trades.js"></script>
+    <script>
+        // Menu mobile - Base propre
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const menuToggle = document.getElementById('menuToggle');
+                const mobileMenu = document.getElementById('mobileMenu');
+                const menuOverlay = document.getElementById('menuOverlay');
+                const closeMenu = document.getElementById('closeMenu');
+                const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
+                
+                console.log('🔧 Menu mobile - base propre');
+                
+                if (!menuToggle || !mobileMenu) return;
+                
+                // Ouvrir menu
+                function openMenu(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📱 Menu ouvert');
+                    mobileMenu.classList.add('active');
+                    menuOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+                
+                // Fermer menu
+                function closeMenuFunc() {
+                    console.log('📱 Menu fermé');
+                    mobileMenu.classList.remove('active');
+                    menuOverlay.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+                
+                // Événements
+                menuToggle.addEventListener('click', openMenu);
+                menuToggle.addEventListener('touchstart', openMenu);
+                
+                if (closeMenu) {
+                    closeMenu.addEventListener('click', closeMenuFunc);
+                    closeMenu.addEventListener('touchstart', closeMenuFunc);
+                }
+                
+                if (menuOverlay) {
+                    menuOverlay.addEventListener('click', closeMenuFunc);
+                    menuOverlay.addEventListener('touchstart', closeMenuFunc);
+                }
+                
+                // Navigation
+                menuLinks.forEach(link => {
+                    function navigate(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const targetSection = this.getAttribute('data-section');
+                        console.log('📱 Navigation:', targetSection);
+                        
+                        document.querySelectorAll('.section').forEach(section => {
+                            section.classList.remove('active');
+                        });
+                        
+                        const target = document.getElementById(targetSection);
+                        if (target) {
+                            target.classList.add('active');
+                        }
+                        
+                        closeMenuFunc();
+                    }
+                    
+                    link.addEventListener('click', navigate);
+                    link.addEventListener('touchstart', navigate);
+                });
+            }, 2000); // Attendre 2s après Firebase
+        });
+    </script>
+</body>
+</html>der">
                 <h2>📅 Calendrier</h2>
             </div>
             <div class="mobile-calendar" id="mobileCalendar">Calendrier</div>
