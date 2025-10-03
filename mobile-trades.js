@@ -400,11 +400,11 @@ function showTradeModal() {
 }
 
 function saveMobileTrade() {
-    const currency = document.getElementById('tradePair')?.value;
-    const entryPoint = parseFloat(document.getElementById('tradeEntry')?.value);
-    const stopLoss = parseFloat(document.getElementById('tradeStopLoss')?.value);
-    const takeProfit = parseFloat(document.getElementById('tradeTakeProfit')?.value);
-    const lotSize = parseFloat(document.getElementById('tradeLot')?.value);
+    const currency = document.getElementById('currency')?.value;
+    const entryPoint = parseFloat(document.getElementById('entryPoint')?.value);
+    const stopLoss = parseFloat(document.getElementById('stopLoss')?.value);
+    const takeProfit = parseFloat(document.getElementById('takeProfit')?.value);
+    const lotSize = parseFloat(document.getElementById('lotSize')?.value);
 
     if (!currency || isNaN(entryPoint) || isNaN(stopLoss) || isNaN(takeProfit) || isNaN(lotSize)) {
         alert('Veuillez remplir tous les champs obligatoires');
@@ -499,15 +499,10 @@ function updateMobileCalendar() {
     calendar.innerHTML = html;
 }
 
-// Fonction classement VIP mobile
+// Fonction classement VIP mobile - EXACTEMENT comme PC
 async function loadMobileRanking() {
     try {
-        // Attendre Firebase avec les mêmes fonctions que PC
-        let attempts = 0;
-        while ((!window.firebaseDB || !window.dbRef || !window.dbGet) && attempts < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
+        await waitForFirebase();
         
         if (!window.firebaseDB || !window.dbRef || !window.dbGet) {
             console.log('⚠️ Firebase DB non disponible');
@@ -515,76 +510,50 @@ async function loadMobileRanking() {
             return;
         }
         
-        console.log('🔄 Chargement classement VIP...');
+        console.log('🏆 Lancement classement Mobile...');
         
-        // Utiliser les fonctions Firebase déjà importées comme sur PC
         const usersRef = window.dbRef(window.firebaseDB, 'users');
         const usersSnapshot = await window.dbGet(usersRef);
         
         let rankings = [];
+        const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
         
         if (usersSnapshot.exists()) {
             const users = usersSnapshot.val();
-            console.log('📊 Utilisateurs trouvés:', Object.keys(users).length);
+            console.log(`${Object.keys(users).length} utilisateurs VIP trouvés`);
             
             Object.entries(users).forEach(([userId, userData]) => {
-                console.log('👤 Utilisateur:', userId, userData);
-                
                 if (userData.isVIP && userData.accounts && userData.accounts.compte1) {
                     const trades = userData.accounts.compte1.trades || [];
-                    const closedTrades = Array.isArray(trades) ? trades.filter(t => t.status === 'closed') : Object.values(trades).filter(t => t.status === 'closed');
-                    const totalPnL = closedTrades.reduce((sum, trade) => sum + (parseFloat(trade.pnl) || 0), 0);
-                    const winTrades = closedTrades.filter(trade => (parseFloat(trade.pnl) || 0) > 0).length;
-                    const winRate = closedTrades.length > 0 ? (winTrades / closedTrades.length * 100) : 0;
+                    
+                    // FILTRER UNIQUEMENT LES TRADES DU JOUR FERMÉS
+                    const todayClosedTrades = Array.isArray(trades) 
+                        ? trades.filter(t => t.status === 'closed' && (t.closeDate === today || t.date === today))
+                        : Object.values(trades).filter(t => t.status === 'closed' && (t.closeDate === today || t.date === today));
+                    
+                    const dailyPnL = todayClosedTrades.reduce((sum, trade) => sum + (parseFloat(trade.pnl) || 0), 0);
+                    
+                    console.log(`${userData.nickname || userData.displayName}: ${todayClosedTrades.length} trades aujourd'hui, $${dailyPnL}`);
                     
                     rankings.push({
                         id: userId,
                         name: userData.nickname || userData.displayName || 'Trader',
-                        totalPnL: totalPnL,
-                        winRate: winRate,
-                        totalTrades: closedTrades.length
+                        dailyPnL: dailyPnL,
+                        todayTrades: todayClosedTrades.length,
+                        totalTrades: Array.isArray(trades) ? trades.filter(t => t.status === 'closed').length : Object.values(trades).filter(t => t.status === 'closed').length
                     });
-                    
-                    console.log('✅ Trader VIP ajouté:', userData.nickname || userData.displayName);
                 }
             });
         }
         
-        // Si pas d'utilisateurs VIP, essayer dashboards
-        if (rankings.length === 0) {
-            console.log('🔄 Essai dashboards...');
-            const dashboardsRef = window.dbRef(window.firebaseDB, 'dashboards');
-            const dashboardsSnapshot = await window.dbGet(dashboardsRef);
-            
-            if (dashboardsSnapshot.exists()) {
-                const dashboards = dashboardsSnapshot.val();
-                console.log('📊 Dashboards trouvés:', Object.keys(dashboards).length);
-                
-                Object.entries(dashboards).forEach(([userId, userData]) => {
-                    if (userData.trades && userData.trades.length > 0) {
-                        const closedTrades = userData.trades.filter(t => t.status === 'closed');
-                        const totalPnL = closedTrades.reduce((sum, trade) => sum + (parseFloat(trade.pnl) || 0), 0);
-                        const winTrades = closedTrades.filter(trade => (parseFloat(trade.pnl) || 0) > 0).length;
-                        const winRate = closedTrades.length > 0 ? (winTrades / closedTrades.length * 100) : 0;
-                        
-                        rankings.push({
-                            id: userId,
-                            name: 'Trader ' + userId.substring(0, 8),
-                            totalPnL: totalPnL,
-                            winRate: winRate,
-                            totalTrades: closedTrades.length
-                        });
-                    }
-                });
-            }
-        }
+        // Trier par P&L du jour (DESC)
+        rankings.sort((a, b) => b.dailyPnL - a.dailyPnL);
         
-        rankings.sort((a, b) => b.totalPnL - a.totalPnL);
-        console.log('🏆 Classement final:', rankings.length, 'traders');
+        console.log('Classement final Mobile:', rankings.map(r => `${r.name}: $${r.dailyPnL}`));
         displayMobileRanking(rankings);
         
     } catch (error) {
-        console.error('❌ Erreur chargement classement:', error);
+        console.error('❌ Erreur chargement classement mobile:', error);
         displayMobileRanking([]);
     }
 }
@@ -596,10 +565,10 @@ function displayMobileRanking(rankings) {
         return;
     }
     
-    console.log('📊 Affichage classement:', rankings ? rankings.length : 0, 'traders');
+    console.log('📊 Affichage classement mobile:', rankings ? rankings.length : 0, 'traders');
     
     if (!rankings || rankings.length === 0) {
-        container.innerHTML = '<div class="no-ranking">🏆 Aucun trader VIP pour le moment<br><small>Ajoutez des trades pour apparaître dans le classement</small></div>';
+        container.innerHTML = '<div class="no-ranking">🏆 Aucun trade aujourd\'hui<br><small>Fermez des trades pour apparaître dans le classement</small></div>';
         return;
     }
     
@@ -622,7 +591,7 @@ function displayMobileRanking(rankings) {
             positionClass = '';
         }
         
-        const pnlClass = user.totalPnL >= 0 ? 'positive' : 'negative';
+        const pnlClass = user.dailyPnL >= 0 ? 'positive' : 'negative';
         
         html += `
             <div class="ranking-item">
@@ -630,16 +599,17 @@ function displayMobileRanking(rankings) {
                 <div class="ranking-info">
                     <div class="trader-name">${user.name}</div>
                     <div class="trader-stats">
-                        <span class="stat-badge">${user.totalTrades} trades</span>
-                        <span class="stat-badge">${user.winRate.toFixed(1)}% WR</span>
+                        <span class="stat-badge">${user.todayTrades} trades aujourd'hui</span>
+                        <span class="stat-badge">${user.totalTrades} total</span>
                     </div>
                 </div>
-                <div class="ranking-pnl ${pnlClass}">${user.totalPnL >= 0 ? '+' : ''}$${user.totalPnL.toFixed(2)}</div>
+                <div class="ranking-pnl ${pnlClass}">${user.dailyPnL >= 0 ? '+' : ''}$${user.dailyPnL.toFixed(0)}</div>
             </div>
         `;
     });
     
     container.innerHTML = html;
+    console.log('✅ Classement mobile affiché');
 }
 
 // Configuration Firebase temps réel (copié du PC)
@@ -790,10 +760,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 30000);
     
-    // Recharger le classement toutes les 60 secondes
+    // Recharger le classement toutes les 30 secondes
     setInterval(() => {
         loadMobileRanking();
-    }, 60000);
+    }, 30000);
 });
 
 // Sauvegarde avant fermeture
