@@ -28,7 +28,7 @@ async function waitForFirebase() {
     }
 }
 
-// Charger les trades
+// Charger TOUTES les données PC existantes
 async function loadMobileTrades() {
     try {
         await waitForFirebase();
@@ -36,23 +36,70 @@ async function loadMobileTrades() {
         mobileData.currentUser = sessionStorage.getItem('firebaseUID');
         if (!mobileData.currentUser) return;
         
-        const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-        const userRef = ref(window.firebaseDB, `dashboards/${mobileData.currentUser}`);
-        const snapshot = await get(userRef);
+        console.log('🔄 Synchronisation avec les données PC...');
         
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            mobileData.trades = data.trades || [];
-            window.mobileTradesData = mobileData.trades;
-            console.log('✅ Trades chargés:', mobileData.trades.length);
+        // Charger depuis dashboards (données PC principales)
+        const dashboardRef = window.dbRef(window.firebaseDB, `dashboards/${mobileData.currentUser}`);
+        const dashboardSnapshot = await window.dbGet(dashboardRef);
+        
+        if (dashboardSnapshot.exists()) {
+            const pcData = dashboardSnapshot.val();
+            
+            // Récupérer TOUTES les données PC
+            mobileData.trades = pcData.trades || [];
+            mobileData.settings = pcData.settings || {
+                capital: 1000,
+                riskPerTrade: 2,
+                dailyTarget: 1,
+                weeklyTarget: 3,
+                monthlyTarget: 15,
+                yearlyTarget: 200
+            };
+            mobileData.accounts = pcData.accounts || {};
+            mobileData.currentAccount = pcData.currentAccount || 'compte1';
+            
+            console.log('✅ Données PC synchronisées:', {
+                trades: mobileData.trades.length,
+                accounts: Object.keys(mobileData.accounts).length,
+                settings: mobileData.settings
+            });
         }
         
+        // Charger le pseudo depuis users
+        const nicknameRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
+        const nicknameSnapshot = await window.dbGet(nicknameRef);
+        if (nicknameSnapshot.exists()) {
+            mobileData.nickname = nicknameSnapshot.val();
+            console.log('✅ Pseudo récupéré:', mobileData.nickname);
+        }
+        
+        // Charger les données utilisateur complètes
+        const userRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}`);
+        const userSnapshot = await window.dbGet(userRef);
+        if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            mobileData.userProfile = {
+                email: userData.email,
+                displayName: userData.displayName,
+                nickname: userData.nickname,
+                isVIP: userData.isVIP,
+                plan: userData.plan
+            };
+            console.log('✅ Profil utilisateur récupéré:', mobileData.userProfile);
+        }
+        
+        window.mobileTradesData = mobileData.trades;
+        
+        // Mettre à jour l'interface avec les données PC
         updateMobileTradesList();
         updateMobileStats();
         updateMobileCalendar();
+        loadMobileSettings(); // Charger les paramètres PC
         loadMobileRanking();
+        
+        console.log('✅ Synchronisation PC → Mobile terminée');
     } catch (error) {
-        console.error('❌ Erreur chargement:', error);
+        console.error('❌ Erreur chargement PC:', error);
     }
 }
 
@@ -688,67 +735,95 @@ async function setupRealtimeSync() {
     }
 }
 
-// Sauvegarde avec structure PC EXACTE
+// Sauvegarde en PRÉSERVANT les données PC existantes
 async function saveMobileDataComplete() {
     if (!window.firebaseDB || !mobileData.currentUser) return;
     
     try {
-        const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+        const { ref, set, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
         
-        const settings = {
-            capital: 1000,
-            riskPerTrade: 2,
-            dailyTarget: 1,
-            weeklyTarget: 3,
-            monthlyTarget: 15,
-            yearlyTarget: 200
-        };
+        // Récupérer les données PC existantes d'abord
+        const dashboardRef = ref(window.firebaseDB, `dashboards/${mobileData.currentUser}`);
+        const existingSnapshot = await get(dashboardRef);
         
-        const accounts = {
-            compte1: {
-                name: 'Compte Principal',
-                capital: 1000,
-                trades: mobileData.trades,
-                settings: settings
-            }
-        };
+        let existingData = {};
+        if (existingSnapshot.exists()) {
+            existingData = existingSnapshot.val();
+        }
         
+        // Fusionner avec les nouvelles données mobile
         const dataToSave = {
-            trades: mobileData.trades,
-            settings: settings,
-            accounts: accounts,
-            currentAccount: 'compte1',
+            ...existingData, // Garder toutes les données PC existantes
+            trades: mobileData.trades, // Mettre à jour seulement les trades
+            settings: mobileData.settings || existingData.settings || {
+                capital: 1000,
+                riskPerTrade: 2,
+                dailyTarget: 1,
+                weeklyTarget: 3,
+                monthlyTarget: 15,
+                yearlyTarget: 200
+            },
+            accounts: mobileData.accounts || existingData.accounts || {
+                compte1: {
+                    name: 'Compte Principal',
+                    capital: mobileData.settings?.capital || 1000,
+                    trades: mobileData.trades
+                }
+            },
+            currentAccount: mobileData.currentAccount || existingData.currentAccount || 'compte1',
             lastUpdated: new Date().toISOString(),
             version: Date.now()
         };
         
-        // Sauvegarder dans dashboards (comme PC)
-        const dashboardRef = ref(window.firebaseDB, `dashboards/${mobileData.currentUser}`);
+        // Sauvegarder dans dashboards
         await set(dashboardRef, dataToSave);
         
-        // Sauvegarder dans users EXACTEMENT comme PC
+        // Récupérer et préserver les données utilisateur existantes
         const userRef = ref(window.firebaseDB, `users/${mobileData.currentUser}`);
-        await set(userRef, {
+        const userSnapshot = await get(userRef);
+        
+        let userData = {
             isVIP: true,
             plan: 'VIP',
             email: sessionStorage.getItem('userEmail') || 'user@example.com',
             displayName: sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader',
-            nickname: sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader',
-            accounts: {
+            nickname: mobileData.nickname || sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader'
+        };
+        
+        if (userSnapshot.exists()) {
+            // Fusionner avec les données existantes
+            userData = {
+                ...userSnapshot.val(),
+                ...userData,
+                accounts: {
+                    ...userSnapshot.val().accounts,
+                    compte1: {
+                        ...userSnapshot.val().accounts?.compte1,
+                        trades: mobileData.trades,
+                        capital: mobileData.settings?.capital || 1000,
+                        settings: dataToSave.settings
+                    }
+                },
+                lastUpdated: new Date().toISOString()
+            };
+        } else {
+            // Créer nouvelles données seulement si aucune n'existe
+            userData.accounts = {
                 compte1: {
                     trades: mobileData.trades,
-                    capital: 1000,
-                    settings: settings
+                    capital: mobileData.settings?.capital || 1000,
+                    settings: dataToSave.settings
                 }
-            },
-            lastUpdated: new Date().toISOString()
-        });
+            };
+        }
         
-        // Sauvegarder le pseudo séparément comme PC
+        await set(userRef, userData);
+        
+        // Sauvegarder le pseudo séparément
         const nicknameRef = ref(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
-        await set(nicknameRef, sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader');
+        await set(nicknameRef, mobileData.nickname || userData.nickname);
         
-        console.log('✅ Sauvegarde mobile EXACTE comme PC');
+        console.log('✅ Sauvegarde mobile avec préservation PC');
     } catch (error) {
         console.error('❌ Erreur sauvegarde mobile:', error);
     }
@@ -784,8 +859,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     setTimeout(() => {
         if (sessionStorage.getItem('firebaseUID')) {
-            loadMobileTrades();
-            loadMobileNickname();
+            loadMobileTrades(); // Ceci charge maintenant tout automatiquement
             loadMobileAccounts();
             
             // Activer la synchronisation temps réel
@@ -863,20 +937,43 @@ async function saveMobileNickname() {
     }
 }
 
-async function loadMobileNickname() {
+async function loadMobileSettings() {
     if (!mobileData.currentUser) return;
     
     try {
-        const nicknameRef = window.dbRef(window.firebaseDB, `users/${mobileData.currentUser}/nickname`);
-        const snapshot = await window.dbGet(nicknameRef);
-        
+        // Charger le pseudo
         const nicknameInput = document.getElementById('mobileNickname');
-        if (nicknameInput && snapshot.exists()) {
-            nicknameInput.value = snapshot.val();
+        if (nicknameInput && mobileData.nickname) {
+            nicknameInput.value = mobileData.nickname;
         }
+        
+        // Charger les paramètres de trading PC
+        if (mobileData.settings) {
+            const capitalInput = document.getElementById('mobileCapitalInput');
+            const dailyGoalInput = document.getElementById('mobileDailyGoal');
+            
+            if (capitalInput) capitalInput.value = mobileData.settings.capital || 1000;
+            if (dailyGoalInput) dailyGoalInput.value = (mobileData.settings.capital * mobileData.settings.dailyTarget / 100) || 10;
+            
+            // Mettre à jour les objectifs affichés
+            const dailyTarget = document.getElementById('mobileDailyTarget');
+            const weeklyTarget = document.getElementById('mobileWeeklyTarget');
+            const monthlyTarget = document.getElementById('mobileMonthlyTarget');
+            
+            if (dailyTarget) dailyTarget.textContent = `$${(mobileData.settings.capital * mobileData.settings.dailyTarget / 100).toFixed(0)}`;
+            if (weeklyTarget) weeklyTarget.textContent = `$${(mobileData.settings.capital * mobileData.settings.weeklyTarget / 100).toFixed(0)}`;
+            if (monthlyTarget) monthlyTarget.textContent = `$${(mobileData.settings.capital * mobileData.settings.monthlyTarget / 100).toFixed(0)}`;
+        }
+        
+        console.log('✅ Paramètres PC chargés sur mobile');
     } catch (error) {
-        console.error('Erreur chargement pseudo:', error);
+        console.error('Erreur chargement paramètres:', error);
     }
+}
+
+async function loadMobileNickname() {
+    // Cette fonction est maintenant incluse dans loadMobileSettings
+    return loadMobileSettings();
 }
 
 async function loadMobileAccounts() {
