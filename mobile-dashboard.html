@@ -264,6 +264,83 @@
     <script>
         // Variables globales
         let currentUser = null;
+        let mobilePerformanceChart = null;
+        let mobileWinRateChart = null;
+        
+        // Initialiser les graphiques mobiles
+        function initMobileCharts() {
+            const perfCtx = document.getElementById('mobilePerformanceChart');
+            const winCtx = document.getElementById('mobileWinRateChart');
+            
+            if (perfCtx) {
+                mobilePerformanceChart = new Chart(perfCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
+                        datasets: [{
+                            label: 'P&L',
+                            data: [0, 0, 0, 0, 0],
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            
+            if (winCtx) {
+                mobileWinRateChart = new Chart(winCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Gagnants', 'Perdants'],
+                        datasets: [{
+                            data: [0, 0],
+                            backgroundColor: ['#28a745', '#dc3545']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+        
+        // Mettre à jour les graphiques
+        function updateMobileCharts() {
+            if (!window.mobileTradesData) return;
+            
+            const trades = window.mobileTradesData;
+            const closedTrades = trades.filter(t => t.status === 'closed');
+            const winTrades = closedTrades.filter(t => t.pnl > 0);
+            const lossTrades = closedTrades.filter(t => t.pnl <= 0);
+            
+            // Performance chart
+            if (mobilePerformanceChart && closedTrades.length > 0) {
+                const pnlData = [];
+                let cumulative = 0;
+                closedTrades.forEach(trade => {
+                    cumulative += trade.pnl || 0;
+                    pnlData.push(cumulative);
+                });
+                
+                mobilePerformanceChart.data.labels = closedTrades.map((_, i) => `T${i+1}`);
+                mobilePerformanceChart.data.datasets[0].data = pnlData;
+                mobilePerformanceChart.update();
+            }
+            
+            // WinRate chart
+            if (mobileWinRateChart && closedTrades.length > 0) {
+                mobileWinRateChart.data.datasets[0].data = [winTrades.length, lossTrades.length];
+                mobileWinRateChart.update();
+            }
+        }
         
         // Navigation mobile
         document.addEventListener('DOMContentLoaded', function() {
@@ -353,10 +430,18 @@
                 chatInput.value = '';
             }
             
-            sendBtn.addEventListener('click', sendMessage);
-            chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendMessage();
-            });
+            if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+            if (chatInput) {
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendMessage();
+                });
+            }
+            
+            // Initialiser les graphiques
+            setTimeout(initMobileCharts, 1000);
+            
+            // Exposer la fonction de mise à jour
+            window.updateMobileCharts = updateMobileCharts;
             
             // Charger chat
             function loadChat() {

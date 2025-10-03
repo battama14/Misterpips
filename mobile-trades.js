@@ -305,6 +305,11 @@ function updateMobileStats() {
     
     // Mettre à jour les graphiques dashboard
     updateDashboardCharts();
+    
+    // Mettre à jour les graphiques mobiles
+    if (window.updateMobileCharts) {
+        window.updateMobileCharts();
+    }
 }
 
 // Modal
