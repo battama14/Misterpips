@@ -62,15 +62,18 @@
             
             console.log('🔧 Menu mobile initialisé après Firebase');
             
-            // Ouvrir menu
+            // Ouvrir menu - Support tactile
             if (menuToggle) {
-                menuToggle.addEventListener('click', function(e) {
+                function openMenu(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     console.log('📱 Ouverture menu');
                     mobileMenu.classList.add('active');
                     menuOverlay.classList.add('active');
                     document.body.style.overflow = 'hidden';
-                });
+                }
+                menuToggle.addEventListener('click', openMenu);
+                menuToggle.addEventListener('touchstart', openMenu);
             }
             
             // Fermer menu
@@ -81,13 +84,20 @@
                 document.body.style.overflow = 'auto';
             }
             
-            if (closeMenu) closeMenu.addEventListener('click', closeMenuFunc);
-            if (menuOverlay) menuOverlay.addEventListener('click', closeMenuFunc);
+            if (closeMenu) {
+                closeMenu.addEventListener('click', closeMenuFunc);
+                closeMenu.addEventListener('touchstart', closeMenuFunc);
+            }
+            if (menuOverlay) {
+                menuOverlay.addEventListener('click', closeMenuFunc);
+                menuOverlay.addEventListener('touchstart', closeMenuFunc);
+            }
             
-            // Navigation
+            // Navigation - Support tactile
             menuLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
+                function navigate(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     const targetSection = this.getAttribute('data-section');
                     console.log('📱 Navigation vers:', targetSection);
                     
@@ -101,7 +111,9 @@
                     }
                     
                     closeMenuFunc();
-                });
+                }
+                link.addEventListener('click', navigate);
+                link.addEventListener('touchstart', navigate);
             });
         }
     </script>
@@ -205,6 +217,50 @@
         <!-- Section Calendrier -->
         <section id="calendar" class="section">
             <div class="section-header">
+                <h2>📅 Calendrier</h2>
+            </div>
+            <div class="mobile-calendar" id="mobileCalendar">Calendrier</div>
+        </section>
+
+        <!-- Section Objectifs -->
+        <section id="objectives" class="section">
+            <div class="section-header">
+                <h2>🎯 Objectifs</h2>
+            </div>
+            <div class="objectives-list">Objectifs</div>
+        </section>
+
+        <!-- Section Classement -->
+        <section id="ranking" class="section">
+            <div class="section-header">
+                <h2>🏆 Classement VIP</h2>
+            </div>
+            <div class="ranking-list" id="mobileRankingList">Classement</div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>Capital initial ($)</label>
+                    <input type="number" id="mobileCapitalInput" value="1000">
+                </div>
+                <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                </div>
+                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="mobile-trades.js"></script>
+</body>
+</html>der">
                 <h2>📅 Calendrier</h2>
                 <div class="calendar-nav">
                     <button id="prevMonthMobile">◀</button>
