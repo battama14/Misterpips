@@ -46,8 +46,64 @@
                 sessionStorage.setItem('firebaseUID', user.uid);
                 sessionStorage.setItem('userEmail', user.email);
                 console.log('🔥 Mobile Firebase prêt:', user.email);
+                
+                // Initialiser le menu APRÈS Firebase
+                setTimeout(initMobileMenu, 100);
             }
         });
+        
+        // Fonction menu mobile
+        function initMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const closeMenu = document.getElementById('closeMenu');
+            const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
+            
+            console.log('🔧 Menu mobile initialisé après Firebase');
+            
+            // Ouvrir menu
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('📱 Ouverture menu');
+                    mobileMenu.classList.add('active');
+                    menuOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+            
+            // Fermer menu
+            function closeMenuFunc() {
+                console.log('📱 Fermeture menu');
+                mobileMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            
+            if (closeMenu) closeMenu.addEventListener('click', closeMenuFunc);
+            if (menuOverlay) menuOverlay.addEventListener('click', closeMenuFunc);
+            
+            // Navigation
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetSection = this.getAttribute('data-section');
+                    console.log('📱 Navigation vers:', targetSection);
+                    
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    const target = document.getElementById(targetSection);
+                    if (target) {
+                        target.classList.add('active');
+                    }
+                    
+                    closeMenuFunc();
+                });
+            });
+        }
     </script>
 </head>
 <body>
@@ -215,6 +271,92 @@
             
             <div class="ranking-list" id="mobileRankingList">
                 <!-- Classement généré dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>Capital initial ($)</label>
+                    <input type="number" id="mobileCapitalInput" value="1000">
+                </div>
+                <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                </div>
+                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Initialiser les graphiques
+        function initCharts() {
+            setTimeout(() => {
+                const ctx1 = document.getElementById('mobilePerformanceChart');
+                if (ctx1) {
+                    new Chart(ctx1, {
+                        type: 'line',
+                        data: {
+                            labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
+                            datasets: [{
+                                label: 'P&L',
+                                data: [0, 10, 5, 15, 20],
+                                borderColor: '#00d4ff',
+                                backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                    console.log('✅ Graphique performance OK');
+                }
+
+                const ctx2 = document.getElementById('mobileWinRateChart');
+                if (ctx2) {
+                    new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Gagnants', 'Perdants'],
+                            datasets: [{
+                                data: [60, 40],
+                                backgroundColor: ['#28a745', '#dc3545']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    console.log('✅ Graphique winrate OK');
+                }
+
+                // Stats
+                document.getElementById('totalTrades').textContent = '5';
+                document.getElementById('winningTrades').textContent = '3';
+                document.getElementById('losingTrades').textContent = '2';
+                document.getElementById('totalProfit').textContent = '$150';
+                document.getElementById('mobileWinRate').textContent = '60%';
+                document.getElementById('mobilePnL').textContent = '$150';
+                document.getElementById('mobileCapital').textContent = '$1150';
+            }, 1000);
+        }
+        
+        // Initialiser après chargement
+        document.addEventListener('DOMContentLoaded', initCharts);
+    </script>
+</body>
+</html>éré dynamiquement -->
             </div>
         </section>
 
