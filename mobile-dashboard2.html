@@ -223,6 +223,158 @@
             <div class="section-header">
                 <h2>⚙️ Paramètres</h2>
             </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>Capital initial ($)</label>
+                    <input type="number" id="mobileCapitalInput" value="1000">
+                </div>
+                <div class="setting-item">
+                    <label>Pseudo</label>
+                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                </div>
+                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Navigation Mobile - JavaScript intégré
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const closeMenu = document.getElementById('closeMenu');
+            const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
+            
+            console.log('🔧 Menu mobile initialisé');
+            
+            // Ouvrir menu
+            menuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('📱 Ouverture menu');
+                mobileMenu.classList.add('active');
+                menuOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Fermer menu
+            function closeMenuFunc() {
+                console.log('📱 Fermeture menu');
+                mobileMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            
+            closeMenu.addEventListener('click', closeMenuFunc);
+            menuOverlay.addEventListener('click', closeMenuFunc);
+            
+            // Navigation sections
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetSection = this.getAttribute('data-section');
+                    console.log('📱 Navigation vers:', targetSection);
+                    
+                    // Masquer toutes les sections
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Afficher la section cible
+                    const target = document.getElementById(targetSection);
+                    if (target) {
+                        target.classList.add('active');
+                    }
+                    
+                    // Fermer le menu
+                    closeMenuFunc();
+                });
+            });
+
+            // Initialiser les graphiques
+            setTimeout(initCharts, 1000);
+        });
+
+        // Graphiques
+        let performanceChart = null;
+        let winRateChart = null;
+
+        function initCharts() {
+            console.log('📊 Initialisation graphiques...');
+            
+            // Graphique performance
+            const perfCtx = document.getElementById('mobilePerformanceChart');
+            if (perfCtx) {
+                performanceChart = new Chart(perfCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
+                        datasets: [{
+                            label: 'P&L Cumulé',
+                            data: [0, 10, 5, 15, 20],
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.1)' },
+                                ticks: { color: '#ccc', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+                console.log('✅ Graphique performance créé');
+            }
+
+            // Graphique winrate
+            const winCtx = document.getElementById('mobileWinRateChart');
+            if (winCtx) {
+                winRateChart = new Chart(winCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Gagnants', 'Perdants'],
+                        datasets: [{
+                            data: [70, 30],
+                            backgroundColor: ['#28a745', '#dc3545'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#ccc', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+                console.log('✅ Graphique winrate créé');
+            }
+        }
+    </script>
+</body>
+</html>éré dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
             
             <div class="settings-list">
                 <div class="setting-item">
