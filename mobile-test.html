@@ -2,71 +2,21 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Mobile Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Misterpips Mobile - Test PC</title>
+    <link rel="stylesheet" href="mobile-clean.css?v=2025">
+    <link rel="stylesheet" href="mobile-stats.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00d4ff">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #1a1a2e;
-            color: white;
-            padding: 20px;
-        }
-        .test-section {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-        }
-        .test-btn {
-            background: #00d4ff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .status {
-            padding: 5px 10px;
-            border-radius: 3px;
-            margin: 5px 0;
-        }
-        .success { background: #4ecdc4; }
-        .error { background: #ff6b6b; }
-        .warning { background: #ffc107; color: black; }
+        /* Forcer l'affichage mobile sur PC */
+        body { max-width: 400px; margin: 0 auto; }
     </style>
-</head>
-<body>
-    <h1>🧪 Test Mobile Dashboard - Misterpips Optimized</h1>
-    
-    <div class="test-section">
-        <h3>1. Test Authentification</h3>
-        <button class="test-btn" onclick="testAuth()">Simuler Auth VIP</button>
-        <div id="authStatus"></div>
-    </div>
-    
-    <div class="test-section">
-        <h3>2. Test Firebase</h3>
-        <button class="test-btn" onclick="testFirebase()">Tester Firebase</button>
-        <div id="firebaseStatus"></div>
-    </div>
-    
-    <div class="test-section">
-        <h3>3. Test LocalStorage</h3>
-        <button class="test-btn" onclick="testLocalStorage()">Tester LocalStorage</button>
-        <div id="localStorageStatus"></div>
-    </div>
-    
-    <div class="test-section">
-        <h3>4. Actions</h3>
-        <button class="test-btn" onclick="goToMobileDashboard()">Aller au Dashboard Mobile</button>
-        <button class="test-btn" onclick="clearAllData()">Effacer toutes les données</button>
-    </div>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
@@ -82,122 +32,228 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
         
-        window.firebaseAuth = auth;
         window.firebaseDB = db;
+        window.firebaseAuth = auth;
         window.dbRef = ref;
-        window.dbSet = set;
         window.dbGet = get;
+        window.dbSet = set;
+        window.onValue = onValue;
+        window.push = push;
         
-        console.log('Firebase initialisé pour les tests');
-    </script>
-    
-    <script>
-        function showStatus(elementId, message, type = 'success') {
-            const element = document.getElementById(elementId);
-            element.innerHTML = `<div class="status ${type}">${message}</div>`;
-        }
-        
-        function testAuth() {
-            const testUID = 'test_user_' + Date.now();
-            const testEmail = 'test@misterpips.com';
-            
-            sessionStorage.setItem('firebaseUID', testUID);
-            sessionStorage.setItem('userEmail', testEmail);
-            sessionStorage.setItem('isVIP', 'true');
-            sessionStorage.setItem('authenticated', 'true');
-            
-            localStorage.setItem('firebaseUID', testUID);
-            localStorage.setItem('userEmail', testEmail);
-            localStorage.setItem('isVIP', 'true');
-            localStorage.setItem('authenticated', 'true');
-            
-            showStatus('authStatus', `✅ Auth simulée: ${testEmail}`, 'success');
-        }
-        
-        async function testFirebase() {
-            try {
-                if (!window.firebaseDB) {
-                    showStatus('firebaseStatus', '❌ Firebase DB non disponible', 'error');
-                    return;
-                }
-                
-                const testRef = window.dbRef(window.firebaseDB, 'test/mobile_test');
-                await window.dbSet(testRef, {
-                    timestamp: Date.now(),
-                    message: 'Test mobile dashboard optimized'
-                });
-                
-                const snapshot = await window.dbGet(testRef);
-                if (snapshot.exists()) {
-                    showStatus('firebaseStatus', '✅ Firebase fonctionne correctement', 'success');
-                } else {
-                    showStatus('firebaseStatus', '⚠️ Problème lecture Firebase', 'warning');
-                }
-            } catch (error) {
-                showStatus('firebaseStatus', `❌ Erreur Firebase: ${error.message}`, 'error');
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+                console.log('🔥 Mobile Test Firebase prêt:', user.email);
+            } else {
+                console.log('❌ Pas d\'utilisateur connecté');
+                // Pas de redirection pour le test
             }
-        }
-        
-        function testLocalStorage() {
-            try {
-                const testData = {
-                    trades: [
-                        {
-                            id: 'test_1',
-                            date: new Date().toISOString().split('T')[0],
-                            currency: 'EUR/USD',
-                            entryPoint: 1.0850,
-                            stopLoss: 1.0800,
-                            takeProfit: 1.0900,
-                            lotSize: 0.1,
-                            status: 'closed',
-                            pnl: 25.50
-                        }
-                    ],
-                    settings: {
-                        capital: 1000,
-                        riskPerTrade: 2,
-                        dailyTarget: 1
-                    }
-                };
-                
-                const testUID = sessionStorage.getItem('firebaseUID') || 'test_user';
-                localStorage.setItem(`dashboard_${testUID}`, JSON.stringify(testData));
-                
-                const saved = localStorage.getItem(`dashboard_${testUID}`);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    showStatus('localStorageStatus', `✅ LocalStorage OK - ${parsed.trades.length} trades`, 'success');
-                } else {
-                    showStatus('localStorageStatus', '❌ Problème LocalStorage', 'error');
-                }
-            } catch (error) {
-                showStatus('localStorageStatus', `❌ Erreur LocalStorage: ${error.message}`, 'error');
-            }
-        }
-        
-        function goToMobileDashboard() {
-            if (!sessionStorage.getItem('firebaseUID')) {
-                alert('Lancez d\'abord le test d\'authentification !');
-                return;
-            }
-            window.location.href = 'mobile-dashboard.html';
-        }
-        
-        function clearAllData() {
-            if (confirm('Effacer toutes les données de test ?')) {
-                sessionStorage.clear();
-                localStorage.clear();
-                alert('Données effacées !');
-                location.reload();
-            }
-        }
-        
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                testFirebase();
-            }, 1000);
         });
     </script>
+</head>
+<body>
+    <!-- Header Mobile -->
+    <header class="mobile-header">
+        <div class="header-top">
+            <h1>📱 Misterpips Test</h1>
+            <button id="menuToggle" class="menu-btn">☰</button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-value" id="mobileCapital">$1000</span>
+                <span class="stat-label">Capital</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="mobileWinRate">0%</span>
+                <span class="stat-label">WinRate</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="mobilePnL">$0</span>
+                <span class="stat-label">P&L</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Menu Mobile -->
+    <nav id="mobileMenu" class="mobile-menu">
+        <div class="menu-header">
+            <h3>Menu</h3>
+            <button id="closeMenu" class="close-btn">✕</button>
+        </div>
+        <ul class="menu-list">
+            <li><a href="#dashboard" onclick="showSection('dashboard')">📊 Dashboard</a></li>
+            <li><a href="#trades" onclick="showSection('trades')">📈 Mes Trades</a></li>
+            <li><a href="#calendar" onclick="showSection('calendar')">📅 Calendrier</a></li>
+            <li><a href="#objectives" onclick="showSection('objectives')">🎯 Objectifs</a></li>
+            <li><a href="#ranking" onclick="showSection('ranking')">🏆 Classement</a></li>
+            <li><a href="#settings" onclick="showSection('settings')">⚙️ Paramètres</a></li>
+            <li><a href="dashboard.html">🖥️ Version PC</a></li>
+        </ul>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <main class="mobile-main">
+        <!-- Section Dashboard -->
+        <section id="dashboard" class="section active">
+            <div class="section-header">
+                <h2>📊 Dashboard</h2>
+                <button id="newTradeBtn" class="primary-btn">+ Trade</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Trades Totaux</h4>
+                    <span id="totalTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Gagnants</h4>
+                    <span id="winningTrades">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Trades -->
+        <section id="trades" class="section">
+            <div class="section-header">
+                <h2>📈 Mes Trades</h2>
+                <button id="addTradeBtn" class="primary-btn">+ Ajouter</button>
+            </div>
+            
+            <div class="trades-list" id="mobileTradesList">
+                <!-- Trades générés dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Calendrier -->
+        <section id="calendar" class="section">
+            <div class="section-header">
+                <h2>📅 Calendrier</h2>
+                <div class="calendar-nav">
+                    <button id="prevMonthMobile">◀</button>
+                    <span id="monthYearMobile">Mois</span>
+                    <button id="nextMonthMobile">▶</button>
+                </div>
+            </div>
+            
+            <div class="mobile-calendar" id="mobileCalendar">
+                <!-- Calendrier généré dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Objectifs -->
+        <section id="objectives" class="section">
+            <div class="section-header">
+                <h2>🎯 Objectifs</h2>
+            </div>
+            
+            <div class="objectives-list">
+                <div class="objective-card">
+                    <div class="objective-header">
+                        <span class="objective-icon">☀️</span>
+                        <span class="objective-title">Journalier</span>
+                        <span class="objective-target" id="mobileDailyTarget">$10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileDailyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileDailyPercent">0%</span>
+                </div>
+                
+                <div class="objective-card">
+                    <div class="objective-header">
+                        <span class="objective-icon">📅</span>
+                        <span class="objective-title">Hebdomadaire</span>
+                        <span class="objective-target" id="mobileWeeklyTarget">$30</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileWeeklyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileWeeklyPercent">0%</span>
+                </div>
+                
+                <div class="objective-card">
+                    <div class="objective-header">
+                        <span class="objective-icon">📊</span>
+                        <span class="objective-title">Mensuel</span>
+                        <span class="objective-target" id="mobileMonthlyTarget">$150</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mobileMonthlyProgress"></div>
+                    </div>
+                    <span class="progress-text" id="mobileMonthlyPercent">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Classement -->
+        <section id="ranking" class="section">
+            <div class="section-header">
+                <h2>🏆 Classement VIP</h2>
+            </div>
+            
+            <div class="ranking-list" id="mobileRankingList">
+                <!-- Classement généré dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Section Paramètres -->
+        <section id="settings" class="section">
+            <div class="section-header">
+                <h2>⚙️ Paramètres</h2>
+            </div>
+            
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>Capital initial ($)</label>
+                    <input type="number" id="mobileCapitalInput" value="1000" min="100" step="10">
+                </div>
+                
+                <div class="setting-item">
+                    <label>Objectif journalier ($)</label>
+                    <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
+                </div>
+                
+                <div class="setting-item">
+                    <label>Notifications</label>
+                    <label class="switch">
+                        <input type="checkbox" id="mobileNotifications" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Trade -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content" id="modalContent">
+            <!-- Contenu généré par JS -->
+        </div>
+    </div>
+
+    <!-- Navigation Bottom -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-section="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-section="trades">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Trades</span>
+        </button>
+        <button class="nav-btn" data-section="calendar">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Calendrier</span>
+        </button>
+        <button class="nav-btn" data-section="ranking">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-label">Classement</span>
+        </button>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="mobile-trades.js"></script>
+    <script src="mobile-features.js"></script>
 </body>
 </html>

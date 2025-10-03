@@ -1,33 +1,20 @@
-/* Mobile Dashboard CSS - Version Propre */
+/* Mobile Clean CSS - Version Minimale */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #1a1a2e, #16213e);
     color: white;
-    overflow-x: hidden;
-    padding-bottom: 80px;
     min-height: 100vh;
-    width: 100vw;
-    max-width: 100vw;
-    position: relative;
 }
 
-/* Header Mobile */
 .mobile-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: rgba(26, 26, 46, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 1000;
-    padding: 10px 15px;
+    background: rgba(0, 212, 255, 0.1);
+    padding: 15px;
     border-bottom: 1px solid rgba(0, 212, 255, 0.3);
 }
 
@@ -38,111 +25,30 @@ body {
     margin-bottom: 10px;
 }
 
-.header-top h1 {
-    font-size: 18px;
-    color: #00d4ff;
-}
-
-.menu-btn {
-    background: none;
-    border: none;
-    color: #00d4ff;
-    font-size: 20px;
-    padding: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
 .stats-row {
     display: flex;
     justify-content: space-around;
-    gap: 10px;
 }
 
 .stat-item {
     text-align: center;
-    flex: 1;
 }
 
 .stat-value {
     display: block;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: #00d4ff;
 }
 
 .stat-label {
     font-size: 12px;
-    color: #888;
+    color: #ccc;
 }
 
-/* Menu Mobile */
-.mobile-menu {
-    position: fixed;
-    top: 0;
-    left: -300px;
-    width: 280px;
-    height: 100vh;
-    background: rgba(26, 26, 46, 0.98);
-    backdrop-filter: blur(15px);
-    z-index: 2000;
-    transition: left 0.3s ease;
-    border-right: 1px solid rgba(0, 212, 255, 0.3);
-}
-
-.mobile-menu.open {
-    left: 0;
-}
-
-.menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.menu-header h3 {
-    color: #00d4ff;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: #ff6b6b;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.menu-list {
-    list-style: none;
-    padding: 20px 0;
-}
-
-.menu-list li {
-    margin-bottom: 5px;
-}
-
-.menu-list a {
-    display: block;
-    padding: 15px 20px;
-    color: white;
-    text-decoration: none;
-    transition: background 0.2s;
-}
-
-.menu-list a:hover {
-    background: rgba(0, 212, 255, 0.1);
-}
-
-/* Contenu Principal */
 .mobile-main {
-    margin-top: 120px;
-    padding: 0 10px;
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    overflow-x: hidden;
+    padding: 20px;
+    padding-bottom: 100px;
 }
 
 .section {
@@ -158,848 +64,424 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.section-header h2 {
-    font-size: 20px;
-    color: #00d4ff;
 }
 
 .primary-btn {
-    background: linear-gradient(45deg, #00d4ff, #5b86e5);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.primary-btn:active {
-    transform: scale(0.95);
-}
-
-/* Graphiques Mobile */
-.chart-container {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.chart-container h3 {
-    color: #00d4ff;
-    margin-bottom: 15px;
-    font-size: 16px;
-}
-
-.chart-container canvas {
-    max-height: 200px !important;
-}
-
-/* Navigation Bottom */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(26, 26, 46, 0.95);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    border-top: 1px solid rgba(0, 212, 255, 0.3);
-    z-index: 1000;
-}
-
-.nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 8px;
-    transition: color 0.2s;
-    min-width: 60px;
-}
-
-.nav-btn.active {
-    color: #00d4ff;
-}
-
-.nav-icon {
-    font-size: 20px;
-    margin-bottom: 4px;
-}
-
-.nav-label {
-    font-size: 10px;
-}
-
-/* Chat Mobile */
-.mobile-chat-toggle {
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    width: 65px;
-    height: 65px;
     background: #00d4ff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    cursor: pointer;
-    z-index: 9999;
-    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.6);
-    border: 4px solid white;
     color: white;
-    font-weight: bold;
-}
-
-.mobile-chat-window {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60vh;
-    background: rgba(26, 26, 46, 0.98);
-    backdrop-filter: blur(15px);
-    z-index: 2500;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    border-top: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 15px 15px 0 0;
-}
-
-.mobile-chat-window.show {
-    transform: translateY(0);
-}
-
-.chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.chat-header h4 {
-    color: #00d4ff;
-}
-
-.chat-messages {
-    height: calc(60vh - 120px);
-    overflow-y: auto;
-    padding: 15px;
-}
-
-.chat-input-container {
-    display: flex;
-    gap: 10px;
-    padding: 15px 20px;
-    border-top: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.chat-input-container input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 16px;
-}
-
-.emoji-btn {
-    width: 40px;
-    height: 40px;
     border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
     cursor: pointer;
-    font-size: 16px;
 }
 
-.send-btn {
-    background: linear-gradient(45deg, #00d4ff, #5b86e5);
-    border: none;
-    color: white;
-    padding: 12px 16px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-/* Panel Emoji */
-.mobile-emoji-panel {
-    display: none;
-    position: absolute;
-    bottom: 60px;
-    left: 15px;
-    right: 15px;
-    background: rgba(26, 26, 46, 0.98);
-    border-radius: 10px;
-    padding: 15px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-.emoji-grid {
+.stats-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 10px;
-}
-
-.emoji-item {
-    font-size: 20px;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 5px;
-    text-align: center;
-    transition: background 0.2s;
-}
-
-.emoji-item:hover {
-    background: rgba(0, 212, 255, 0.2);
-}
-
-/* Messages de chat */
-.chat-message {
-    margin-bottom: 15px;
-    padding: 10px 15px;
-    border-radius: 15px;
-    max-width: 80%;
-    word-wrap: break-word;
-}
-
-.chat-message.own {
-    background: linear-gradient(135deg, #00d4ff, #5b86e5);
-    color: white;
-    margin-left: auto;
-    border-bottom-right-radius: 5px;
-}
-
-.chat-message.other {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    margin-right: auto;
-    border-bottom-left-radius: 5px;
-}
-
-.message-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-.message-nickname {
-    font-weight: bold;
-    color: #00d4ff;
-}
-
-.message-time {
-    font-size: 11px;
-    opacity: 0.7;
-}
-
-.message-content {
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-/* Modal Mobile */
-.mobile-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 3000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.mobile-modal.show {
-    display: flex;
-}
-
-.modal-content {
-    background: rgba(26, 26, 46, 0.98);
-    border-radius: 15px;
-    width: 100%;
-    max-width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.modal-header h3 {
-    color: #00d4ff;
-}
-
-.modal-body {
-    padding: 20px;
-}
-
-.form-group {
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
     margin-bottom: 20px;
 }
 
-.form-group label {
-    display: block;
-    color: #00d4ff;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 8px;
+.stat-card {
     background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 16px;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
 }
 
-.form-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.secondary-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-/* Trades */
 .trades-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
-.trade-card {
-    background: rgba(255, 255, 255, 0.05);
+.trade-item {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 150, 200, 0.05));
+    padding: 16px;
     border-radius: 12px;
-    padding: 15px;
-    border-left: 4px solid #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.trade-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #00d4ff, #0099cc);
+}
+
+.trade-item.open {
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.trade-item.closed {
+    border-color: rgba(40, 167, 69, 0.3);
 }
 
 .trade-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .trade-pair {
     font-weight: bold;
-    color: #00d4ff;
     font-size: 16px;
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
 }
 
 .trade-status {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
-}
-
-.trade-status.open {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-}
-
-.trade-status.closed {
-    background: rgba(78, 205, 196, 0.2);
-    color: #4ecdc4;
+    padding: 4px 10px;
+    border-radius: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(0, 212, 255, 0.2);
 }
 
 .trade-details {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    font-size: 14px;
-}
-
-.trade-detail {
-    display: flex;
-    justify-content: space-between;
-}
-
-.trade-detail-label {
-    color: #888;
-}
-
-.trade-pnl {
-    font-weight: bold;
-}
-
-.trade-pnl.positive {
-    color: #4ecdc4;
-}
-
-.trade-pnl.negative {
-    color: #ff6b6b;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    color: #e0e0e0;
 }
 
 .trade-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
-.action-btn {
-    flex: 1;
-    padding: 8px;
+.trade-actions button {
+    padding: 8px 12px;
     border: none;
-    border-radius: 6px;
-    font-size: 12px;
+    border-radius: 20px;
     cursor: pointer;
-    transition: transform 0.2s;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    min-width: 50px;
 }
 
-.action-btn:active {
-    transform: scale(0.95);
+.trade-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.action-btn.edit {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
+.trade-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
 }
 
-.action-btn.close-trade {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
+.trade-detail-label {
+    color: #aaa;
+    font-size: 12px;
 }
 
-.action-btn.delete {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
+.trade-detail-value {
+    font-weight: 500;
+    color: white;
 }
 
-.action-btn.validate {
-    background: rgba(78, 205, 196, 0.2);
-    color: #4ecdc4;
+.trade-pnl {
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+    padding: 6px;
+    border-radius: 8px;
+    margin: 8px 0;
 }
 
-/* Calendrier amélioré */
-.mobile-calendar {
+.trade-pnl.positive {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.trade-pnl.negative {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.trade-status.open {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    color: #000;
+}
+
+.trade-status.closed {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-tp {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-sl {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.btn-be {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    font-size: 14px;
+    padding: 6px 10px;
+}
+
+.no-trades {
+    text-align: center;
+    padding: 40px 20px;
+    color: #aaa;
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 2px dashed rgba(0, 212, 255, 0.2);
+}
+
+/* Calendrier Mobile */
+.calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
-    margin-top: 20px;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
+}
+
+.calendar-day-header {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    text-align: center;
+    padding: 8px 4px;
+    font-weight: bold;
+    font-size: 12px;
 }
 
 .calendar-day {
-    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.05);
+    min-height: 60px;
+    padding: 4px;
+    border-radius: 4px;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    font-size: 12px;
-    position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    min-height: 40px;
-    padding: 4px;
+    justify-content: flex-start;
 }
 
-.calendar-day.other-month {
-    opacity: 0.3;
-}
-
-.calendar-day.has-trades {
-    background: rgba(0, 212, 255, 0.15);
-    border: 1px solid rgba(0, 212, 255, 0.4);
-    box-shadow: 0 0 5px rgba(0, 212, 255, 0.2);
+.calendar-day.empty {
+    background: transparent;
 }
 
 .calendar-day.profit-day {
-    background: rgba(78, 205, 196, 0.15);
-    border: 1px solid rgba(78, 205, 196, 0.4);
-    box-shadow: 0 0 5px rgba(78, 205, 196, 0.2);
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid rgba(40, 167, 69, 0.4);
 }
 
 .calendar-day.loss-day {
-    background: rgba(255, 107, 107, 0.15);
-    border: 1px solid rgba(255, 107, 107, 0.4);
-    box-shadow: 0 0 5px rgba(255, 107, 107, 0.2);
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+}
+
+.calendar-day.be-day {
+    background: rgba(108, 117, 125, 0.2);
+    border: 1px solid rgba(108, 117, 125, 0.4);
 }
 
 .calendar-date {
+    font-size: 12px;
     font-weight: bold;
     color: white;
-    font-size: 13px;
+    margin-bottom: 2px;
 }
 
 .calendar-pnl {
-    font-size: 9px;
-    margin-top: 2px;
+    font-size: 10px;
     font-weight: bold;
     color: inherit;
 }
 
-.calendar-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 10px;
-}
-
-.calendar-nav button {
-    background: rgba(0, 212, 255, 0.2);
-    border: none;
-    color: #00d4ff;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.2s;
-}
-
-.calendar-nav button:active {
-    transform: scale(0.95);
-    background: rgba(0, 212, 255, 0.3);
-}
-
-#monthYearMobile {
-    color: #00d4ff;
-    font-weight: bold;
-    font-size: 18px;
-    min-width: 150px;
+.calendar-trades {
+    font-size: 8px;
+    color: #ccc;
     text-align: center;
 }
 
-/* Paramètres */
-.settings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.profit-day .calendar-pnl {
+    color: #28a745;
 }
 
-.setting-item {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid rgba(0, 212, 255, 0.2);
+.loss-day .calendar-pnl {
+    color: #dc3545;
 }
 
-.setting-item label {
-    display: block;
-    color: #00d4ff;
-    margin-bottom: 10px;
-    font-weight: bold;
+.be-day .calendar-pnl {
+    color: #6c757d;
 }
 
-.setting-item input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 16px;
-}
-
-.account-selector-container {
-    margin-bottom: 10px;
-}
-
-.account-selector {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 14px;
-}
-
-.account-controls {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.danger-btn {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
-    border: 1px solid rgba(255, 107, 107, 0.3);
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-/* Classement */
+/* Classement VIP Mobile */
 .ranking-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
 .ranking-item {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.05));
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 15px;
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    gap: 15px;
+    position: relative;
+    overflow: hidden;
 }
 
-.ranking-item.current-user {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: #00d4ff;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+.ranking-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #ffd700, #ffb347);
+}
+
+.ranking-item:nth-child(1) {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+}
+
+.ranking-item:nth-child(2) {
+    background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.1));
+    border-color: rgba(192, 192, 192, 0.4);
+}
+
+.ranking-item:nth-child(3) {
+    background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.1));
+    border-color: rgba(205, 127, 50, 0.4);
 }
 
 .ranking-position {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
-    color: #00d4ff;
-    margin-right: 15px;
-    min-width: 30px;
+    min-width: 40px;
+    text-align: center;
+    background: rgba(0, 212, 255, 0.1);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(0, 212, 255, 0.3);
+}
+
+.ranking-position.gold {
+    background: linear-gradient(135deg, #ffd700, #ffb347);
+    color: #000;
+    border-color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.ranking-position.silver {
+    background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+    color: #000;
+    border-color: #c0c0c0;
+}
+
+.ranking-position.bronze {
+    background: linear-gradient(135deg, #cd7f32, #b8860b);
+    color: #fff;
+    border-color: #cd7f32;
 }
 
 .ranking-info {
     flex: 1;
-}
-
-.ranking-name {
-    font-weight: bold;
-    color: white;
-}
-
-.ranking-trades {
-    font-size: 12px;
-    color: #888;
-}
-
-.ranking-pnl {
-    font-weight: bold;
-    font-size: 16px;
-}
-
-.ranking-pnl.positive {
-    color: #4ecdc4;
-}
-
-.ranking-pnl.negative {
-    color: #ff6b6b;
-}
-
-/* Objectifs */
-.objectives-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 4px;
 }
 
-.objective-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
+.trader-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.trader-stats {
+    font-size: 12px;
+    color: #ccc;
+    display: flex;
+    gap: 10px;
+}
+
+.stat-badge {
+    background: rgba(0, 212, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
     border: 1px solid rgba(0, 212, 255, 0.2);
 }
 
-.objective-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-}
-
-.objective-icon {
-    font-size: 24px;
-}
-
-.objective-title {
-    flex: 1;
-    margin-left: 15px;
+.ranking-pnl {
+    font-size: 16px;
     font-weight: bold;
-    color: #00d4ff;
+    text-align: right;
+    padding: 8px 12px;
+    border-radius: 20px;
+    min-width: 80px;
 }
 
-.objective-target {
-    font-weight: bold;
-    color: #4ecdc4;
+.ranking-pnl.positive {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(40, 167, 69, 0.1));
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.2);
 }
 
-.progress-bar {
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 10px;
+.ranking-pnl.negative {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.2), rgba(220, 53, 69, 0.1));
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.2);
 }
 
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #00d4ff, #4ecdc4);
-    border-radius: 4px;
-    transition: width 0.5s ease;
-}
-
-.progress-text {
-    font-size: 14px;
-    color: #888;
-}
-
-/* Animations */
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-10px); }
-    60% { transform: translateY(-5px); }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.section.active {
-    animation: fadeIn 0.3s ease;
-}
-
-/* Classes utilitaires */
-.positive {
-    color: #4ecdc4 !important;
-}
-
-.negative {
-    color: #ff6b6b !important;
-}
-
-.text-center {
+.no-ranking {
     text-align: center;
+    padding: 40px 20px;
+    color: #aaa;
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 2px dashed rgba(255, 215, 0, 0.2);
 }
 
-.hidden {
-    display: none !important;
-}
-
-/* Fix responsive mobile */
-* {
-    max-width: 100vw;
-    box-sizing: border-box;
-}
-
-.section, .chart-container, .trade-card, .objective-card, .ranking-item {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-}
-
-/* Empêcher le débordement horizontal */
-html {
-    overflow-x: hidden;
-    width: 100%;
-}
-
-.mobile-header, .mobile-main, .bottom-nav {
-    width: 100%;
-    max-width: 100vw;
-}
-
-/* Fix boutons tactiles */
-.primary-btn, .secondary-btn, .action-btn, .nav-btn, .menu-btn, .close-btn, .send-btn {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-    cursor: pointer;
-    position: relative;
-    z-index: 10;
-}
-
-.primary-btn:active, .secondary-btn:active, .action-btn:active, .send-btn:active {
-    transform: scale(0.95);
-    transition: transform 0.1s;
-}
-
-/* Bottom Navigation */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(26, 26, 46, 0.95);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    border-top: 1px solid rgba(0, 212, 255, 0.3);
-    z-index: 1000;
-}
-
-.nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 8px;
-    transition: color 0.2s;
-    min-width: 60px;
-}
-
-.nav-btn.active {
-    color: #00d4ff;
-}
-
-.nav-icon {
-    font-size: 20px;
-    margin-bottom: 4px;
-}
-
-.nav-label {
-    font-size: 10px;
-}
-
-/* Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -1008,43 +490,16 @@ html {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    z-index: 1000;
 }
 
 .modal-content {
-    background: rgba(26, 26, 46, 0.98);
-    border-radius: 15px;
-    width: 100%;
-    max-width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-}
-
-.modal-header {
-    background: linear-gradient(135deg, #00d4ff, #0099cc);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 15px 15px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.close-modal {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 5px;
-}
-
-.trade-form {
+    background: #1a1a2e;
+    margin: 10% auto;
     padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
 }
 
 .form-group {
@@ -1054,158 +509,118 @@ html {
 .form-group label {
     display: block;
     margin-bottom: 5px;
-    font-weight: 500;
-    color: #00d4ff;
+    color: #ccc;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 5px;
     background: rgba(255, 255, 255, 0.1);
     color: white;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: #00d4ff;
-    background: rgba(255, 255, 255, 0.15);
 }
 
 .form-actions {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
+    justify-content: flex-end;
 }
 
 .secondary-btn {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    background: #666;
     color: white;
-    border-radius: 8px;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
     cursor: pointer;
 }
 
-/* Switch Toggle */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
     left: 0;
     right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 24px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked + .slider {
-    background-color: #00d4ff;
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-
-/* Fix spécifique pour les boutons critiques */
-#newTradeBtn, #addTradeBtn, .send-btn, #chatToggle {
-    pointer-events: auto !important;
-    z-index: 1000 !important;
-    position: relative !important;
-}
-
-.mobile-chat-toggle {
-    pointer-events: auto !important;
-    z-index: 1500 !important;
-    transition: transform 0.2s ease;
-}
-
-.mobile-chat-toggle:hover {
-    transform: scale(1.1);
-}
-
-.mobile-chat-toggle:active {
-    transform: scale(0.95);
-}
-
-/* Fix chat mobile minimal */
-.chat-header .close-btn {
-    background: #ff6b6b;
-    color: white;
-    border: none;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    font-size: 18px;
-    cursor: pointer;
+    background: rgba(26, 26, 46, 0.95);
     display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    cursor: pointer;
+    padding: 5px;
 }
 
-.send-btn {
-    background: #00d4ff;
-    color: white;
-    border: none;
-    padding: 12px 16px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 16px;
-    min-width: 45px;
-    height: 45px;
+.nav-btn.active {
+    color: #00d4ff;
+}
+
+.nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+}
+
+.nav-label {
+    font-size: 10px;
+}
+
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    height: 100%;
+    background: rgba(26, 26, 46, 0.98);
+    transition: left 0.3s ease;
+    z-index: 999;
+}
+
+.mobile-menu.active {
+    left: 0;
+}
+
+.menu-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.3);
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
 }
 
-/* Amélioration des boutons d'action des trades */
-.trade-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 15px;
-    flex-wrap: wrap;
+.menu-list {
+    list-style: none;
+    padding: 20px 0;
 }
 
-.action-btn {
-    flex: 1;
-    min-width: 80px;
-    padding: 10px 8px;
+.menu-list li {
+    margin-bottom: 10px;
+}
+
+.menu-list a {
+    display: block;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+}
+
+.menu-list a:hover {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.menu-btn,
+.close-btn {
+    background: none;
     border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: bold;
+    color: white;
+    font-size: 20px;
     cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
 }

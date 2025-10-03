@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
-    <link rel="stylesheet" href="mobile-clean.css?v=2025">
-    <link rel="stylesheet" href="mobile-chat-styles-fix.css">
+    <link rel="stylesheet" href="mobile-clean.css">
+    <link rel="stylesheet" href="mobile-complete.css">
+    <link rel="stylesheet" href="mobile-chat-fix.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
@@ -33,7 +34,10 @@
         
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log('✅ Utilisateur authentifié:', user.email);
+                console.log('✅ Utilisateur authentifié:', user.email, 'UID:', user.uid);
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+                window.currentUser = user.uid;
             } else {
                 console.log('❌ Pas d'utilisateur, redirection...');
                 window.location.href = 'index.html';
@@ -90,14 +94,49 @@
                 <button id="newTradeBtn" class="primary-btn">+ Trade</button>
             </div>
             
-            <div class="chart-container">
-                <h3>Performance</h3>
-                <canvas id="mobilePerformanceChart"></canvas>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Trades Totaux</h4>
+                    <span id="totalTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Gagnants</h4>
+                    <span id="winningTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Perdants</h4>
+                    <span id="losingTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Ratio R/R</h4>
+                    <span id="riskReward">1:1</span>
+                </div>
             </div>
             
             <div class="chart-container">
-                <h3>WinRate</h3>
-                <canvas id="mobileWinRateChart"></canvas>
+                <h3>📈 Performance</h3>
+                <div class="chart-placeholder" id="performanceChart">
+                    <div class="chart-info">
+                        <div class="chart-value" id="chartCapital">$1000</div>
+                        <div class="chart-pnl" id="chartLastPnL" style="font-size: 16px; margin-top: 5px; font-weight: bold;"></div>
+                        <div class="chart-label">Capital Actuel</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>🎯 WinRate</h3>
+                <div class="chart-placeholder" id="winrateChart">
+                    <div class="winrate-display">
+                        <div class="winrate-circle">
+                            <div class="winrate-value" id="chartWinRate">0%</div>
+                        </div>
+                        <div class="winrate-stats">
+                            <div class="win-stat positive" id="chartWins">0 Gains</div>
+                            <div class="loss-stat negative" id="chartLosses">0 Pertes</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -212,7 +251,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>📈 Nouveau Trade</h3>
-                <button class="close-modal" id="closeTradeModal">✕</button>
+                <button class="close-modal" id="closeTradeModal" onclick="closeMobileModal()">✕</button>
             </div>
             
             <form id="tradeForm" class="trade-form">
@@ -261,12 +300,14 @@
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" class="secondary-btn" id="cancelTradeBtn" onclick="closeMobileModal()" ontouchend="closeMobileModal()">Annuler</button>
-                    <button type="submit" class="primary-btn" onclick="saveMobileTrade()" ontouchend="saveMobileTrade()">💾 Sauvegarder</button>
+                    <button type="button" class="secondary-btn" onclick="closeMobileModal()">Annuler</button>
+                    <button type="button" class="primary-btn" onclick="addMobileTrade()">💾 Sauvegarder</button>
                 </div>
             </form>
         </div>
     </div>
+
+
 
     <!-- Navigation Bottom -->
     <nav class="bottom-nav">
@@ -288,43 +329,81 @@
         </button>
     </nav>
 
-    <!-- Chat Toggle -->
-    <div class="mobile-chat-toggle" id="chatToggle">💬</div>
 
-    <!-- Chat Window -->
-    <div class="mobile-chat-window" id="chatWindow" style="display: none;">
-        <div class="chat-header">
-            <h4>💬 Chat VIP</h4>
-            <button class="close-btn" onclick="toggleMobileChat()" ontouchend="toggleMobileChat()">✕</button>
+
+
+
+    <!-- Chat Widget Droite -->
+    <div id="mobileChat" style="position: fixed; bottom: 100px; right: 20px; z-index: 99999;">
+        <div id="chatToggle" style="width: 60px; height: 60px; background: linear-gradient(135deg, #00d4ff, #0099cc); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4); color: white; font-weight: bold;" onclick="openMobileChat()">
+            💬
         </div>
-        <div class="chat-messages" id="mobileMessages">
-            <div class="welcome-message">
-                <div class="message-author">Misterpips Bot</div>
-                <div class="message-text">Bienvenue dans le chat VIP! 🚀</div>
-                <div class="message-time">Maintenant</div>
+    </div>
+
+    <div id="chatWindow" style="position: fixed; bottom: 0; right: 20px; width: 350px; height: 500px; background: rgba(26, 26, 46, 0.98); border-radius: 15px 15px 0 0; z-index: 99998; transform: translateY(100%); transition: transform 0.3s ease; display: none;">
+        <div style="padding: 15px; border-bottom: 1px solid rgba(0, 212, 255, 0.3); display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="color: #00d4ff; margin: 0;">💬 Chat VIP</h4>
+            <button onclick="closeMobileChat()" style="background: #ff6b6b; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">×</button>
+        </div>
+        <div id="chatMessages" style="height: 350px; overflow-y: auto; padding: 15px;">
+            <div style="background: rgba(0, 212, 255, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                <strong style="color: #00d4ff;">Bot:</strong> Bienvenue dans le chat VIP! 🚀
             </div>
         </div>
-        <div class="mobile-emoji-panel" id="mobileEmojiPanel" style="display: none;">
-            <div class="emoji-grid">
-                <span class="emoji-item" onclick="insertEmoji('😀')" ontouchend="insertEmoji('😀')">😀</span>
-                <span class="emoji-item" onclick="insertEmoji('😂')" ontouchend="insertEmoji('😂')">😂</span>
-                <span class="emoji-item" onclick="insertEmoji('🔥')" ontouchend="insertEmoji('🔥')">🔥</span>
-                <span class="emoji-item" onclick="insertEmoji('💪')" ontouchend="insertEmoji('💪')">💪</span>
-                <span class="emoji-item" onclick="insertEmoji('👍')" ontouchend="insertEmoji('👍')">👍</span>
-                <span class="emoji-item" onclick="insertEmoji('💰')" ontouchend="insertEmoji('💰')">💰</span>
-                <span class="emoji-item" onclick="insertEmoji('📈')" ontouchend="insertEmoji('📈')">📈</span>
-                <span class="emoji-item" onclick="insertEmoji('🚀')" ontouchend="insertEmoji('🚀')">🚀</span>
-            </div>
-        </div>
-        <div class="chat-input-container">
-            <button class="emoji-btn" onclick="toggleEmojiPanel()" ontouchend="toggleEmojiPanel()">😀</button>
-            <input type="text" id="mobileMessageInput" placeholder="Tapez votre message..." maxlength="500" onkeypress="if(event.key==='Enter') sendMobileMessage()">
-            <button class="send-btn" onclick="sendMobileMessage()" ontouchend="sendMobileMessage()">➤</button>
+        <div style="padding: 15px; border-top: 1px solid rgba(0, 212, 255, 0.3); display: flex; gap: 10px;">
+            <input type="text" id="chatInput" placeholder="Votre message..." style="flex: 1; padding: 10px; border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 20px; background: rgba(255, 255, 255, 0.1); color: white;" onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()" style="background: #00d4ff; border: none; color: white; padding: 10px 15px; border-radius: 50%; cursor: pointer;">➤</button>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="mobile-simple-trades.js"></script>
+    <script>
+        function openMobileChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.style.display = 'block';
+            setTimeout(() => {
+                chatWindow.style.transform = 'translateY(0)';
+            }, 10);
+        }
+        
+        function closeMobileChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+                chatWindow.style.display = 'none';
+            }, 300);
+        }
+        
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (message) {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML += `
+                    <div style="background: rgba(0, 212, 255, 0.2); padding: 10px; border-radius: 8px; margin-bottom: 10px; margin-left: auto; max-width: 80%;">
+                        <strong style="color: #00d4ff;">Vous:</strong> ${message}
+                        <div style="font-size: 12px; color: #888; margin-top: 5px;">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                `;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                input.value = '';
+            }
+        }
+        
+        // Forcer la position à droite
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileChat = document.getElementById('mobileChat');
+            if (mobileChat) {
+                mobileChat.style.position = 'fixed';
+                mobileChat.style.bottom = '100px';
+                mobileChat.style.right = '20px';
+                mobileChat.style.left = 'auto';
+                mobileChat.style.zIndex = '99999';
+            }
+        });
+    </script>
+    <script src="mobile-trades.js"></script>
+    <script src="mobile-features.js"></script>
     <script>
         // Fonctions chat mobile
         function sendMobileMessage() {
@@ -364,303 +443,202 @@
         function closeMobileModal() {
             document.getElementById('tradeModal').style.display = 'none';
             editingTradeIndex = -1;
-            document.querySelector('#tradeModal h3').textContent = 'Nouveau Trade';
+            document.querySelector('#tradeModal h3').textContent = '📈 Nouveau Trade';
             // Reset form
             document.getElementById('tradeForm').reset();
+            document.getElementById('tradeLot').value = '0.01';
             document.getElementById('tradeEntry').value = '1.0000';
             document.getElementById('tradeStopLoss').value = '0.9950';
             document.getElementById('tradeTakeProfit').value = '1.0050';
+            document.getElementById('tradeResult').value = '';
         }
         
-        // Variables globales
-        let mobileTradesData = [];
+        // Exposer la fonction globalement
+        window.closeMobileModal = closeMobileModal;
+        
+        // Variables globales (système PC)
+        window.currentUser = sessionStorage.getItem('firebaseUID');
+        window.mobileTradesData = [];
         let editingTradeIndex = -1;
         let mobileCharts = {};
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let settings = { capital: 1000, riskPerTrade: 2 };
+        let accounts = { compte1: { name: 'Compte Principal', capital: 1000 } };
+        let currentAccount = 'compte1';
         
-        async function saveMobileTrade() {
-            const pair = document.getElementById('tradePair').value;
-            const type = document.getElementById('tradeType').value;
-            const lot = document.getElementById('tradeLot').value;
-            const entry = document.getElementById('tradeEntry').value;
-            const sl = document.getElementById('tradeStopLoss').value;
-            const tp = document.getElementById('tradeTakeProfit').value;
-            const result = document.getElementById('tradeResult').value;
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+        function updateMobileCharts() {
+            // Pas de graphiques Chart.js - utilise les stats cards
+            const totalTrades = window.mobileTradesData ? window.mobileTradesData.length : 0;
+            const winTrades = window.mobileTradesData ? window.mobileTradesData.filter(t => t.pnl > 0).length : 0;
             
-            if (!pair || !type || !lot || !entry) {
-                alert('Veuillez remplir tous les champs obligatoires');
-                return;
+            document.getElementById('totalTrades').textContent = totalTrades;
+            document.getElementById('winningTrades').textContent = winTrades;
+        }
+        
+        // Système de chargement PC adapté
+        async function loadMobileTrades() {
+            try {
+                if (window.firebaseDB && window.currentUser) {
+                    const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                    const userRef = ref(window.firebaseDB, `dashboards/${window.currentUser}`);
+                    const snapshot = await get(userRef);
+                    
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        window.mobileTradesData = data.trades || [];
+                        settings = data.settings || settings;
+                        accounts = data.accounts || accounts;
+                        currentAccount = data.currentAccount || currentAccount;
+                        console.log('✅ Données chargées depuis Firebase:', window.mobileTradesData.length, 'trades');
+                    } else {
+                        console.log('ℹ️ Aucune donnée Firebase, valeurs par défaut');
+                    }
+                } else {
+                    console.log('⚠️ Firebase ou utilisateur non disponible');
+                }
+            } catch (error) {
+                console.error('❌ Erreur chargement Firebase:', error);
             }
             
-            const trade = {
-                id: editingTradeIndex >= 0 ? mobileTradesData[editingTradeIndex].id : Date.now(),
-                pair, type, lots: parseFloat(lot),
-                entry: parseFloat(entry), 
-                stopLoss: parseFloat(sl) || 0, 
-                takeProfit: parseFloat(tp) || 0,
-                pnl: result ? parseFloat(result) : 0,
-                date: new Date().toISOString().split('T')[0],
-                time: new Date().toLocaleTimeString(),
-                status: result ? 'closed' : 'open'
-            };
+            updateMobileTradesList();
+            updateMobileStats();
+            updateMobileCharts();
+            updateMobileCalendar();
+            loadVIPRanking();
+        }
+        
+        // Système de sauvegarde PC adapté
+        async function saveMobileData() {
+            if (!window.firebaseDB || !window.currentUser) return;
             
             try {
-                // Sauvegarder dans Firebase
-                if (window.firebaseDB) {
-                    const { ref, set, push } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                    
-                    if (editingTradeIndex >= 0) {
-                        // Modification
-                        await set(ref(window.firebaseDB, `users/mobile_user_fixed/accounts/compte1/trades/${trade.id}`), trade);
-                        mobileTradesData[editingTradeIndex] = trade;
-                    } else {
-                        // Nouveau trade
-                        const newRef = await push(ref(window.firebaseDB, 'users/mobile_user_fixed/accounts/compte1/trades'), trade);
-                        trade.id = newRef.key;
-                        mobileTradesData.push(trade);
-                    }
-                }
+                const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
                 
-                // Mettre à jour l'affichage
-                updateMobileTradesList();
-                updateMobileStats();
-                updateMobileCharts();
+                const dataToSave = {
+                    trades: window.mobileTradesData,
+                    settings: settings,
+                    accounts: accounts,
+                    currentAccount: currentAccount,
+                    lastUpdated: new Date().toISOString(),
+                    version: Date.now()
+                };
                 
-                closeMobileModal();
-                editingTradeIndex = -1;
-                alert(editingTradeIndex >= 0 ? 'Trade modifié!' : 'Trade sauvegardé!');
+                // Sauvegarder dans dashboards
+                const dashboardRef = ref(window.firebaseDB, `dashboards/${window.currentUser}`);
+                await set(dashboardRef, dataToSave);
                 
+                // Sauvegarder dans users pour le classement VIP
+                const userRef = ref(window.firebaseDB, `users/${window.currentUser}`);
+                await set(userRef, {
+                    isVIP: true,
+                    plan: 'VIP',
+                    email: sessionStorage.getItem('userEmail') || 'user@example.com',
+                    displayName: sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader',
+                    nickname: sessionStorage.getItem('userEmail')?.split('@')[0] || 'Trader',
+                    accounts: {
+                        compte1: {
+                            trades: window.mobileTradesData,
+                            capital: accounts[currentAccount]?.capital || settings.capital,
+                            settings: settings
+                        }
+                    },
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                console.log('✅ Données sauvegardées dans Firebase');
             } catch (error) {
-                console.error('❌ Erreur sauvegarde:', error);
-                // Sauvegarde locale en cas d'erreur
-                if (editingTradeIndex >= 0) {
-                    mobileTradesData[editingTradeIndex] = trade;
-                } else {
-                    mobileTradesData.push(trade);
-                }
-                updateMobileTradesList();
-                updateMobileStats();
-                updateMobileCharts();
-                closeMobileModal();
-                editingTradeIndex = -1;
+                console.error('❌ Erreur sauvegarde Firebase:', error);
             }
         }
         
-        function updateMobileTradesList() {
-            const tradesList = document.getElementById('mobileTradesList');
-            if (!tradesList) return;
+        // Fonctions simplifiées
+        window.closeTradeAs = (index, type) => closeTrade(index, type);
+        window.deleteMobileTrade = (index) => deleteTrade(index);
+        
+        async function loadVIPRanking() {
+            try {
+                const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                const usersRef = ref(window.firebaseDB, 'users');
+                const snapshot = await get(usersRef);
+                
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    const rankings = [];
+                    
+                    Object.entries(users).forEach(([userId, userData]) => {
+                        if (userData.isVIP && userData.accounts && userData.accounts.compte1) {
+                            const trades = userData.accounts.compte1.trades || [];
+                            const closedTrades = Array.isArray(trades) ? trades.filter(t => t.status === 'closed') : Object.values(trades).filter(t => t.status === 'closed');
+                            const totalPnL = closedTrades.reduce((sum, trade) => sum + (parseFloat(trade.pnl) || 0), 0);
+                            const winTrades = closedTrades.filter(trade => (parseFloat(trade.pnl) || 0) > 0).length;
+                            const winRate = closedTrades.length > 0 ? (winTrades / closedTrades.length * 100) : 0;
+                            
+                            rankings.push({
+                                id: userId,
+                                name: userData.nickname || userData.displayName || 'Trader',
+                                totalPnL: totalPnL,
+                                winRate: winRate,
+                                totalTrades: closedTrades.length
+                            });
+                        }
+                    });
+                    
+                    rankings.sort((a, b) => b.totalPnL - a.totalPnL);
+                    displayRanking(rankings);
+                    console.log('✅ Classement VIP chargé:', rankings.length, 'traders');
+                } else {
+                    displayRanking([]);
+                }
+            } catch (error) {
+                console.error('❌ Erreur chargement classement:', error);
+                displayRanking([]);
+            }
+        }
+        
+        function displayRanking(rankings) {
+            const container = document.getElementById('mobileRankingList');
+            if (!container) return;
             
-            if (mobileTradesData.length === 0) {
-                tradesList.innerHTML = '<div class="no-trades">Aucun trade pour le moment</div>';
+            if (!rankings || rankings.length === 0) {
+                container.innerHTML = '<div class="no-ranking">Aucun trader VIP pour le moment</div>';
                 return;
             }
             
             let html = '';
-            mobileTradesData.forEach((trade, index) => {
-                const profitClass = trade.pnl >= 0 ? 'profit' : 'loss';
-                const profitIcon = trade.pnl >= 0 ? '🟢' : '🔴';
+            rankings.forEach((user, index) => {
+                const position = index + 1;
+                const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : `${position}`;
+                const pnlClass = user.totalPnL >= 0 ? 'positive' : 'negative';
                 
                 html += `
-                    <div class="trade-item" data-index="${index}">
-                        <div class="trade-header">
-                            <span class="trade-pair">${trade.pair}</span>
-                            <span class="trade-type ${trade.type.toLowerCase()}">${trade.type}</span>
-                            <span class="trade-result ${profitClass}">${profitIcon} $${trade.pnl}</span>
+                    <div class="ranking-item">
+                        <div class="ranking-position">${medal}</div>
+                        <div class="ranking-info">
+                            <div class="trader-name">${user.name}</div>
+                            <div class="trader-stats">${user.totalTrades} trades • ${user.winRate.toFixed(1)}% WR</div>
                         </div>
-                        <div class="trade-details">
-                            <div class="trade-info">
-                                <span>Lots: ${trade.lots}</span>
-                                <span>Entrée: ${trade.entry}</span>
-                                <span>Date: ${trade.date}</span>
-                            </div>
-                            <div class="trade-actions">
-                                <button class="edit-btn" onclick="editMobileTrade(${index})">✏️</button>
-                                <button class="delete-btn" onclick="deleteMobileTrade(${index})">🗑️</button>
-                            </div>
-                        </div>
+                        <div class="ranking-pnl ${pnlClass}">$${user.totalPnL.toFixed(2)}</div>
                     </div>
                 `;
             });
             
-            tradesList.innerHTML = html;
+            container.innerHTML = html;
         }
-        
-        function editMobileTrade(index) {
-            const trade = mobileTradesData[index];
-            if (!trade) return;
-            
-            editingTradeIndex = index;
-            
-            // Remplir le formulaire
-            document.getElementById('tradePair').value = trade.pair;
-            document.getElementById('tradeType').value = trade.type;
-            document.getElementById('tradeLot').value = trade.lots;
-            document.getElementById('tradeEntry').value = trade.entry;
-            document.getElementById('tradeStopLoss').value = trade.stopLoss;
-            document.getElementById('tradeTakeProfit').value = trade.takeProfit;
-            document.getElementById('tradeResult').value = trade.pnl;
-            
-            // Changer le titre
-            document.querySelector('#tradeModal h3').textContent = 'Modifier Trade';
-            
-            // Ouvrir la modal
-            document.getElementById('tradeModal').style.display = 'block';
-        }
-        
-        async function deleteMobileTrade(index) {
-            if (!confirm('Supprimer ce trade?')) return;
-            
-            const trade = mobileTradesData[index];
-            
-            try {
-                // Supprimer de Firebase
-                if (window.firebaseDB && trade.id) {
-                    const { ref, remove } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                    await remove(ref(window.firebaseDB, `users/mobile_user_fixed/accounts/compte1/trades/${trade.id}`));
-                }
-                
-                // Supprimer localement
-                mobileTradesData.splice(index, 1);
-                
-                // Mettre à jour l'affichage
-                updateMobileTradesList();
-                updateMobileStats();
-                updateMobileCharts();
-                
-                alert('Trade supprimé!');
-                
-            } catch (error) {
-                console.error('❌ Erreur suppression:', error);
-                // Suppression locale en cas d'erreur
-                mobileTradesData.splice(index, 1);
-                updateMobileTradesList();
-                updateMobileStats();
-                updateMobileCharts();
-            }
-        }
-        
-        function updateMobileStats() {
-            const totalPnL = mobileTradesData.reduce((sum, trade) => sum + trade.pnl, 0);
-            const winTrades = mobileTradesData.filter(trade => trade.pnl > 0).length;
-            const winRate = mobileTradesData.length > 0 ? (winTrades / mobileTradesData.length * 100) : 0;
-            
-            document.getElementById('mobilePnL').textContent = `$${totalPnL.toFixed(2)}`;
-            document.getElementById('mobileWinRate').textContent = `${winRate.toFixed(1)}%`;
-        }
-        
-        function updateMobileCharts() {
-            // Graphique Performance
-            const perfCtx = document.getElementById('mobilePerformanceChart');
-            if (perfCtx) {
-                if (mobileCharts.performance) {
-                    mobileCharts.performance.destroy();
-                }
-                
-                let cumulative = 1000; // Capital initial
-                const data = [cumulative];
-                const labels = ['Début'];
-                
-                mobileTradesData.forEach((trade, index) => {
-                    cumulative += trade.pnl;
-                    data.push(cumulative);
-                    labels.push(`T${index + 1}`);
-                });
-                
-                mobileCharts.performance = new Chart(perfCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Capital',
-                            data: data,
-                            borderColor: '#00d4ff',
-                            backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: false }
-                        }
-                    }
-                });
-            }
-            
-            // Graphique WinRate
-            const winCtx = document.getElementById('mobileWinRateChart');
-            if (winCtx) {
-                if (mobileCharts.winRate) {
-                    mobileCharts.winRate.destroy();
-                }
-                
-                const winTrades = mobileTradesData.filter(trade => trade.pnl > 0).length;
-                const lossTrades = mobileTradesData.length - winTrades;
-                
-                mobileCharts.winRate = new Chart(winCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Gains', 'Pertes'],
-                        datasets: [{
-                            data: [winTrades, lossTrades],
-                            backgroundColor: ['#4CAF50', '#f44336']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { position: 'bottom' }
-                        }
-                    }
-                });
-            }
-        }
-        
-        // Charger les trades au démarrage
-        async function loadMobileTrades() {
-            try {
-                if (window.firebaseDB) {
-                    const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
-                    const tradesRef = ref(window.firebaseDB, 'users/mobile_user_fixed/accounts/compte1/trades');
-                    const snapshot = await get(tradesRef);
-                    
-                    if (snapshot.exists()) {
-                        const trades = snapshot.val();
-                        mobileTradesData = Object.entries(trades).map(([id, trade]) => ({ ...trade, id }));
-                    }
-                }
-                
-                updateMobileTradesList();
-                updateMobileStats();
-                updateMobileCharts();
-                
-            } catch (error) {
-                console.error('❌ Erreur chargement trades:', error);
-            }
-        }
-        
-        // Exposer les fonctions
-        window.editMobileTrade = editMobileTrade;
-        window.deleteMobileTrade = deleteMobileTrade;
-        
-        // Classement mobile simple (sans Firebase)
-        setTimeout(() => {
-            const rankingContainer = document.getElementById('mobileRankingList');
-            if (rankingContainer) {
-                rankingContainer.innerHTML = `
-                    <div class="ranking-header"><h4>🏆 Classement VIP</h4></div>
-                    <div class="ranking-item">
-                        <div class="ranking-position">🥇</div>
-                        <div class="ranking-info">
-                            <div class="trader-name">Mobile User</div>
-                            <div class="trader-stats">Trader VIP</div>
-                        </div>
-                        <div class="ranking-pnl positive">VIP</div>
-                    </div>
-                `;
-                console.log('✅ Classement mobile affiché');
-            }
-        }, 1000);
         
         // Événements navigation et chat
         document.addEventListener('DOMContentLoaded', () => {
@@ -696,26 +674,45 @@
                 document.getElementById('tradeModal').style.display = 'block';
             });
             
-            // Initialiser la liste des trades
-            showMobileTradesList();
+            // Attendre l'authentification puis charger
+            const initWhenReady = () => {
+                if (window.currentUser || sessionStorage.getItem('firebaseUID')) {
+                    window.currentUser = window.currentUser || sessionStorage.getItem('firebaseUID');
+                    loadMobileTrades();
+                    console.log('🚀 Dashboard initialisé pour:', window.currentUser);
+                } else {
+                    setTimeout(initWhenReady, 100);
+                }
+            };
+            initWhenReady();
             
-            // Chat position
+            // Navigation calendrier
+            document.getElementById('prevMonthMobile')?.addEventListener('click', () => {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                updateMobileCalendar();
+            });
+            
+            document.getElementById('nextMonthMobile')?.addEventListener('click', () => {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                updateMobileCalendar();
+            });
+            
+            // Chat events
             const chatToggle = document.getElementById('chatToggle');
-            const chatWindow = document.getElementById('chatWindow');
-            
             if (chatToggle) {
-                chatToggle.style.position = 'fixed';
-                chatToggle.style.right = '20px';
-                chatToggle.style.bottom = '90px';
-                chatToggle.style.left = 'auto';
                 chatToggle.addEventListener('click', toggleMobileChat);
-            }
-            
-            if (chatWindow) {
-                chatWindow.style.position = 'fixed';
-                chatWindow.style.right = '20px';
-                chatWindow.style.bottom = '160px';
-                chatWindow.style.left = 'auto';
+                chatToggle.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    toggleMobileChat();
+                });
             }
         });
         
@@ -728,6 +725,56 @@
         }
         
         window.showSection = showSection;
+        
+        // Fonction calendrier mobile
+        function updateMobileCalendar() {
+            const calendar = document.getElementById('mobileCalendar');
+            const monthYear = document.getElementById('monthYearMobile');
+            
+            if (!calendar || !monthYear) return;
+            
+            const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                          'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            
+            monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            let html = '';
+            
+            // Jours de la semaine
+            const dayNames = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+            dayNames.forEach(day => {
+                html += `<div class="calendar-header-day">${day}</div>`;
+            });
+            
+            // Jours vides au début
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day empty"></div>';
+            }
+            
+            // Jours du mois
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayTrades = window.mobileTradesData.filter(trade => trade.date === dateStr && trade.status === 'closed');
+                const dayPnL = dayTrades.reduce((sum, trade) => sum + trade.pnl, 0);
+                
+                let dayClass = 'calendar-day';
+                if (dayTrades.length > 0) {
+                    dayClass += dayPnL >= 0 ? ' profit-day' : ' loss-day';
+                }
+                
+                html += `
+                    <div class="${dayClass}">
+                        <div class="calendar-date">${day}</div>
+                        ${dayTrades.length > 0 ? `<div class="calendar-pnl">$${dayPnL.toFixed(0)}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            calendar.innerHTML = html;
+        }
     </script>
 </body>
 </html>

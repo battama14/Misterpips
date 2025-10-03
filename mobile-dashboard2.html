@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
     <link rel="stylesheet" href="mobile-clean.css?v=2025">
-    <link rel="stylesheet" href="mobile-trade-styles.css">
-    <link rel="stylesheet" href="mobile-ranking-styles-fix.css">
-    <link rel="stylesheet" href="mobile-chat-styles.css">
+    <link rel="stylesheet" href="mobile-stats.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Misterpips">
     <link rel="apple-touch-icon" href="Misterpips.jpg">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
@@ -36,14 +34,19 @@
         
         window.firebaseDB = db;
         window.firebaseAuth = auth;
+        window.dbRef = ref;
+        window.dbGet = get;
+        window.dbSet = set;
+        window.onValue = onValue;
+        window.push = push;
         
-        // Vérifier l'authentification au chargement
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log('✅ Utilisateur authentifié:', user.email);
-            } else {
-                console.log('❌ Pas d’utilisateur, redirection...');
+            if (!user) {
                 window.location.href = 'index.html';
+            } else {
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+                console.log('🔥 Mobile Firebase prêt:', user.email);
             }
         });
     </script>
@@ -97,14 +100,15 @@
                 <button id="newTradeBtn" class="primary-btn">+ Trade</button>
             </div>
             
-            <div class="chart-container">
-                <h3>Performance</h3>
-                <canvas id="mobilePerformanceChart"></canvas>
-            </div>
-            
-            <div class="chart-container">
-                <h3>WinRate</h3>
-                <canvas id="mobileWinRateChart"></canvas>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Trades Totaux</h4>
+                    <span id="totalTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Gagnants</h4>
+                    <span id="winningTrades">0</span>
+                </div>
             </div>
         </section>
 
@@ -218,80 +222,16 @@
                 </div>
                 
                 <div class="setting-item">
-                    <label>Mode sombre</label>
-                    <label class="switch">
-                        <input type="checkbox" id="mobileDarkMode">
-                        <span class="slider"></span>
-                    </label>
+                    <button class="danger-btn" onclick="resetData()">Réinitialiser</button>
                 </div>
-                
-                <button class="primary-btn" id="saveSettingsBtn">💾 Sauvegarder</button>
             </div>
         </section>
     </main>
 
     <!-- Modal Trade -->
     <div id="tradeModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📈 Nouveau Trade</h3>
-                <button class="close-modal" id="closeTradeModal">✕</button>
-            </div>
-            
-            <form id="tradeForm" class="trade-form">
-                <div class="form-group">
-                    <label>Paire</label>
-                    <select id="tradePair" required>
-                        <option value="">Sélectionner...</option>
-                        <option value="EUR/USD">EUR/USD</option>
-                        <option value="GBP/USD">GBP/USD</option>
-                        <option value="USD/JPY">USD/JPY</option>
-                        <option value="AUD/USD">AUD/USD</option>
-                        <option value="USD/CAD">USD/CAD</option>
-                        <option value="NZD/USD">NZD/USD</option>
-                        <option value="EUR/GBP">EUR/GBP</option>
-                        <option value="EUR/JPY">EUR/JPY</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="tradeType" required>
-                        <option value="BUY">🟢 BUY</option>
-                        <option value="SELL">🔴 SELL</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Lot Size</label>
-                    <input type="number" id="tradeLot" step="0.01" min="0.01" value="0.01" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Prix d'entrée</label>
-                    <input type="number" id="tradeEntry" step="0.00001" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Take Profit</label>
-                    <input type="number" id="tradeTp" step="0.00001">
-                </div>
-                
-                <div class="form-group">
-                    <label>Stop Loss</label>
-                    <input type="number" id="tradeSl" step="0.00001">
-                </div>
-                
-                <div class="form-group">
-                    <label>Résultat ($)</label>
-                    <input type="number" id="tradeResult" step="0.01" required>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="secondary-btn" id="cancelTradeBtn">Annuler</button>
-                    <button type="submit" class="primary-btn">💾 Sauvegarder</button>
-                </div>
-            </form>
+        <div class="modal-content" id="modalContent">
+            <!-- Contenu généré par JS -->
         </div>
     </div>
 
@@ -316,188 +256,7 @@
     </nav>
 
     <!-- Scripts -->
-    <script src="mobile-sync-unified.js"></script>
-    <script src="mobile-complete.js"></script>
-    <script src="mobile-ranking-vip-only.js"></script>
-    <script src="mobile-chat-optimized.js"></script>
-    <script src="mobile-final-fix.js"></script>
-</body>
-</html>="number" id="mobileCapitalInput" value="1000">
-                </div>
-                <div class="setting-item">
-                    <label>Risque par trade (%)</label>
-                    <input type="number" id="mobileRiskInput" value="2" step="0.1">
-                </div>
-                <div class="setting-item">
-                    <label>Objectif journalier ($)</label>
-                    <input type="number" id="mobileDailyObjective" value="10">
-                </div>
-                <div class="setting-item">
-                    <label>Pseudo</label>
-                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
-                </div>
-                <div class="setting-item">
-                    <div class="account-selector-container">
-                        <label>Compte actuel</label>
-                        <select id="mobileAccountSelector" class="account-selector" onchange="window.mobileDashboard?.switchAccount(this.value)" onclick="window.mobileDashboard?.switchAccount(this.value)">
-                            <option value="default">Compte Principal</option>
-                        </select>
-                    </div>
-                    <div class="account-controls">
-                        <button class="secondary-btn" onclick="window.mobileDashboard?.createNewAccount()">Nouveau Compte</button>
-                        <button class="danger-btn" onclick="window.mobileDashboard?.deleteCurrentAccount()">Supprimer</button>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <button class="primary-btn" onclick="window.mobileDashboard?.saveSettings()">💾 Sauvegarder</button>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Navigation Bottom -->
-    <nav class="bottom-nav">
-        <button class="nav-btn active" ontouchend="showSection('dashboard')">
-            <span class="nav-icon">📊</span>
-            <span class="nav-label">Dashboard</span>
-        </button>
-        <button class="nav-btn" ontouchend="showSection('trades')">
-            <span class="nav-icon">📈</span>
-            <span class="nav-label">Trades</span>
-        </button>
-        <button class="nav-btn" ontouchend="showSection('calendar')">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">Calendrier</span>
-        </button>
-        <button class="nav-btn" ontouchend="showSection('ranking')">
-            <span class="nav-icon">🏆</span>
-            <span class="nav-label">Classement</span>
-        </button>
-        <button class="nav-btn" ontouchend="showSection('settings')">
-            <span class="nav-icon">⚙️</span>
-            <span class="nav-label">Paramètres</span>
-        </button>
-    </nav>
-
-    <!-- Chat Toggle -->
-    <div class="mobile-chat-toggle" id="chatToggle">💬</div>
-
-    <!-- Chat Window -->
-    <div class="mobile-chat-window" id="chatWindow">
-        <div class="chat-header">
-            <h4>💬 Chat VIP</h4>
-            <button class="close-btn" onclick="toggleMobileChat()">✕</button>
-        </div>
-        <div class="chat-messages" id="mobileMessages">
-            <!-- Messages générés dynamiquement -->
-        </div>
-        <div class="mobile-emoji-panel" id="mobileEmojiPanel">
-            <div class="emoji-grid">
-                <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
-                <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
-                <span class="emoji-item" onclick="insertEmoji('😍')">😍</span>
-                <span class="emoji-item" onclick="insertEmoji('🤔')">🤔</span>
-                <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
-                <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
-                <span class="emoji-item" onclick="insertEmoji('💪')">💪</span>
-                <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
-                <span class="emoji-item" onclick="insertEmoji('👎')">👎</span>
-                <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
-                <span class="emoji-item" onclick="insertEmoji('💰')">💰</span>
-                <span class="emoji-item" onclick="insertEmoji('📈')">📈</span>
-                <span class="emoji-item" onclick="insertEmoji('📉')">📉</span>
-                <span class="emoji-item" onclick="insertEmoji('🚀')">🚀</span>
-                <span class="emoji-item" onclick="insertEmoji('⭐')">⭐</span>
-                <span class="emoji-item" onclick="insertEmoji('🎯')">🎯</span>
-                <span class="emoji-item" onclick="insertEmoji('💎')">💎</span>
-                <span class="emoji-item" onclick="insertEmoji('🏆')">🏆</span>
-                <span class="emoji-item" onclick="insertEmoji('🎉')">🎉</span>
-                <span class="emoji-item" onclick="insertEmoji('⚡')">⚡</span>
-            </div>
-        </div>
-        <div class="chat-input-container">
-            <button class="emoji-btn" onclick="toggleEmojiPanel()">😀</button>
-            <input type="text" id="mobileMessageInput" placeholder="Tapez votre message..." maxlength="500">
-            <button class="send-btn" onclick="sendMobileMessage()">➤</button>
-        </div>
-    </div>
-
-    <!-- Modal Trade -->
-    <div class="mobile-modal" id="tradeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Nouveau Trade</h3>
-                <button class="close-btn" onclick="closeMobileModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Paire</label>
-                    <select id="tradePair">
-                        <option value="EUR/USD">EUR/USD</option>
-                        <option value="GBP/USD">GBP/USD</option>
-                        <option value="USD/JPY">USD/JPY</option>
-                        <option value="USD/CHF">USD/CHF</option>
-                        <option value="AUD/USD">AUD/USD</option>
-                        <option value="USD/CAD">USD/CAD</option>
-                        <option value="NZD/USD">NZD/USD</option>
-                        <option value="EUR/GBP">EUR/GBP</option>
-                        <option value="EUR/JPY">EUR/JPY</option>
-                        <option value="GBP/JPY">GBP/JPY</option>
-                        <option value="XAU/USD">XAU/USD (Gold)</option>
-                        <option value="XAG/USD">XAG/USD (Silver)</option>
-                        <option value="WTI/USD">WTI/USD (Oil)</option>
-                        <option value="BTC/USD">BTC/USD</option>
-                        <option value="ETH/USD">ETH/USD</option>
-                        <option value="US30">US30 (Dow Jones)</option>
-                        <option value="SPX500">SPX500 (S&P 500)</option>
-                        <option value="NAS100">NAS100 (Nasdaq)</option>
-                        <option value="GER40">GER40 (DAX)</option>
-                        <option value="UK100">UK100 (FTSE)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="tradeType">
-                        <option value="BUY">BUY</option>
-                        <option value="SELL">SELL</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Lots</label>
-                    <input type="number" id="tradeLots" step="0.01" value="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Prix d'entrée</label>
-                    <input type="number" id="tradeEntry" step="0.00001">
-                </div>
-                <div class="form-group">
-                    <label>Stop Loss</label>
-                    <input type="number" id="tradeStopLoss" step="0.00001">
-                </div>
-                <div class="form-group">
-                    <label>Take Profit</label>
-                    <input type="number" id="tradeTakeProfit" step="0.00001">
-                </div>
-
-                <div class="form-actions">
-                    <button class="primary-btn" onclick="saveMobileTrade()">💾 Sauvegarder</button>
-                    <button class="secondary-btn" onclick="closeMobileModal()">❌ Annuler</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="mobile-viewport-fix.js"></script>
-    <script src="mobile-critical-fix.js"></script>
-    <script src="mobile-chat-minimal.js"></script>
-    <script src="date-helper.js"></script>
-    <script src="user-manager.js"></script>
-    <script src="clean-mobile-duplicates.js"></script>
-    <script src="mobile-complete.js"></script>
-    <script src="mobile-ranking-stable.js"></script>
-    <script src="mobile-buttons-fix.js"></script>
-    <script src="debug-vip-users.js"></script>
-    <script src="mobile-fixes.js"></script>
+    <script src="mobile-trades.js"></script>
+    <script src="mobile-features.js"></script>
 </body>
 </html>
