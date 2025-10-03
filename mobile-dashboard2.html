@@ -204,14 +204,190 @@
         </section>
     </main>
 
+    <!-- Widget Chat Flottant -->
+    <div id="chatWidget" class="chat-widget">
+        <button id="chatToggle" class="chat-toggle" onclick="toggleChat()">💬</button>
+        <div id="chatBox" class="chat-box">
+            <div class="chat-header">
+                <span>💬 Chat VIP</span>
+                <button onclick="toggleChat()" class="chat-close">✕</button>
+            </div>
+            <div class="chat-messages" id="widgetChatMessages"></div>
+            <div class="chat-input">
+                <input type="text" id="widgetChatInput" placeholder="Message...">
+                <button onclick="sendWidgetMessage()">📤</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="mobile-trades.js"></script>
-    <script src="mobile-chat.js"></script>
     <script>
-        // Fonctions menu onclick
+        // Menu mobile
         function openMobileMenu() {
-            console.log('📱 Ouverture menu');
             document.getElementById('mobileMenu').classList.add('active');
+            document.getElementById('menuOverlay').classList.add('active');
+        }
+        
+        function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active');
+        }
+        
+        function showMobileSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            closeMobileMenu();
+        }
+        
+        // Widget Chat
+        function toggleChat() {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.classList.toggle('active');
+        }
+        
+        function sendWidgetMessage() {
+            const input = document.getElementById('widgetChatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const uid = sessionStorage.getItem('firebaseUID');
+            const email = sessionStorage.getItem('userEmail');
+            
+            if (window.firebaseDB && window.push && window.dbRef) {
+                const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+                window.push(chatRef, {
+                    text: message,
+                    sender: email || 'Mobile User',
+                    timestamp: Date.now(),
+                    uid: uid
+                });
+            }
+            
+            input.value = '';
+        }
+        
+        // Charger messages widget
+        function loadWidgetChat() {
+            if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
+            
+            const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+            window.onValue(chatRef, (snapshot) => {
+                const messages = snapshot.val();
+                const container = document.getElementById('widgetChatMessages');
+                
+                if (!container) return;
+                container.innerHTML = '';
+                
+                if (messages) {
+                    Object.values(messages)
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                        .slice(-10) // Derniers 10 messages
+                        .forEach(msg => {
+                            const div = document.createElement('div');
+                            div.className = 'chat-msg';
+                            div.innerHTML = `<b>${msg.sender}:</b> ${msg.text}`;
+                            container.appendChild(div);
+                        });
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        }
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadWidgetChat, 3000);
+            
+            const widgetInput = document.getElementById('widgetChatInput');
+            if (widgetInput) {
+                widgetInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendWidgetMessage();
+                });
+            }
+        });
+    </script>
+</body>
+</html>     function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active');
+        }
+        
+        function showMobileSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            closeMobileMenu();
+        }
+        
+        // Chat VIP Firebase
+        function sendMobileMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const uid = sessionStorage.getItem('firebaseUID');
+            const email = sessionStorage.getItem('userEmail');
+            
+            if (window.firebaseDB && window.push && window.dbRef) {
+                const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+                window.push(chatRef, {
+                    text: message,
+                    sender: email || 'Mobile User',
+                    timestamp: Date.now(),
+                    uid: uid
+                });
+            }
+            
+            input.value = '';
+        }
+        
+        // Charger messages
+        function loadVipChat() {
+            if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
+            
+            const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+            window.onValue(chatRef, (snapshot) => {
+                const messages = snapshot.val();
+                const container = document.getElementById('chatMessages');
+                
+                if (!container) return;
+                container.innerHTML = '';
+                
+                if (messages) {
+                    Object.values(messages)
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                        .forEach(msg => {
+                            const div = document.createElement('div');
+                            div.className = 'message received';
+                            div.innerHTML = `
+                                <div class="message-content">
+                                    <div class="message-text">${msg.text}</div>
+                                    <div class="message-info">
+                                        <span class="message-sender">${msg.sender}</span>
+                                        <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                    </div>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        }
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadVipChat, 3000);
+            
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendMobileMessage();
+                });
+            }
+        });
+    </script>
+</body>
+</html>;
             document.getElementById('menuOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
