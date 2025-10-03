@@ -237,6 +237,87 @@
             // Fermer le menu
             closeMobileMenu();
         }
+        
+        // Chat mobile simple
+        function sendMobileMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const container = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">${message}</div>
+                    <div class="message-info">
+                        <span class="message-sender">Vous</span>
+                        <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+            input.value = '';
+            
+            // Réponse auto
+            setTimeout(() => {
+                const botDiv = document.createElement('div');
+                botDiv.className = 'message received';
+                botDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-text">Message reçu ! 👍</div>
+                        <div class="message-info">
+                            <span class="message-sender">Bot</span>
+                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(botDiv);
+                container.scrollTop = container.scrollHeight;
+            }, 1000);
+        }
+        
+        // Entrée pour chat
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendMobileMessage();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>;
+            document.getElementById('menuOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeMobileMenu() {
+            console.log('📱 Fermeture menu');
+            document.getElementById('mobileMenu').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function showMobileSection(sectionId) {
+            console.log('📱 Navigation:', sectionId);
+            
+            // Masquer toutes les sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Afficher la section cible
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Fermer le menu
+            closeMobileMenu();
+        }
     </script>
 </body>
 </html>
