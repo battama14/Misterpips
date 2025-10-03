@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
-    <link rel="stylesheet" href="mobile-clean.css?v=2025">
-    <link rel="stylesheet" href="mobile-trade-styles.css">
+    <link rel="stylesheet" href="mobile-optimized.css?v=2025">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Misterpips">
     <link rel="apple-touch-icon" href="Misterpips.jpg">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
@@ -34,25 +33,20 @@
         
         window.firebaseDB = db;
         window.firebaseAuth = auth;
+        window.dbRef = ref;
+        window.dbGet = get;
+        window.dbSet = set;
+        window.onValue = onValue;
+        window.push = push;
         
-        onAuthStateChanged(auth, async (user) => {
-            // Attendre que userManager soit chargé
-            const waitForUserManager = () => {
-                if (window.userManager) {
-                    if (user) {
-                        window.userManager.loginUser(user.email, user.uid);
-                        console.log('✅ Utilisateur connecté:', user.email);
-                    } else {
-                        const tempUID = 'mobile_user_fixed';
-                        const tempEmail = 'mobile@misterpips.com';
-                        window.userManager.loginUser(tempEmail, tempUID);
-                        console.log('📱 Mode démo activé avec UID fixe');
-                    }
-                } else {
-                    setTimeout(waitForUserManager, 100);
-                }
-            };
-            waitForUserManager();
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+                console.log('🔥 Mobile Firebase prêt:', user.email);
+            }
         });
     </script>
 </head>
@@ -79,6 +73,9 @@
         </div>
     </header>
 
+    <!-- Overlay Menu -->
+    <div id="menuOverlay" class="menu-overlay"></div>
+    
     <!-- Menu Mobile -->
     <nav id="mobileMenu" class="mobile-menu">
         <div class="menu-header">
@@ -86,13 +83,14 @@
             <button id="closeMenu" class="close-btn">✕</button>
         </div>
         <ul class="menu-list">
-            <li><a href="#dashboard" ontouchend="showSection('dashboard')">📊 Dashboard</a></li>
-            <li><a href="#trades" ontouchend="showSection('trades')">📈 Mes Trades</a></li>
-            <li><a href="#calendar" ontouchend="showSection('calendar')">📅 Calendrier</a></li>
-            <li><a href="#objectives" ontouchend="showSection('objectives')">🎯 Objectifs</a></li>
-            <li><a href="#ranking" ontouchend="showSection('ranking')">🏆 Classement</a></li>
-            <li><a href="#settings" ontouchend="showSection('settings')">⚙️ Paramètres</a></li>
-            <li><a href="index-fixed.html">🚪 Déconnexion</a></li>
+            <li><a href="#dashboard" data-section="dashboard">📊 Dashboard</a></li>
+            <li><a href="#trades" data-section="trades">📈 Mes Trades</a></li>
+            <li><a href="#calendar" data-section="calendar">📅 Calendrier</a></li>
+            <li><a href="#objectives" data-section="objectives">🎯 Objectifs</a></li>
+            <li><a href="#ranking" data-section="ranking">🏆 Classement</a></li>
+            <li><a href="#chat" data-section="chat">💬 Chat VIP</a></li>
+            <li><a href="#settings" data-section="settings">⚙️ Paramètres</a></li>
+            <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
 
@@ -105,14 +103,35 @@
                 <button id="newTradeBtn" class="primary-btn">+ Trade</button>
             </div>
             
-            <div class="chart-container">
-                <h3>Performance</h3>
-                <canvas id="mobilePerformanceChart"></canvas>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Trades Totaux</h4>
+                    <span id="totalTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Gagnants</h4>
+                    <span id="winningTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Trades Perdants</h4>
+                    <span id="losingTrades">0</span>
+                </div>
+                <div class="stat-card">
+                    <h4>Profit Total</h4>
+                    <span id="totalProfit">$0</span>
+                </div>
             </div>
             
-            <div class="chart-container">
-                <h3>WinRate</h3>
-                <canvas id="mobileWinRateChart"></canvas>
+            <!-- Graphiques Mobile -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h4>Performance</h4>
+                    <canvas id="mobilePerformanceChart" width="300" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>Taux de Réussite</h4>
+                    <canvas id="mobileWinRateChart" width="200" height="200"></canvas>
+                </div>
             </div>
         </section>
 
@@ -124,7 +143,7 @@
             </div>
             
             <div class="trades-list" id="mobileTradesList">
-                <!-- Trades générés dynamiquement -->
+                <div class="no-trades">Aucun trade pour le moment</div>
             </div>
         </section>
 
@@ -132,16 +151,8 @@
         <section id="calendar" class="section">
             <div class="section-header">
                 <h2>📅 Calendrier</h2>
-                <div class="calendar-nav">
-                    <button id="prevMonthMobile">◀</button>
-                    <span id="monthYearMobile">Mois</span>
-                    <button id="nextMonthMobile">▶</button>
-                </div>
             </div>
-            
-            <div class="mobile-calendar" id="mobileCalendar">
-                <!-- Calendrier généré dynamiquement -->
-            </div>
+            <div class="mobile-calendar" id="mobileCalendar">Calendrier</div>
         </section>
 
         <!-- Section Objectifs -->
@@ -149,7 +160,6 @@
             <div class="section-header">
                 <h2>🎯 Objectifs</h2>
             </div>
-            
             <div class="objectives-list">
                 <div class="objective-card">
                     <div class="objective-header">
@@ -162,30 +172,6 @@
                     </div>
                     <span class="progress-text" id="mobileDailyPercent">0%</span>
                 </div>
-                
-                <div class="objective-card">
-                    <div class="objective-header">
-                        <span class="objective-icon">📅</span>
-                        <span class="objective-title">Hebdomadaire</span>
-                        <span class="objective-target" id="mobileWeeklyTarget">$30</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="mobileWeeklyProgress"></div>
-                    </div>
-                    <span class="progress-text" id="mobileWeeklyPercent">0%</span>
-                </div>
-                
-                <div class="objective-card">
-                    <div class="objective-header">
-                        <span class="objective-icon">📊</span>
-                        <span class="objective-title">Mensuel</span>
-                        <span class="objective-target" id="mobileMonthlyTarget">$150</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="mobileMonthlyProgress"></div>
-                    </div>
-                    <span class="progress-text" id="mobileMonthlyPercent">0%</span>
-                </div>
             </div>
         </section>
 
@@ -194,9 +180,22 @@
             <div class="section-header">
                 <h2>🏆 Classement VIP</h2>
             </div>
-            
             <div class="ranking-list" id="mobileRankingList">
-                <!-- Classement généré dynamiquement -->
+                <div class="no-ranking">Chargement du classement...</div>
+            </div>
+        </section>
+
+        <!-- Section Chat VIP -->
+        <section id="chat" class="section">
+            <div class="section-header">
+                <h2>💬 Chat VIP</h2>
+            </div>
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="Tapez votre message...">
+                    <button id="sendBtn">📤</button>
+                </div>
             </div>
         </section>
 
@@ -205,182 +204,201 @@
             <div class="section-header">
                 <h2>⚙️ Paramètres</h2>
             </div>
-            
             <div class="settings-list">
                 <div class="setting-item">
                     <label>Capital initial ($)</label>
                     <input type="number" id="mobileCapitalInput" value="1000">
                 </div>
                 <div class="setting-item">
-                    <label>Risque par trade (%)</label>
-                    <input type="number" id="mobileRiskInput" value="2" step="0.1">
-                </div>
-                <div class="setting-item">
-                    <label>Objectif journalier ($)</label>
-                    <input type="number" id="mobileDailyObjective" value="10">
-                </div>
-                <div class="setting-item">
                     <label>Pseudo</label>
                     <input type="text" id="mobileNickname" placeholder="Votre pseudo">
                 </div>
-                <div class="setting-item">
-                    <div class="account-selector-container">
-                        <label>Compte actuel</label>
-                        <select id="mobileAccountSelector" class="account-selector" onchange="window.mobileDashboard?.switchAccount(this.value)" onclick="window.mobileDashboard?.switchAccount(this.value)">
-                            <option value="default">Compte Principal</option>
-                        </select>
-                    </div>
-                    <div class="account-controls">
-                        <button class="secondary-btn" onclick="window.mobileDashboard?.createNewAccount()">Nouveau Compte</button>
-                        <button class="danger-btn" onclick="window.mobileDashboard?.deleteCurrentAccount()">Supprimer</button>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <button class="primary-btn" onclick="window.mobileDashboard?.saveSettings()">💾 Sauvegarder</button>
-                </div>
+                <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
             </div>
         </section>
     </main>
 
     <!-- Navigation Bottom -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" ontouchend="showSection('dashboard')">
+        <button class="nav-btn active" data-section="dashboard">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Dashboard</span>
         </button>
-        <button class="nav-btn" ontouchend="showSection('trades')">
+        <button class="nav-btn" data-section="trades">
             <span class="nav-icon">📈</span>
             <span class="nav-label">Trades</span>
         </button>
-        <button class="nav-btn" ontouchend="showSection('calendar')">
+        <button class="nav-btn" data-section="calendar">
             <span class="nav-icon">📅</span>
             <span class="nav-label">Calendrier</span>
         </button>
-        <button class="nav-btn" ontouchend="showSection('ranking')">
+        <button class="nav-btn" data-section="ranking">
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Classement</span>
         </button>
-        <button class="nav-btn" ontouchend="showSection('settings')">
-            <span class="nav-icon">⚙️</span>
-            <span class="nav-label">Paramètres</span>
-        </button>
     </nav>
 
-    <!-- Chat Toggle -->
-    <div class="mobile-chat-toggle" id="chatToggle">💬</div>
-
-    <!-- Chat Window -->
-    <div class="mobile-chat-window" id="chatWindow">
-        <div class="chat-header">
-            <h4>💬 Chat VIP</h4>
-            <button class="close-btn" onclick="toggleMobileChat()">✕</button>
-        </div>
-        <div class="chat-messages" id="mobileMessages">
-            <!-- Messages générés dynamiquement -->
-        </div>
-        <div class="mobile-emoji-panel" id="mobileEmojiPanel">
-            <div class="emoji-grid">
-                <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
-                <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
-                <span class="emoji-item" onclick="insertEmoji('😍')">😍</span>
-                <span class="emoji-item" onclick="insertEmoji('🤔')">🤔</span>
-                <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
-                <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
-                <span class="emoji-item" onclick="insertEmoji('💪')">💪</span>
-                <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
-                <span class="emoji-item" onclick="insertEmoji('👎')">👎</span>
-                <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
-                <span class="emoji-item" onclick="insertEmoji('💰')">💰</span>
-                <span class="emoji-item" onclick="insertEmoji('📈')">📈</span>
-                <span class="emoji-item" onclick="insertEmoji('📉')">📉</span>
-                <span class="emoji-item" onclick="insertEmoji('🚀')">🚀</span>
-                <span class="emoji-item" onclick="insertEmoji('⭐')">⭐</span>
-                <span class="emoji-item" onclick="insertEmoji('🎯')">🎯</span>
-                <span class="emoji-item" onclick="insertEmoji('💎')">💎</span>
-                <span class="emoji-item" onclick="insertEmoji('🏆')">🏆</span>
-                <span class="emoji-item" onclick="insertEmoji('🎉')">🎉</span>
-                <span class="emoji-item" onclick="insertEmoji('⚡')">⚡</span>
+    <!-- Widget Chat Flottant -->
+    <div class="chat-widget">
+        <button class="chat-toggle" id="chatToggle">💬</button>
+        <div id="chatBox" class="chat-box">
+            <div class="chat-header">
+                <span>💬 Chat VIP</span>
+                <button id="chatClose" class="chat-close">✕</button>
             </div>
-        </div>
-        <div class="chat-input-container">
-            <button class="emoji-btn" onclick="toggleEmojiPanel()">😀</button>
-            <input type="text" id="mobileMessageInput" placeholder="Tapez votre message..." maxlength="500">
-            <button class="send-btn" onclick="sendMobileMessage()">➤</button>
+            <div class="chat-messages" id="widgetMessages"></div>
+            <div class="chat-input">
+                <input type="text" id="widgetInput" placeholder="Message...">
+                <button id="widgetSend">📤</button>
+            </div>
         </div>
     </div>
 
     <!-- Modal Trade -->
-    <div class="mobile-modal" id="tradeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Nouveau Trade</h3>
-                <button class="close-btn" onclick="closeMobileModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Paire</label>
-                    <select id="tradePair">
-                        <option value="EUR/USD">EUR/USD</option>
-                        <option value="GBP/USD">GBP/USD</option>
-                        <option value="USD/JPY">USD/JPY</option>
-                        <option value="USD/CHF">USD/CHF</option>
-                        <option value="AUD/USD">AUD/USD</option>
-                        <option value="USD/CAD">USD/CAD</option>
-                        <option value="NZD/USD">NZD/USD</option>
-                        <option value="EUR/GBP">EUR/GBP</option>
-                        <option value="EUR/JPY">EUR/JPY</option>
-                        <option value="GBP/JPY">GBP/JPY</option>
-                        <option value="XAU/USD">XAU/USD (Gold)</option>
-                        <option value="XAG/USD">XAG/USD (Silver)</option>
-                        <option value="WTI/USD">WTI/USD (Oil)</option>
-                        <option value="BTC/USD">BTC/USD</option>
-                        <option value="ETH/USD">ETH/USD</option>
-                        <option value="US30">US30 (Dow Jones)</option>
-                        <option value="SPX500">SPX500 (S&P 500)</option>
-                        <option value="NAS100">NAS100 (Nasdaq)</option>
-                        <option value="GER40">GER40 (DAX)</option>
-                        <option value="UK100">UK100 (FTSE)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="tradeType">
-                        <option value="BUY">BUY</option>
-                        <option value="SELL">SELL</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Lots</label>
-                    <input type="number" id="tradeLots" step="0.01" value="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Prix d'entrée</label>
-                    <input type="number" id="tradeEntry" step="0.00001">
-                </div>
-                <div class="form-group">
-                    <label>Stop Loss</label>
-                    <input type="number" id="tradeStopLoss" step="0.00001">
-                </div>
-                <div class="form-group">
-                    <label>Take Profit</label>
-                    <input type="number" id="tradeTakeProfit" step="0.00001">
-                </div>
-
-                <div class="form-actions">
-                    <button class="primary-btn" onclick="saveMobileTrade()">💾 Sauvegarder</button>
-                    <button class="secondary-btn" onclick="closeMobileModal()">❌ Annuler</button>
-                </div>
-            </div>
-        </div>
+    <div id="tradeModal" class="modal">
+        <div class="modal-content" id="modalContent"></div>
     </div>
 
-    <!-- Scripts -->
-    <script src="date-helper.js"></script>
-    <script src="user-manager.js"></script>
-    <script src="firebase-audit.js"></script>
-    <script src="ranking-fix.js"></script>
-    <script src="mobile-realtime-sync.js"></script>
-    <script src="mobile-debug.js"></script>
-    <script src="mobile-complete.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="mobile-trades.js"></script>
+    <script>
+        // Variables globales
+        let currentUser = null;
+        
+        // Navigation mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const closeMenu = document.getElementById('closeMenu');
+            const menuLinks = document.querySelectorAll('.menu-list a[data-section]');
+            const navBtns = document.querySelectorAll('.nav-btn[data-section]');
+            
+            // Menu hamburger
+            menuToggle.addEventListener('click', () => {
+                mobileMenu.classList.add('active');
+                menuOverlay.classList.add('active');
+            });
+            
+            function closeMenuFunc() {
+                mobileMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+            }
+            
+            closeMenu.addEventListener('click', closeMenuFunc);
+            menuOverlay.addEventListener('click', closeMenuFunc);
+            
+            // Navigation sections
+            function showSection(sectionId) {
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(sectionId).classList.add('active');
+                
+                // Mettre à jour navigation bottom
+                navBtns.forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+                
+                closeMenuFunc();
+            }
+            
+            // Événements navigation
+            menuLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(link.getAttribute('data-section'));
+                });
+            });
+            
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showSection(btn.getAttribute('data-section'));
+                });
+            });
+            
+            // Chat widget
+            const chatToggle = document.getElementById('chatToggle');
+            const chatBox = document.getElementById('chatBox');
+            const chatClose = document.getElementById('chatClose');
+            
+            chatToggle.addEventListener('click', () => {
+                chatBox.classList.toggle('active');
+            });
+            
+            chatClose.addEventListener('click', () => {
+                chatBox.classList.remove('active');
+            });
+            
+            // Chat VIP
+            const sendBtn = document.getElementById('sendBtn');
+            const chatInput = document.getElementById('chatInput');
+            
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+                
+                const uid = sessionStorage.getItem('firebaseUID');
+                const email = sessionStorage.getItem('userEmail');
+                
+                if (window.firebaseDB && window.push && window.dbRef) {
+                    const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+                    window.push(chatRef, {
+                        text: message,
+                        sender: email || 'Mobile User',
+                        timestamp: Date.now(),
+                        uid: uid
+                    });
+                }
+                
+                chatInput.value = '';
+            }
+            
+            sendBtn.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Charger chat
+            function loadChat() {
+                if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
+                
+                const chatRef = window.dbRef(window.firebaseDB, 'vip-chat');
+                window.onValue(chatRef, (snapshot) => {
+                    const messages = snapshot.val();
+                    const container = document.getElementById('chatMessages');
+                    
+                    if (!container) return;
+                    container.innerHTML = '';
+                    
+                    if (messages) {
+                        Object.values(messages)
+                            .sort((a, b) => a.timestamp - b.timestamp)
+                            .forEach(msg => {
+                                const div = document.createElement('div');
+                                div.className = 'message received';
+                                div.innerHTML = `
+                                    <div class="message-content">
+                                        <div class="message-text">${msg.text}</div>
+                                        <div class="message-info">
+                                            <span class="message-sender">${msg.sender}</span>
+                                            <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                        </div>
+                                    </div>
+                                `;
+                                container.appendChild(div);
+                            });
+                        container.scrollTop = container.scrollHeight;
+                    }
+                });
+            }
+            
+            // Initialiser après Firebase
+            setTimeout(() => {
+                loadChat();
+                if (window.loadMobileData) window.loadMobileData();
+                if (window.loadMobileRanking) window.loadMobileRanking();
+            }, 3000);
+        });
+    </script>
 </body>
 </html>
