@@ -420,13 +420,7 @@
                 if (!message) return;
                 
                 const uid = sessionStorage.getItem('firebaseUID');
-                let nickname = 'Mobile User';
-                
-                try {
-                    const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
-                    const snapshot = await window.dbGet(nicknameRef);
-                    if (snapshot.exists()) nickname = snapshot.val();
-                } catch (error) {}
+                let nickname = sessionStorage.getItem('userNickname') || document.getElementById('mobileNickname')?.value || 'Mobile User';
                 
                 const messageData = {
                     id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -440,9 +434,10 @@
                 try {
                     const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
                     await window.push(messagesRef, messageData);
-                } catch (error) {}
-                
-                input.value = '';
+                    input.value = '';
+                } catch (error) {
+                    console.error('Erreur widget message:', error);
+                }
             }
             
             if (sendBtn) sendBtn.addEventListener('click', sendMessage);
@@ -458,37 +453,39 @@
             // Exposer la fonction de mise à jour
             window.updateMobileCharts = updateMobileCharts;
             
-            // Charger chat avec la bonne référence
-            function loadChat() {
-                if (!window.firebaseDB || !window.onValue || !window.dbRef) return;
+            // Charger chat widget
+            function loadWidgetChat() {
+                if (!window.firebaseDB) return;
                 
                 const chatRef = window.dbRef(window.firebaseDB, 'vip_chat');
                 window.onValue(chatRef, (snapshot) => {
-                    const messages = snapshot.val();
-                    const container = document.getElementById('chatMessages');
-                    
+                    const container = document.getElementById('widgetMessages');
                     if (!container) return;
+                    
                     container.innerHTML = '';
                     
-                    if (messages) {
-                        Object.values(messages)
+                    if (snapshot.exists()) {
+                        const messages = Object.values(snapshot.val())
                             .sort((a, b) => a.timestamp - b.timestamp)
-                            .forEach(msg => {
-                                const div = document.createElement('div');
-                                div.className = 'message received';
-                                div.innerHTML = `
-                                    <div class="message-content">
-                                        <div class="message-text">${msg.message || msg.text}</div>
-                                        <div class="message-info">
-                                            <span class="message-sender">${msg.nickname || msg.sender}</span>
-                                            <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
-                                        </div>
+                            .slice(-20);
+                        
+                        messages.forEach(msg => {
+                            const div = document.createElement('div');
+                            const isOwn = msg.userId === sessionStorage.getItem('firebaseUID');
+                            div.className = `message ${isOwn ? 'sent' : 'received'}`;
+                            div.innerHTML = `
+                                <div class="message-content">
+                                    <div class="message-text">${msg.message}</div>
+                                    <div class="message-info">
+                                        <span class="message-sender">${msg.nickname}</span>
+                                        <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
                                     </div>
-                                `;
-                                container.appendChild(div);
-                            });
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                        
                         container.scrollTop = container.scrollHeight;
-                        console.log('✅ Chat chargé:', Object.keys(messages).length, 'messages');
                     } else {
                         container.innerHTML = '<div class="no-messages">💬 Aucun message</div>';
                     }
@@ -497,7 +494,7 @@
             
             // Initialiser après Firebase
             setTimeout(() => {
-                loadChat();
+                loadWidgetChat();
                 if (window.loadMobileData) window.loadMobileData();
                 if (window.loadMobileRanking) window.loadMobileRanking();
             }, 3000);
@@ -510,13 +507,7 @@
             if (!message) return;
             
             const uid = sessionStorage.getItem('firebaseUID');
-            let nickname = 'Mobile User';
-            
-            try {
-                const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
-                const snapshot = await window.dbGet(nicknameRef);
-                if (snapshot.exists()) nickname = snapshot.val();
-            } catch (error) {}
+            let nickname = sessionStorage.getItem('userNickname') || document.getElementById('mobileNickname')?.value || 'Mobile User';
             
             const messageData = {
                 id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -530,9 +521,10 @@
             try {
                 const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
                 await window.push(messagesRef, messageData);
-            } catch (error) {}
-            
-            input.value = '';
+                input.value = '';
+            } catch (error) {
+                console.error('Erreur envoi message:', error);
+            }
         }
         
         // Afficher message mobile
@@ -573,8 +565,22 @@
                         .slice(-50);
                     
                     messages.forEach(msg => {
-                        addMobileMessageToUI(msg, msg.userId === sessionStorage.getItem('firebaseUID'));
+                        const messageDiv = document.createElement('div');
+                        const isOwn = msg.userId === sessionStorage.getItem('firebaseUID');
+                        messageDiv.className = `message ${isOwn ? 'sent' : 'received'}`;
+                        messageDiv.innerHTML = `
+                            <div class="message-content">
+                                <div class="message-text">${msg.message}</div>
+                                <div class="message-info">
+                                    <span class="message-sender">${msg.nickname}</span>
+                                    <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(messageDiv);
                     });
+                    
+                    container.scrollTop = container.scrollHeight;
                 } else {
                     container.innerHTML = '<div class="no-messages">💬 Aucun message</div>';
                 }
@@ -649,6 +655,26 @@
             }
         }
         
+        // Charger le pseudo sauvegardé
+        async function loadMobileNickname() {
+            const uid = sessionStorage.getItem('firebaseUID');
+            if (!uid || !window.firebaseDB) return;
+            
+            try {
+                const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
+                const snapshot = await window.dbGet(nicknameRef);
+                
+                if (snapshot.exists()) {
+                    const nickname = snapshot.val();
+                    sessionStorage.setItem('userNickname', nickname);
+                    const nicknameInput = document.getElementById('mobileNickname');
+                    if (nicknameInput) nicknameInput.value = nickname;
+                }
+            } catch (error) {
+                console.error('Erreur chargement pseudo:', error);
+            }
+        }
+        
         // Menu mobile
         function openMobileMenu() {
             document.getElementById('mobileMenu').classList.add('active');
@@ -718,12 +744,7 @@
                     });
                 }
                 
-                const savedNickname = sessionStorage.getItem('userNickname');
-                if (savedNickname) {
-                    const nicknameInput = document.getElementById('mobileNickname');
-                    if (nicknameInput) nicknameInput.value = savedNickname;
-                }
-                
+                loadMobileNickname();
                 loadMobileChat();
             }, 1000);
         });
