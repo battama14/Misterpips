@@ -533,19 +533,7 @@ async function loadMobileRanking() {
         for (const [uid, userData] of vipUsers) {
             let userTrades = []; // Toujours initialiser comme array
             
-            // Chercher dans dashboards
-            try {
-                const dashboardRef = window.dbRef(window.firebaseDB, `dashboards/${uid}/trades`);
-                const dashboardSnapshot = await window.dbGet(dashboardRef);
-                if (dashboardSnapshot.exists()) {
-                    const trades = dashboardSnapshot.val();
-                    if (Array.isArray(trades)) {
-                        userTrades = trades;
-                    }
-                }
-            } catch (error) {}
-            
-            // Chercher aussi dans users/accounts
+            // PRIORITÉ: Chercher d'abord dans users/accounts (source principale)
             try {
                 const userAccountsRef = window.dbRef(window.firebaseDB, `users/${uid}/accounts`);
                 const accountsSnapshot = await window.dbGet(userAccountsRef);
@@ -553,11 +541,26 @@ async function loadMobileRanking() {
                     const accounts = accountsSnapshot.val();
                     Object.values(accounts).forEach(account => {
                         if (account.trades && Array.isArray(account.trades)) {
-                            userTrades = userTrades.concat(account.trades);
+                            userTrades = account.trades; // Prendre seulement le premier compte
+                            return; // Sortir de la boucle
                         }
                     });
                 }
             } catch (error) {}
+            
+            // FALLBACK: Si pas de trades dans users/accounts, chercher dans dashboards
+            if (userTrades.length === 0) {
+                try {
+                    const dashboardRef = window.dbRef(window.firebaseDB, `dashboards/${uid}/trades`);
+                    const dashboardSnapshot = await window.dbGet(dashboardRef);
+                    if (dashboardSnapshot.exists()) {
+                        const trades = dashboardSnapshot.val();
+                        if (Array.isArray(trades)) {
+                            userTrades = trades;
+                        }
+                    }
+                } catch (error) {}
+            }
             
             // S'assurer que userTrades est toujours un array
             if (!Array.isArray(userTrades)) {

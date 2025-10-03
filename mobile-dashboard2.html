@@ -83,12 +83,12 @@
             <button id="closeMenu" class="close-btn">✕</button>
         </div>
         <ul class="menu-list">
-            <li><a href="#dashboard" ontouchend="showSection('dashboard')">📊 Dashboard</a></li>
-            <li><a href="#trades" ontouchend="showSection('trades')">📈 Mes Trades</a></li>
-            <li><a href="#calendar" ontouchend="showSection('calendar')">📅 Calendrier</a></li>
-            <li><a href="#objectives" ontouchend="showSection('objectives')">🎯 Objectifs</a></li>
-            <li><a href="#ranking" ontouchend="showSection('ranking')">🏆 Classement</a></li>
-            <li><a href="#settings" ontouchend="showSection('settings')">⚙️ Paramètres</a></li>
+            <li><a href="#dashboard" data-section="dashboard">📊 Dashboard</a></li>
+            <li><a href="#trades" data-section="trades">📈 Mes Trades</a></li>
+            <li><a href="#calendar" data-section="calendar">📅 Calendrier</a></li>
+            <li><a href="#objectives" data-section="objectives">🎯 Objectifs</a></li>
+            <li><a href="#ranking" data-section="ranking">🏆 Classement</a></li>
+            <li><a href="#settings" data-section="settings">⚙️ Paramètres</a></li>
             <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
     </nav>
@@ -214,6 +214,74 @@
                         <label>Objectif journalier ($)</label>
                         <input type="number" id="mobileDailyGoal" value="10" min="1" step="1">
                     </div>
+                </div>
+                
+                <!-- Profil -->
+                <div class="settings-group">
+                    <h3>👤 Profil</h3>
+                    <div class="setting-item">
+                        <label>Pseudo</label>
+                        <div class="input-group">
+                            <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                            <button class="btn-save" onclick="saveMobileNickname()">💾</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comptes -->
+                <div class="settings-group">
+                    <h3>💼 Comptes</h3>
+                    <div class="accounts-list" id="mobileAccountsList">
+                        <!-- Comptes générés dynamiquement -->
+                    </div>
+                    <button class="btn-add" onclick="addMobileAccount()">+ Nouveau Compte</button>
+                </div>
+                
+                <!-- Actions -->
+                <div class="settings-group">
+                    <h3>🔧 Actions</h3>
+                    <div class="setting-item">
+                        <label>Notifications</label>
+                        <label class="switch">
+                            <input type="checkbox" id="mobileNotifications" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <button class="danger-btn" onclick="resetMobileData()">🗑️ Réinitialiser</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Trade -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content" id="modalContent">
+            <!-- Contenu généré par JS -->
+        </div>
+    </div>
+
+    <!-- Navigation Bottom -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-section="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-section="trades">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Trades</span>
+        </button>
+        <button class="nav-btn" data-section="calendar">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Calendrier</span>
+        </button>
+        <button class="nav-btn" data-section="ranking">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-label">Classement</span>
+        </button>
+    </nav>           </div>
                 </div>
                 
                 <!-- Profil -->
