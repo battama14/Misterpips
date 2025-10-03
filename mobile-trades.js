@@ -630,13 +630,11 @@ async function loadMobileRanking() {
             // Récupérer le pseudo avec PRIORITÉ sur nickname
             let nickname = 'Trader VIP';
             try {
-                // PRIORITÉ 1: nickname dans users/{uid}/nickname
                 const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
                 const nicknameSnapshot = await window.dbGet(nicknameRef);
                 if (nicknameSnapshot.exists() && nicknameSnapshot.val()) {
                     nickname = nicknameSnapshot.val();
                 } else {
-                    // PRIORITÉ 2: displayName ou nickname dans userData
                     nickname = userData.nickname || userData.displayName || userData.email?.split('@')[0] || 'Trader VIP';
                 }
             } catch (error) {

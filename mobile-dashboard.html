@@ -193,7 +193,7 @@
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-container">
-                    <input type="text" id="chatInput" placeholder="Tapez votre message... (Entrée pour envoyer)" onkeypress="if(event.key==='Enter'){const input=this;const message=input.value.trim();if(message){const uid=sessionStorage.getItem('firebaseUID');const email=sessionStorage.getItem('userEmail');if(window.firebaseDB&&window.push&&window.dbRef){const chatRef=window.dbRef(window.firebaseDB,'vip-chat');window.push(chatRef,{text:message,sender:email||'Mobile User',timestamp:Date.now(),uid:uid});}input.value='';}}"
+                    <input type="text" id="chatInput" placeholder="Tapez votre message...">
                     <button id="sendBtn">📤</button>
                 </div>
             </div>
@@ -220,21 +220,25 @@
 
     <!-- Navigation Bottom -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" data-section="dashboard">
+        <button class="nav-btn active" onclick="showMobileSection('dashboard')">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Dashboard</span>
         </button>
-        <button class="nav-btn" data-section="trades">
+        <button class="nav-btn" onclick="showMobileSection('trades')">
             <span class="nav-icon">📈</span>
             <span class="nav-label">Trades</span>
         </button>
-        <button class="nav-btn" data-section="calendar">
+        <button class="nav-btn" onclick="showMobileSection('calendar')">
             <span class="nav-icon">📅</span>
             <span class="nav-label">Calendrier</span>
         </button>
-        <button class="nav-btn" data-section="ranking">
+        <button class="nav-btn" onclick="showMobileSection('ranking')">
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Classement</span>
+        </button>
+        <button class="nav-btn" onclick="showMobileSection('chat')">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Chat</span>
         </button>
     </nav>
 
@@ -485,29 +489,21 @@
             }, 3000);
         });
         
-        // Fonctions mobiles essentielles - CONFIG IDENTIQUE PC
+        // Chat mobile fixé
         async function sendMobileMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
             
             const uid = sessionStorage.getItem('firebaseUID');
-            
-            // Récupérer le pseudo comme sur PC
             let nickname = 'Mobile User';
-            try {
-                if (window.firebaseDB && window.dbRef && window.dbGet) {
-                    const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
-                    const snapshot = await window.dbGet(nicknameRef);
-                    if (snapshot.exists()) {
-                        nickname = snapshot.val();
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur récupération pseudo:', error);
-            }
             
-            // EXACTEMENT la même structure que PC
+            try {
+                const nicknameRef = window.dbRef(window.firebaseDB, `users/${uid}/nickname`);
+                const snapshot = await window.dbGet(nicknameRef);
+                if (snapshot.exists()) nickname = snapshot.val();
+            } catch (error) {}
+            
             const messageData = {
                 id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 userId: uid,
@@ -517,16 +513,10 @@
                 type: 'text'
             };
             
-            // Envoyer à Firebase avec la même référence que PC
             try {
-                if (window.firebaseDB && window.push && window.dbRef) {
-                    const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat'); // Même que PC
-                    await window.push(messagesRef, messageData);
-                    console.log('✅ Message envoyé:', messageData);
-                }
-            } catch (error) {
-                console.error('❌ Erreur envoi message:', error);
-            }
+                const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
+                await window.push(messagesRef, messageData);
+            } catch (error) {}
             
             input.value = '';
         }
@@ -656,6 +646,11 @@
         function showMobileSection(sectionId) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.target) {
+                const btn = event.target.closest('.nav-btn');
+                if (btn) btn.classList.add('active');
+            }
             closeMobileMenu();
         }
         
