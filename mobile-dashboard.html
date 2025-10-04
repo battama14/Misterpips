@@ -39,6 +39,11 @@
         window.onValue = onValue;
         window.push = push;
         
+        // Exposer les modules Firebase
+        window.firebaseModules = {
+            ref, get, set, onValue, push
+        };
+        
         onAuthStateChanged(auth, (user) => {
             if (!user) {
                 window.location.href = 'index.html';
@@ -553,6 +558,11 @@
             const message = input.value.trim();
             if (!message) return;
             
+            if (!window.firebaseDB || !window.push || !window.dbRef) {
+                console.error('Firebase non prêt');
+                return;
+            }
+            
             const uid = sessionStorage.getItem('firebaseUID');
             let nickname = sessionStorage.getItem('userNickname') || 'Mobile User';
             
@@ -565,15 +575,16 @@
                 type: 'text'
             };
             
-            // Afficher immédiatement le message
-            addMobileMessageToUI(messageData, true);
             input.value = '';
+            console.log('📤 Envoi message mobile:', messageData);
             
             try {
-                const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
-                await window.push(messagesRef, messageData);
+                const { ref, push } = window.firebaseModules;
+                const messagesRef = ref(window.firebaseDB, 'vip_chat');
+                await push(messagesRef, messageData);
+                console.log('✅ Message envoyé avec succès');
             } catch (error) {
-                console.error('Erreur:', error);
+                console.error('❌ Erreur envoi:', error);
             }
         }
         
