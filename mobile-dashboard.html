@@ -592,7 +592,7 @@
             const message = input.value.trim();
             if (!message) return;
             
-            if (!window.firebaseDB || !window.push || !window.dbRef) {
+            if (!window.firebaseDB) {
                 console.error('Firebase non prêt');
                 return;
             }
