@@ -743,6 +743,14 @@
                 
                 loadMobileNickname();
                 loadMobileChat();
+                
+                // Fix chat - initialiser l'écoute des messages
+                setTimeout(() => {
+                    if (window.firebaseDB && !window.chatInitialized) {
+                        loadMobileChat();
+                        window.chatInitialized = true;
+                    }
+                }, 2000);
             }, 1000);
         });
         
