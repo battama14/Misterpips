@@ -46,6 +46,11 @@
                 sessionStorage.setItem('firebaseUID', user.uid);
                 sessionStorage.setItem('userEmail', user.email);
                 console.log('🔥 Mobile Firebase prêt:', user.email);
+                
+                // Charger le pseudo automatiquement
+                setTimeout(() => {
+                    loadMobileNickname();
+                }, 1000);
             }
         });
     </script>
@@ -56,6 +61,11 @@
         <div class="header-top">
             <h1>📱 Misterpips</h1>
             <button id="menuToggle" class="menu-btn">☰</button>
+        </div>
+        <div class="account-selector">
+            <select id="headerAccountSelect" class="account-select">
+                <option value="default">Compte Principal</option>
+            </select>
         </div>
         <div class="stats-row">
             <div class="stat-item">
@@ -204,16 +214,52 @@
             <div class="section-header">
                 <h2>⚙️ Paramètres</h2>
             </div>
-            <div class="settings-list">
-                <div class="setting-item">
-                    <label>Capital initial ($)</label>
-                    <input type="number" id="mobileCapitalInput" value="1000">
+            <div class="settings-container">
+                <!-- Gestion des comptes -->
+                <div class="settings-group">
+                    <h3>👤 Gestion des Comptes</h3>
+                    <div class="setting-item">
+                        <label>Compte actuel</label>
+                        <select id="mobileAccountSelect">
+                            <option value="default">Compte Principal</option>
+                        </select>
+                    </div>
+                    <div class="accounts-list" id="mobileAccountsList"></div>
+                    <button id="addMobileAccountBtn" class="btn-add">+ Ajouter un compte</button>
                 </div>
-                <div class="setting-item">
-                    <label>Pseudo</label>
-                    <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                
+                <!-- Paramètres du compte -->
+                <div class="settings-group">
+                    <h3>💰 Paramètres du Compte</h3>
+                    <div class="setting-item">
+                        <label>Nom du compte</label>
+                        <input type="text" id="mobileAccountName" placeholder="Nom du compte">
+                    </div>
+                    <div class="setting-item">
+                        <label>Capital initial ($)</label>
+                        <input type="number" id="mobileCapitalInput" value="1000">
+                    </div>
+                    <div class="setting-item">
+                        <label>Objectif journalier ($)</label>
+                        <input type="number" id="mobileDailyGoal" value="10">
+                    </div>
+                    <div class="setting-item">
+                        <label>Objectif mensuel ($)</label>
+                        <input type="number" id="mobileMonthlyGoal" value="300">
+                    </div>
                 </div>
+                
+                <!-- Paramètres utilisateur -->
+                <div class="settings-group">
+                    <h3>🏷️ Profil Utilisateur</h3>
+                    <div class="setting-item">
+                        <label>Pseudo</label>
+                        <input type="text" id="mobileNickname" placeholder="Votre pseudo">
+                    </div>
+                </div>
+                
                 <button id="saveSettingsBtn" class="primary-btn">💾 Sauvegarder</button>
+                <button id="deleteMobileAccountBtn" class="danger-btn" style="display:none;">🗑️ Supprimer ce compte</button>
             </div>
         </section>
     </main>
@@ -519,10 +565,13 @@
                 type: 'text'
             };
             
+            // Afficher immédiatement le message
+            addMobileMessageToUI(messageData, true);
+            input.value = '';
+            
             try {
                 const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
                 await window.push(messagesRef, messageData);
-                input.value = '';
             } catch (error) {
                 console.error('Erreur:', error);
             }
@@ -670,6 +719,9 @@
                     sessionStorage.setItem('userNickname', nickname);
                     const nicknameInput = document.getElementById('mobileNickname');
                     if (nicknameInput) nicknameInput.value = nickname;
+                    console.log('✅ Pseudo chargé:', nickname);
+                } else {
+                    console.log('📝 Aucun pseudo sauvegardé');
                 }
             } catch (error) {
                 console.error('Erreur chargement pseudo:', error);
@@ -722,8 +774,42 @@
                 }
                 
                 if (saveBtn) {
-                    saveBtn.addEventListener('click', saveMobileNickname);
+                    saveBtn.addEventListener('click', () => {
+                        saveMobileNickname();
+                        saveMobileAccountSettings();
+                    });
                 }
+                
+                // Gestion des comptes
+                const headerAccountSelect = document.getElementById('headerAccountSelect');
+                const settingsAccountSelect = document.getElementById('mobileAccountSelect');
+                const addAccountBtn = document.getElementById('addMobileAccountBtn');
+                const deleteAccountBtn = document.getElementById('deleteMobileAccountBtn');
+                
+                if (headerAccountSelect) {
+                    headerAccountSelect.addEventListener('change', (e) => {
+                        switchMobileAccount(e.target.value);
+                    });
+                }
+                
+                if (settingsAccountSelect) {
+                    settingsAccountSelect.addEventListener('change', (e) => {
+                        switchMobileAccount(e.target.value);
+                    });
+                }
+                
+                if (addAccountBtn) {
+                    addAccountBtn.addEventListener('click', addMobileAccount);
+                }
+                
+                if (deleteAccountBtn) {
+                    deleteAccountBtn.addEventListener('click', () => {
+                        deleteMobileAccount(currentMobileAccount);
+                    });
+                }
+                
+                // Charger les comptes
+                loadMobileAccounts();
                 
                 const widgetSend = document.getElementById('widgetSend');
                 const widgetInput = document.getElementById('widgetInput');
@@ -754,9 +840,141 @@
             }, 1000);
         });
         
+        // Gestion des comptes mobiles
+        let mobileAccounts = JSON.parse(localStorage.getItem('mobileAccounts')) || { default: { name: 'Compte Principal', capital: 1000, dailyGoal: 10, monthlyGoal: 300 } };
+        let currentMobileAccount = localStorage.getItem('currentMobileAccount') || 'default';
+        
+        function loadMobileAccounts() {
+            const headerSelect = document.getElementById('headerAccountSelect');
+            const settingsSelect = document.getElementById('mobileAccountSelect');
+            const accountsList = document.getElementById('mobileAccountsList');
+            
+            if (headerSelect) {
+                headerSelect.innerHTML = '';
+                Object.keys(mobileAccounts).forEach(id => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = mobileAccounts[id].name;
+                    if (id === currentMobileAccount) option.selected = true;
+                    headerSelect.appendChild(option);
+                });
+            }
+            
+            if (settingsSelect) {
+                settingsSelect.innerHTML = '';
+                Object.keys(mobileAccounts).forEach(id => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = mobileAccounts[id].name;
+                    if (id === currentMobileAccount) option.selected = true;
+                    settingsSelect.appendChild(option);
+                });
+            }
+            
+            if (accountsList) {
+                accountsList.innerHTML = '';
+                Object.keys(mobileAccounts).forEach(id => {
+                    const account = mobileAccounts[id];
+                    const div = document.createElement('div');
+                    div.className = 'account-item';
+                    div.innerHTML = `
+                        <div class="account-info">
+                            <div class="account-name">${account.name}</div>
+                            <div class="account-capital">Capital: $${account.capital}</div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn-edit" onclick="editMobileAccount('${id}')">✏️</button>
+                            ${id !== 'default' ? `<button class="btn-delete-account" onclick="deleteMobileAccount('${id}')">🗑️</button>` : ''}
+                        </div>
+                    `;
+                    accountsList.appendChild(div);
+                });
+            }
+            
+            loadCurrentMobileAccount();
+        }
+        
+        function loadCurrentMobileAccount() {
+            const account = mobileAccounts[currentMobileAccount];
+            if (!account) return;
+            
+            document.getElementById('mobileAccountName').value = account.name;
+            document.getElementById('mobileCapitalInput').value = account.capital;
+            document.getElementById('mobileDailyGoal').value = account.dailyGoal;
+            document.getElementById('mobileMonthlyGoal').value = account.monthlyGoal;
+            
+            document.getElementById('mobileCapital').textContent = `$${account.capital}`;
+            
+            const deleteBtn = document.getElementById('deleteMobileAccountBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = currentMobileAccount === 'default' ? 'none' : 'block';
+            }
+        }
+        
+        function switchMobileAccount(accountId) {
+            currentMobileAccount = accountId;
+            localStorage.setItem('currentMobileAccount', accountId);
+            loadCurrentMobileAccount();
+            if (window.loadMobileData) window.loadMobileData();
+        }
+        
+        function addMobileAccount() {
+            const name = prompt('Nom du nouveau compte:', 'Nouveau Compte');
+            if (!name) return;
+            
+            const id = 'acc_' + Date.now();
+            mobileAccounts[id] = {
+                name: name,
+                capital: 1000,
+                dailyGoal: 10,
+                monthlyGoal: 300
+            };
+            
+            localStorage.setItem('mobileAccounts', JSON.stringify(mobileAccounts));
+            loadMobileAccounts();
+        }
+        
+        function editMobileAccount(accountId) {
+            currentMobileAccount = accountId;
+            localStorage.setItem('currentMobileAccount', accountId);
+            loadMobileAccounts();
+        }
+        
+        function deleteMobileAccount(accountId) {
+            if (accountId === 'default') return;
+            if (!confirm('Supprimer ce compte ?')) return;
+            
+            delete mobileAccounts[accountId];
+            if (currentMobileAccount === accountId) {
+                currentMobileAccount = 'default';
+                localStorage.setItem('currentMobileAccount', 'default');
+            }
+            
+            localStorage.setItem('mobileAccounts', JSON.stringify(mobileAccounts));
+            loadMobileAccounts();
+        }
+        
+        function saveMobileAccountSettings() {
+            const account = mobileAccounts[currentMobileAccount];
+            if (!account) return;
+            
+            account.name = document.getElementById('mobileAccountName').value;
+            account.capital = parseFloat(document.getElementById('mobileCapitalInput').value) || 1000;
+            account.dailyGoal = parseFloat(document.getElementById('mobileDailyGoal').value) || 10;
+            account.monthlyGoal = parseFloat(document.getElementById('mobileMonthlyGoal').value) || 300;
+            
+            localStorage.setItem('mobileAccounts', JSON.stringify(mobileAccounts));
+            loadMobileAccounts();
+            alert('✅ Paramètres sauvegardés !');
+        }
+        
         // Fonctions globales
         window.sendMessage = sendMessage;
         window.sendWidgetMessage = sendWidgetMessage;
+        window.addMobileAccount = addMobileAccount;
+        window.editMobileAccount = editMobileAccount;
+        window.deleteMobileAccount = deleteMobileAccount;
+        window.switchMobileAccount = switchMobileAccount;
     </script>
 </body>
 </html>
