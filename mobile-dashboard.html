@@ -103,7 +103,7 @@
             <li><a href="#calendar" data-section="calendar">📅 Calendrier</a></li>
             <li><a href="#objectives" data-section="objectives">🎯 Objectifs</a></li>
             <li><a href="#ranking" data-section="ranking">🏆 Classement</a></li>
-            <li><a href="#chat" data-section="chat">💬 Chat VIP</a></li>
+            <li><a href="#settings" data-section="settings">💬 Chat VIP</a></li>
             <li><a href="#settings" data-section="settings">⚙️ Paramètres</a></li>
             <li><a href="index.html">🚪 Déconnexion</a></li>
         </ul>
@@ -319,7 +319,7 @@
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Classement</span>
         </button>
-        <button class="nav-btn" onclick="showMobileSection('chat')">
+        <button class="nav-btn" onclick="showMobileSection('settings')">
             <span class="nav-icon">💬</span>
             <span class="nav-label">Chat</span>
         </button>
@@ -515,8 +515,9 @@
                 };
                 
                 try {
-                    const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
-                    await window.push(messagesRef, messageData);
+                    const { ref, push } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                    const messagesRef = ref(window.firebaseDB, 'vip_chat');
+                    await push(messagesRef, messageData);
                     input.value = '';
                 } catch (error) {
                     console.error('Erreur widget message:', error);
@@ -771,6 +772,22 @@
             const year = today.getFullYear();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             
+            // Récupérer les trades du localStorage
+            const trades = JSON.parse(localStorage.getItem('trades')) || [];
+            const tradesData = {};
+            
+            trades.forEach(trade => {
+                if (trade.date) {
+                    const tradeDate = new Date(trade.date);
+                    if (tradeDate.getMonth() === month && tradeDate.getFullYear() === year) {
+                        const day = tradeDate.getDate();
+                        if (!tradesData[day]) tradesData[day] = { count: 0, pnl: 0 };
+                        tradesData[day].count++;
+                        tradesData[day].pnl += parseFloat(trade.pnl) || 0;
+                    }
+                }
+            });
+            
             let html = '<div class="calendar-grid">';
             
             // Jours de la semaine
@@ -780,7 +797,17 @@
             
             // Jours du mois
             for (let day = 1; day <= daysInMonth; day++) {
-                html += `<div class="calendar-day"><div class="calendar-date">${day}</div></div>`;
+                const dayData = tradesData[day];
+                const hasData = dayData && dayData.count > 0;
+                const pnlClass = hasData ? (dayData.pnl > 0 ? 'profit-day' : 'loss-day') : '';
+                
+                html += `<div class="calendar-day ${pnlClass}">`;
+                html += `<div class="calendar-date">${day}</div>`;
+                if (hasData) {
+                    html += `<div class="calendar-trades">${dayData.count}T</div>`;
+                    html += `<div class="calendar-pnl ${dayData.pnl > 0 ? 'positive' : 'negative'}">$${dayData.pnl.toFixed(0)}</div>`;
+                }
+                html += '</div>';
             }
             
             html += '</div>';
