@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Misterpips Mobile</title>
     <link rel="stylesheet" href="mobile-optimized.css?v=2025">
+    <link rel="stylesheet" href="mobile-chat-display-fix.css?v=2025">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d4ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -265,6 +266,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="mobile-trades.js"></script>
+    <script src="mobile-chat-fix.js"></script>
+    <script src="test-mobile-chat.js"></script>
     <script>
         // Variables globales
         let currentUser = null;
@@ -440,7 +443,7 @@
                 }
             }
             
-            if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+            if (sendBtn) sendBtn.onclick = sendMessage;
             if (chatInput) {
                 chatInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') sendMessage();
@@ -500,17 +503,17 @@
             }, 3000);
         });
         
-        // Chat mobile simple et efficace
-        async function sendMobileMessage() {
+        // Chat mobile simple
+        async function sendMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
             
             const uid = sessionStorage.getItem('firebaseUID');
-            let nickname = sessionStorage.getItem('userNickname') || document.getElementById('mobileNickname')?.value || 'Mobile User';
+            let nickname = sessionStorage.getItem('userNickname') || 'Mobile User';
             
             const messageData = {
-                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                id: Date.now(),
                 userId: uid,
                 nickname: nickname,
                 message: message,
@@ -523,7 +526,7 @@
                 await window.push(messagesRef, messageData);
                 input.value = '';
             } catch (error) {
-                console.error('Erreur envoi message:', error);
+                console.error('Erreur:', error);
             }
         }
         
@@ -711,17 +714,13 @@
                 const saveBtn = document.getElementById('saveSettingsBtn');
                 
                 if (chatInput) {
-                    chatInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            sendMobileMessage();
-                        }
-                    });
+                    chatInput.onkeypress = (e) => {
+                        if (e.key === 'Enter') sendMessage();
+                    };
                 }
                 
                 if (sendBtn) {
-                    sendBtn.addEventListener('click', sendMobileMessage);
-                    sendBtn.addEventListener('touchstart', sendMobileMessage);
+                    sendBtn.onclick = sendMessage;
                 }
                 
                 if (saveBtn) {
@@ -750,7 +749,7 @@
         });
         
         // Fonctions globales
-        window.sendMobileMessage = sendMobileMessage;
+        window.sendMessage = sendMessage;
         window.sendWidgetMessage = sendWidgetMessage;
     </script>
 </body>

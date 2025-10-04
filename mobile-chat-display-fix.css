@@ -1,0 +1,244 @@
+/* Fix Affichage Chat Mobile - CSS Correctif */
+
+/* Forcer l'affichage des messages */
+#chatMessages {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 15px !important;
+    height: 300px !important;
+    overflow-y: auto !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(0, 212, 255, 0.3) !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Messages individuels */
+.message {
+    display: flex !important;
+    flex-direction: column !important;
+    max-width: 85% !important;
+    margin-bottom: 8px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    word-wrap: break-word !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+}
+
+/* Messages envoyés */
+.message.sent {
+    align-self: flex-end !important;
+    background: linear-gradient(135deg, #00d4ff, #0099cc) !important;
+    color: white !important;
+    border-bottom-right-radius: 4px !important;
+}
+
+/* Messages reçus */
+.message.received {
+    align-self: flex-start !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border-bottom-left-radius: 4px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Contenu du message */
+.message-content {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+}
+
+.message-text {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 4px !important;
+    color: inherit !important;
+    display: block !important;
+}
+
+.message-info {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 10px !important;
+    opacity: 0.8 !important;
+    margin-top: 4px !important;
+}
+
+.message-sender {
+    font-weight: 500 !important;
+    color: inherit !important;
+}
+
+.message-time {
+    font-style: italic !important;
+    color: inherit !important;
+}
+
+/* Container de chat */
+.chat-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: calc(100vh - 250px) !important;
+    max-height: 400px !important;
+    min-height: 300px !important;
+}
+
+/* Input de chat */
+.chat-input-container {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    padding: 10px !important;
+    border-radius: 25px !important;
+    border: 1px solid rgba(0, 212, 255, 0.3) !important;
+    margin-top: 10px !important;
+}
+
+#chatInput {
+    flex: 1 !important;
+    padding: 12px 15px !important;
+    border: none !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    font-size: 14px !important;
+    outline: none !important;
+}
+
+#chatInput::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+#sendBtn {
+    background: linear-gradient(135deg, #00d4ff, #0099cc) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 12px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+}
+
+#sendBtn:active {
+    transform: scale(0.95) !important;
+}
+
+/* Message de bienvenue */
+.no-messages {
+    text-align: center !important;
+    padding: 20px !important;
+    color: #aaa !important;
+    font-style: italic !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    border: 2px dashed rgba(0, 212, 255, 0.2) !important;
+    display: block !important;
+}
+
+/* Widget chat */
+#widgetMessages {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding: 10px !important;
+    height: 250px !important;
+    overflow-y: auto !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-radius: 8px !important;
+}
+
+#widgetMessages .message {
+    font-size: 12px !important;
+    padding: 6px 8px !important;
+    margin-bottom: 4px !important;
+}
+
+/* Corrections spécifiques pour mobile */
+@media (max-width: 768px) {
+    #chatMessages {
+        height: 250px !important;
+        padding: 10px !important;
+    }
+    
+    .message {
+        max-width: 90% !important;
+        padding: 8px 10px !important;
+    }
+    
+    .message-text {
+        font-size: 13px !important;
+    }
+    
+    .message-info {
+        font-size: 9px !important;
+    }
+}
+
+/* Forcer la visibilité */
+.section#chat .chat-container,
+.section#chat .chat-messages,
+.section#chat .message {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Scrollbar personnalisée pour mobile */
+#chatMessages::-webkit-scrollbar {
+    width: 4px;
+}
+
+#chatMessages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 255, 0.5);
+    border-radius: 2px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 212, 255, 0.7);
+}
+
+/* Animation d'apparition des messages */
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message {
+    animation: messageAppear 0.3s ease !important;
+}
+
+/* Debug - bordures visibles */
+.debug-chat #chatMessages {
+    border: 2px solid red !important;
+}
+
+.debug-chat .message {
+    border: 1px solid yellow !important;
+}
+
+.debug-chat .message-content {
+    border: 1px solid green !important;
+}

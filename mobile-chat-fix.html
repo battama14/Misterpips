@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Misterpips Mobile</title>
+    <link rel="stylesheet" href="mobile-optimized.css?v=2025">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSDK0NfVSs_VQb3TnrixiJbOpTsmoUMvU",
+            authDomain: "misterpips-b71fb.firebaseapp.com",
+            databaseURL: "https://misterpips-b71fb-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "misterpips-b71fb",
+            storageBucket: "misterpips-b71fb.firebasestorage.app",
+            messagingSenderId: "574231126409",
+            appId: "1:574231126409:web:b7ed93ac4ea62e247dc158"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        
+        window.firebaseDB = db;
+        window.firebaseAuth = auth;
+        window.dbRef = ref;
+        window.dbGet = get;
+        window.dbSet = set;
+        window.onValue = onValue;
+        window.push = push;
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                sessionStorage.setItem('firebaseUID', user.uid);
+                sessionStorage.setItem('userEmail', user.email);
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- Section Chat VIP -->
+    <section id="chat" class="section active">
+        <div class="section-header">
+            <h2>💬 Chat VIP</h2>
+        </div>
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">💬 Chargement...</div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Tapez votre message...">
+                <button id="sendBtn">📤</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Widget Chat -->
+    <div class="chat-widget">
+        <button class="chat-toggle" onclick="toggleChat()">💬</button>
+        <div id="chatBox" class="chat-box">
+            <div class="chat-header">
+                <span>💬 Chat VIP</span>
+                <button onclick="toggleChat()" class="chat-close">✕</button>
+            </div>
+            <div class="chat-messages" id="widgetMessages">💬 Chargement...</div>
+            <div class="chat-input">
+                <input type="text" id="widgetInput" placeholder="Message...">
+                <button id="widgetSend">📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chat simple
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const uid = sessionStorage.getItem('firebaseUID');
+            const nickname = 'Mobile User';
+            
+            const messageData = {
+                id: Date.now(),
+                userId: uid,
+                nickname: nickname,
+                message: message,
+                timestamp: Date.now(),
+                type: 'text'
+            };
+            
+            try {
+                const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
+                await window.push(messagesRef, messageData);
+                input.value = '';
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        // Widget
+        async function sendWidgetMessage() {
+            const input = document.getElementById('widgetInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const uid = sessionStorage.getItem('firebaseUID');
+            const nickname = 'Widget User';
+            
+            const messageData = {
+                id: Date.now(),
+                userId: uid,
+                nickname: nickname,
+                message: message,
+                timestamp: Date.now(),
+                type: 'text'
+            };
+            
+            try {
+                const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
+                await window.push(messagesRef, messageData);
+                input.value = '';
+            } catch (error) {
+                console.error('Erreur widget:', error);
+            }
+        }
+        
+        // Charger messages
+        function loadChat() {
+            if (!window.firebaseDB) return;
+            
+            const chatRef = window.dbRef(window.firebaseDB, 'vip_chat');
+            window.onValue(chatRef, (snapshot) => {
+                const mainContainer = document.getElementById('chatMessages');
+                const widgetContainer = document.getElementById('widgetMessages');
+                
+                let html = '';
+                
+                if (snapshot.exists()) {
+                    const messages = Object.values(snapshot.val())
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                        .slice(-20);
+                    
+                    messages.forEach(msg => {
+                        const isOwn = msg.userId === sessionStorage.getItem('firebaseUID');
+                        html += `
+                            <div class="message ${isOwn ? 'sent' : 'received'}">
+                                <div class="message-content">
+                                    <div class="message-text">${msg.message}</div>
+                                    <div class="message-info">
+                                        <span class="message-sender">${msg.nickname}</span>
+                                        <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="no-messages">💬 Aucun message</div>';
+                }
+                
+                if (mainContainer) {
+                    mainContainer.innerHTML = html;
+                    mainContainer.scrollTop = mainContainer.scrollHeight;
+                }
+                
+                if (widgetContainer) {
+                    widgetContainer.innerHTML = html;
+                    widgetContainer.scrollTop = widgetContainer.scrollHeight;
+                }
+            });
+        }
+        
+        function toggleChat() {
+            document.getElementById('chatBox').classList.toggle('active');
+        }
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const sendBtn = document.getElementById('sendBtn');
+                const chatInput = document.getElementById('chatInput');
+                const widgetSend = document.getElementById('widgetSend');
+                const widgetInput = document.getElementById('widgetInput');
+                
+                if (sendBtn) sendBtn.onclick = sendMessage;
+                if (chatInput) chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+                if (widgetSend) widgetSend.onclick = sendWidgetMessage;
+                if (widgetInput) widgetInput.onkeypress = (e) => { if (e.key === 'Enter') sendWidgetMessage(); };
+                
+                loadChat();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
