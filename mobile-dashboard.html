@@ -538,11 +538,12 @@
             window.updateMobileCharts = updateMobileCharts;
             
             // Charger chat widget
-            function loadWidgetChat() {
+            async function loadWidgetChat() {
                 if (!window.firebaseDB) return;
                 
-                const chatRef = window.dbRef(window.firebaseDB, 'vip_chat');
-                window.onValue(chatRef, (snapshot) => {
+                const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+                const chatRef = ref(window.firebaseDB, 'vip_chat');
+                onValue(chatRef, (snapshot) => {
                     const container = document.getElementById('widgetMessages');
                     if (!container) return;
                     
@@ -657,11 +658,12 @@
         }
         
         // Écouter les messages
-        function loadMobileChat() {
+        async function loadMobileChat() {
             if (!window.firebaseDB) return;
             
-            const messagesRef = window.dbRef(window.firebaseDB, 'vip_chat');
-            window.onValue(messagesRef, (snapshot) => {
+            const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
+            const messagesRef = ref(window.firebaseDB, 'vip_chat');
+            onValue(messagesRef, (snapshot) => {
                 const container = document.getElementById('chatMessages');
                 if (!container) return;
                 
@@ -772,18 +774,60 @@
             const year = today.getFullYear();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             
-            // Récupérer les trades du localStorage
-            const trades = JSON.parse(localStorage.getItem('trades')) || [];
+            // Récupérer les trades de toutes les sources possibles
+            let trades = [];
+            
+            // Essayer différentes sources de données
+            const sources = [
+                localStorage.getItem('trades'),
+                localStorage.getItem(`trades_${currentMobileAccount}`),
+                localStorage.getItem('mobileTradesData'),
+                sessionStorage.getItem('trades')
+            ];
+            
+            for (const source of sources) {
+                if (source) {
+                    try {
+                        const data = JSON.parse(source);
+                        if (Array.isArray(data) && data.length > 0) {
+                            trades = data;
+                            break;
+                        }
+                    } catch (e) {}
+                }
+            }
+            
+            // Si window.mobileTradesData existe, l'utiliser
+            if (window.mobileTradesData && Array.isArray(window.mobileTradesData)) {
+                trades = window.mobileTradesData;
+            }
+            
             const tradesData = {};
             
             trades.forEach(trade => {
+                let tradeDate;
+                
+                // Essayer différents formats de date
                 if (trade.date) {
-                    const tradeDate = new Date(trade.date);
+                    tradeDate = new Date(trade.date);
+                } else if (trade.timestamp) {
+                    tradeDate = new Date(trade.timestamp);
+                } else if (trade.createdAt) {
+                    tradeDate = new Date(trade.createdAt);
+                }
+                
+                if (tradeDate && !isNaN(tradeDate.getTime())) {
                     if (tradeDate.getMonth() === month && tradeDate.getFullYear() === year) {
                         const day = tradeDate.getDate();
                         if (!tradesData[day]) tradesData[day] = { count: 0, pnl: 0 };
                         tradesData[day].count++;
-                        tradesData[day].pnl += parseFloat(trade.pnl) || 0;
+                        
+                        // Calculer P&L selon le statut
+                        let pnl = 0;
+                        if (trade.status === 'closed' || trade.status === 'tp' || trade.status === 'sl') {
+                            pnl = parseFloat(trade.pnl) || parseFloat(trade.profit) || 0;
+                        }
+                        tradesData[day].pnl += pnl;
                     }
                 }
             });
