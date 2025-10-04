@@ -414,7 +414,7 @@
             const sendBtn = document.getElementById('sendBtn');
             const chatInput = document.getElementById('chatInput');
             
-            async function sendWidgetMessage() {
+            window.sendWidgetMessage = async function() {
                 const input = document.getElementById('widgetInput');
                 const message = input.value.trim();
                 if (!message) return;
@@ -511,7 +511,7 @@
             let nickname = sessionStorage.getItem('userNickname') || 'Mobile User';
             
             const messageData = {
-                id: Date.now(),
+                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 userId: uid,
                 nickname: nickname,
                 message: message,
