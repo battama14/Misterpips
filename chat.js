@@ -609,20 +609,21 @@ class iMessageChat {
                 const { ref, onValue, query, orderByKey, limitToLast } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js');
                 
                 const messagesRef = ref(window.firebaseDB, 'vip_chat');
-                const recentMessagesQuery = query(messagesRef, orderByKey(), limitToLast(50));
                 
-                onValue(recentMessagesQuery, (snapshot) => {
+                onValue(messagesRef, (snapshot) => {
                     if (snapshot.exists()) {
                         const messages = Object.values(snapshot.val());
                         const sortedMessages = messages.sort((a, b) => a.timestamp - b.timestamp);
                         
-                        // Nouveaux messages depuis la dernière fois
+                        // Recharger tous les messages pour éviter les problèmes de sync
+                        this.renderMessages(sortedMessages.slice(-50));
+                        
+                        // Nouveaux messages pour notifications
                         const newMessages = sortedMessages.filter(msg => 
                             msg.timestamp > this.lastMessageTime && msg.userId !== this.currentUser
                         );
                         
                         newMessages.forEach(message => {
-                            this.addMessageToUI(message, false);
                             this.showNotification(message);
                         });
                         
